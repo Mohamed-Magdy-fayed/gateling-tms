@@ -66,7 +66,7 @@ export default async function RootLayout({
   const { lang } = await params
 
   return (
-    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className={`${geist.variable}`}>
+    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className={`${geist.variable}`} suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>

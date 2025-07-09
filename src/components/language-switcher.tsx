@@ -12,7 +12,6 @@ export function LanguageSwitcher() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-9 w-9"
       asChild
     >
       <Link href={switchLanguage()}>

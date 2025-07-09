@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { initI18n, type Locale, locales, type LanguageMessages } from "./lib"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 const TranslationContext = createContext<
   | (ReturnType<typeof initI18n> & {
@@ -34,6 +34,8 @@ export function TranslationProvider({
   children: ReactNode
 }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams();
+
   const [locale, setLocale] = useState(() => {
     if (defaultLocale == null) return locales.find(locale => pathname.includes(locale)) || navigator.language
     return defaultLocale
@@ -50,6 +52,7 @@ export function TranslationProvider({
 
   const switchLanguage = useCallback(() => {
     const segments = pathname.split('/').filter(Boolean);
+
     const isLocalePrefixed = locales.includes(segments[0] as Locale);
 
     if (isLocalePrefixed) {
@@ -62,8 +65,10 @@ export function TranslationProvider({
       segments.unshift("en");
     }
 
-    return '/' + segments.join('/');
-  }, [pathname]);
+    const search = searchParams.toString();
+
+    return '/' + segments.join('/') + (search ? `?${search}` : '');
+  }, [pathname, searchParams]);
 
   return (
     <TranslationContext.Provider

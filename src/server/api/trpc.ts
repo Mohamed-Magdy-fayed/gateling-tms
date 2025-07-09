@@ -13,6 +13,7 @@ import { ZodError } from "zod";
 
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import type { Locale } from "@/i18n/lib";
 
 /**
  * 1. CONTEXT
@@ -28,10 +29,12 @@ import { db } from "@/server/db";
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth();
+  const locale = (opts.headers.get("x-custom-locale") || "en") as Locale;
 
   return {
     db,
     session,
+    locale,
     ...opts,
   };
 };

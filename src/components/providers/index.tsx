@@ -5,6 +5,7 @@ import { TranslationProvider } from '@/i18n/useTranslation';
 import en from '@/i18n/global/en';
 import ar from '@/i18n/global/ar';
 import { TRPCReactProvider } from '@/trpc/react';
+import { Toaster } from 'sonner';
 
 interface ProvidersProps {
     children: React.ReactNode;
@@ -25,6 +26,7 @@ export function Providers({ children }: ProvidersProps) {
                 enableSystem
                 disableTransitionOnChange
             >
+                <Toaster />
                 <TRPCReactProvider>{children}</TRPCReactProvider>
             </ThemeProvider>
         </TranslationProvider>

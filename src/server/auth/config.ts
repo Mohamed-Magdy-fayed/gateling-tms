@@ -4,10 +4,10 @@ import GoogleProvider from "next-auth/providers/google";
 
 import { db } from "@/server/db";
 import {
-  accounts,
-  sessions,
-  users,
-  verificationTokens,
+  AccountsTable,
+  SessionsTable,
+  UsersTable,
+  VerificationTokensTable,
 } from "@/server/db/schema";
 import { env } from "@/env";
 
@@ -54,10 +54,10 @@ export const authConfig = {
      */
   ],
   adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
+    usersTable: UsersTable,
+    accountsTable: AccountsTable,
+    sessionsTable: SessionsTable,
+    verificationTokensTable: VerificationTokensTable,
   }),
   callbacks: {
     session: ({ session, user }) => ({
