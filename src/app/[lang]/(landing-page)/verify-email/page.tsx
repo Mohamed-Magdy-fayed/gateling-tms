@@ -1,12 +1,11 @@
-import { getI18n } from "@/i18n/lib/get-translations";
-import type { Locale } from "@/i18n/lib";
-import VerifyEmail from "@/featurs/get-started/components/verify-email";
+import { VerifyEmail } from "@/featurs/get-started/components/verify-email";
 import { Suspense } from "react";
 import Image from "next/image";
+import { getI18n } from "@/i18n/lib/get-translations";
 
-export default async function VerifyEmailPage({ params }: { params: Promise<{ lang: Locale }> }) {
+export default async function VerifyEmailPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  const { t } = await getI18n(lang);
+  const { t } = await getI18n(lang)
 
   return (
     <div className="relative bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">

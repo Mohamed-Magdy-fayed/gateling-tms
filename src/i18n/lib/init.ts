@@ -181,7 +181,7 @@ function getTranslationByKey(obj: LanguageMessages, key: string) {
   let currentObj = obj
 
   for (let i = 0; i <= keys.length - 1; i++) {
-    const k = keys[i]
+    const k = keys[i]!
     const newObj = currentObj[k]
     if (newObj == null) return undefined
 

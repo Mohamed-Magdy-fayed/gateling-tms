@@ -11,16 +11,23 @@ import {
     ShieldCheckIcon,
     FingerprintIcon,
     KeyIcon,
-    SmartphoneIcon,
     LaptopIcon,
     UsbIcon
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function VerifyEmailEnhanced() {
+export function VerifyEmail() {
+    return (
+        <Suspense>
+            <VerifyEmailEnhanced />
+        </Suspense>
+    )
+}
+
+export function VerifyEmailEnhanced() {
     const searchParams = useSearchParams();
     const token = searchParams.get("orgId");
     const [showPasswordlessSetup, setShowPasswordlessSetup] = useState(false);
@@ -73,7 +80,7 @@ export default function VerifyEmailEnhanced() {
             setShowPasswordlessSetup(false);
         }
     };
-    
+
     const skipPasswordlessSetup = () => {
         setShowPasswordlessSetup(false);
     };

@@ -2,25 +2,23 @@ type ParseOptionType<
   ParamType extends string,
   ParamName extends string
 > = ParamType extends "number"
-  ? { number?: { [K in ParamName]?: Intl.NumberFormatOptions } }
+  ? { number?: Partial<Record<ParamName, Intl.NumberFormatOptions>> }
   : ParamType extends "plural"
   ? {
-      plural: {
-        [K in ParamName]: Partial<
+      plural: Record<ParamName, Partial<
           Record<Exclude<Intl.LDMLPluralRule, "other">, string>
         > & {
           other: string
           formatter?: Intl.NumberFormatOptions
           type?: Intl.PluralRuleType
-        }
-      }
+        }>
     }
   : ParamType extends "date"
-  ? { date?: { [K in ParamName]?: Intl.DateTimeFormatOptions } }
+  ? { date?: Partial<Record<ParamName, Intl.DateTimeFormatOptions>> }
   : ParamType extends "list"
-  ? { list?: { [K in ParamName]?: Intl.ListFormatOptions } }
+  ? { list?: Partial<Record<ParamName, Intl.ListFormatOptions>> }
   : ParamType extends "enum"
-  ? { enum: { [K in ParamName]: Record<string, string> } }
+  ? { enum: Record<ParamName, Record<string, string>> }
   : never
 
 type ExtractParamOptions<S extends string> =

@@ -4,7 +4,6 @@ import { type NextRequest } from "next/server";
 import { env } from "@/env";
 import { appRouter } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
-import type { Locale } from "@/i18n/lib";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -13,7 +12,6 @@ import type { Locale } from "@/i18n/lib";
 const createContext = async (req: NextRequest) => {
   return createTRPCContext({
     headers: req.headers,
-    lang: (req.nextUrl.pathname.split("/")[1] || "en") as Locale, // Extract language from URL or default to 'en'
   });
 };
 

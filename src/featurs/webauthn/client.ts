@@ -1,6 +1,4 @@
 // WebAuthn client-side utilities
-import { toast } from "sonner";
-
 export interface WebAuthnCredential {
     id: string;
     rawId: ArrayBuffer;
