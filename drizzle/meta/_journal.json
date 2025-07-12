@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1752058103786,
-      "tag": "0000_faulty_gambit",
+      "when": 1752234443371,
+      "tag": "0000_easy_loners",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1752091755036,
-      "tag": "0001_acoustic_bucky",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1752091788640,
-      "tag": "0002_fantastic_callisto",
+      "when": 1752263515282,
+      "tag": "0001_burly_hellfire_club",
       "breakpoints": true
     }
   ]

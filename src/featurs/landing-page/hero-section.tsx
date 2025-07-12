@@ -24,14 +24,10 @@ export function HeroSection() {
     ], [locale]);
 
     return (
-        <section className="relative overflow-hidden bg-gradient-to-br from-background to-accent/20 py-20 sm:py-32">
+        <section className="relative overflow-hidden bg-gradient-to-br from-background dark:to-neutral-950 to-orange-50 py-20 sm:py-32">
             {/* Background decoration */}
-            <div className="absolute inset-0 -z-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
-            </div>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     {/* Left column - Content */}
                     <div className="space-y-8">

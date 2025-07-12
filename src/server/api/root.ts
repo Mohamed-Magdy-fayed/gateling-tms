@@ -1,5 +1,6 @@
+import { authRouter } from "@/server/api/routers/auth-router";
+import { coursesRouter } from "@/server/api/routers/content/courses-router";
 import { getStartedRouter } from "@/server/api/routers/get-started-router";
-import { webAuthnRouter } from "@/server/api/routers/webauthn-trpc-router.ts";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -9,7 +10,8 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   getStartedRouter,
-  webAuthnRouter,
+  coursesRouter,
+  authRouter,
 });
 
 // export type definition of API

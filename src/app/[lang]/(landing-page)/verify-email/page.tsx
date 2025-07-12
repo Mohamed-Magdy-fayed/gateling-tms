@@ -2,10 +2,12 @@ import { VerifyEmail } from "@/featurs/get-started/components/verify-email";
 import { Suspense } from "react";
 import Image from "next/image";
 import { getI18n } from "@/i18n/lib/get-translations";
+import { auth } from "@/server/auth";
 
 export default async function VerifyEmailPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const { t } = await getI18n(lang)
+  const session = await auth()
 
   return (
     <div className="relative bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">

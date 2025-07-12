@@ -1,6 +1,6 @@
 import { dt, type LanguageMessages } from "@/i18n/lib";
 
-export const emailsAr = {
+export default {
     emailConfirmation: {
         email_confirmation_subject: "تأكيد عنوان بريدك الإلكتروني لـ Gateling-Solutions",
         dear_user: "عزيزي {userName},",

@@ -267,7 +267,7 @@ export function GetStartedForm() {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="relative min-h-screen bg-gradient-to-br from-background/5 to-primary/5">
             <div className="container mx-auto px-4 py-12 max-w-4xl">
                 {/* Hero Section */}
                 <div className="text-center mb-12">
@@ -294,13 +294,13 @@ export function GetStartedForm() {
                     </Alert>
                 )}
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('getStartedForm.cardTitle', { currentStep, stepTitle: getStepTitle(currentStep) })}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('getStartedForm.cardTitle', { currentStep, stepTitle: getStepTitle(currentStep) })}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
                                 {/* Step 1: Business Information */}
                                 {currentStep === 1 && (
                                     <div className="space-y-6">
@@ -420,53 +420,65 @@ export function GetStartedForm() {
                                     </div>
                                 )}
 
-                                {/* Navigation Buttons */}
-                                <div className="flex justify-between pt-6 border-t">
+                                {/* Submit Button */}
+                                {currentStep === 3 && <div className="flex justify-between pt-6 border-t">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={prevStep}
-                                        disabled={currentStep === 1 || form.formState.isSubmitting}
+                                        disabled={form.formState.isSubmitting}
                                         className="flex items-center gap-2"
                                     >
                                         <ArrowLeft className="w-4 h-4" />
                                         {t('getStartedForm.navigation.previous')}
                                     </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={form.formState.isSubmitting}
+                                        className="flex items-center gap-2 bg-primary"
+                                    >
+                                        {form.formState.isSubmitting ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin scale-none" />
+                                                {t('getStartedForm.navigation.preparingYourSystem')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {t('getStartedForm.navigation.letsGo')}
+                                                <CheckCircle className="w-4 h-4" />
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>}
+                            </form>
+                        </Form>
+                        {/* Navigation Buttons */}
+                        {currentStep !== 3 && <div className="flex justify-between pt-6 border-t mt-6">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={prevStep}
+                                disabled={currentStep === 1 || form.formState.isSubmitting}
+                                className="flex items-center gap-2"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                {t('getStartedForm.navigation.previous')}
+                            </Button>
 
-                                    {currentStep < TOTAL_STEPS ? (
-                                        <Button
-                                            type="button"
-                                            onClick={nextStep}
-                                            disabled={form.formState.isSubmitting}
-                                            className="flex items-center gap-2 bg-primary"
-                                        >
-                                            {t('getStartedForm.navigation.next')}
-                                            <ArrowRight className="w-4 h-4" />
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            type="submit"
-                                            disabled={form.formState.isSubmitting}
-                                            className="flex items-center gap-2 bg-primary"
-                                        >
-                                            {form.formState.isSubmitting ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 animate-spin scale-none" />
-                                                    {t('getStartedForm.navigation.preparingYourSystem')}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {t('getStartedForm.navigation.letsGo')}
-                                                    <CheckCircle className="w-4 h-4" />
-                                                </>
-                                            )}
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </form>
-                </Form>
+                            {currentStep < TOTAL_STEPS && (
+                                <Button
+                                    type="button"
+                                    onClick={nextStep}
+                                    disabled={form.formState.isSubmitting}
+                                    className="flex items-center gap-2 bg-primary"
+                                >
+                                    {t('getStartedForm.navigation.next')}
+                                    <ArrowRight className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </div>}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

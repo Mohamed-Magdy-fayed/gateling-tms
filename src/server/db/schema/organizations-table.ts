@@ -1,3 +1,4 @@
+import { CoursesTable } from "@/server/db/schema/content/courses-table";
 import { UsersTable } from "@/server/db/schema/users-table";
 import { createdAt, id, updatedAt } from "@/server/db/schemaHelpers";
 import { relations } from "drizzle-orm";
@@ -40,6 +41,7 @@ export const OrganizationsTable = pgTable(
 );
 
 export const organizationRelations = relations(OrganizationsTable, ({ one, many }) => ({
-    users: many(UsersTable)
+    users: many(UsersTable),
+    courses: many(CoursesTable,)
 }))
 

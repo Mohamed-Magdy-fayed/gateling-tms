@@ -7,6 +7,7 @@ import ar from '@/i18n/global/ar';
 import { TRPCReactProvider } from '@/trpc/react';
 import { Toaster } from 'sonner';
 import { Suspense } from 'react';
+import { SessionProvider } from 'next-auth/react';
 
 interface ProvidersProps {
     children: React.ReactNode;
@@ -15,23 +16,25 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
     return (
         <Suspense>
-            <TranslationProvider
-                fallbackLocale={["en"]}
-                translations={{
-                    en,
-                    ar,
-                }}
-            >
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
+            <SessionProvider>
+                <TranslationProvider
+                    fallbackLocale={["en"]}
+                    translations={{
+                        en,
+                        ar,
+                    }}
                 >
-                    <Toaster />
-                    <TRPCReactProvider>{children}</TRPCReactProvider>
-                </ThemeProvider>
-            </TranslationProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        <Toaster />
+                        <TRPCReactProvider>{children}</TRPCReactProvider>
+                    </ThemeProvider>
+                </TranslationProvider>
+            </SessionProvider>
         </Suspense>
     );
 }

@@ -1,15 +1,12 @@
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-
+import Passkey from "next-auth/providers/passkey"
+import "next-auth/jwt"
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/server/db";
-import {
-  AccountsTable,
-  SessionsTable,
-  UsersTable,
-  VerificationTokensTable,
-} from "@/server/db/schema";
-import { env } from "@/env";
+import { AccountsTable, UsersTable, type UserRole } from "@/server/db/schema";
+import { AuthenticatorTable } from "@/server/db/schema/auth/authenticators-table";
+import { eq } from "drizzle-orm";
+import type { AdapterUser } from "next-auth/adapters";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -19,18 +16,17 @@ import { env } from "@/env";
  */
 declare module "next-auth" {
   interface Session extends DefaultSession {
+    accessToken?: string
     user: {
       id: string;
+      organizationId: string;
+      roles: UserRole[];
       // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
-
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
 }
+
+export type Awaitable<T> = T | PromiseLike<T>
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -39,9 +35,33 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    Passkey({
+      getUserInfo: async (opts, req) => {
+        const email = req.query.email
+        if (!email) return null
+
+        const user = await db.query.UsersTable.findFirst({
+          where: eq(UsersTable.email, email)
+        })
+        if (!user) {
+          console.error(`Passkey attempt for non-existent user: ${email}`);
+          return null
+        }
+
+        const authenticator = await db.query.AuthenticatorTable.findFirst({
+          where: eq(AuthenticatorTable.userId, user.id)
+        })
+
+        if (!authenticator) return {
+          exists: false,
+          user
+        }
+
+        return {
+          exists: true,
+          user
+        }
+      },
     }),
     /**
      * ...add more providers here.
@@ -56,16 +76,30 @@ export const authConfig = {
   adapter: DrizzleAdapter(db, {
     usersTable: UsersTable,
     accountsTable: AccountsTable,
-    sessionsTable: SessionsTable,
-    verificationTokensTable: VerificationTokensTable,
+    authenticatorsTable: AuthenticatorTable
   }),
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    async signIn(params) {
+      if (params.account) {
+        const existingAccount = await db.query.AccountsTable.findFirst({
+          where: eq(AccountsTable.providerAccountId, params.account.providerAccountId)
+        })
+        if (existingAccount) return true
+
+        await db.insert(AccountsTable).values({
+          provider: params.account.provider,
+          providerAccountId: params.account.providerAccountId,
+          userId: params.user.id,
+          type: params.account.type,
+        } as unknown as typeof AccountsTable.$inferInsert);
+      }
+
+      return true;
+    },
   },
+  experimental: { enableWebAuthn: true },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  }
 } satisfies NextAuthConfig;

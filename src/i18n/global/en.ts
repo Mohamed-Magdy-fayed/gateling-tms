@@ -1,7 +1,11 @@
 import landingEn from "@/featurs/landing-page/landing-en"
 import { dt, type LanguageMessages } from "../lib"
 import getStartedEn from "@/featurs/get-started/get-started-en"
-import { emailsEn } from "@/services/resend/data/emails-en"
+import emailsEn from "@/services/resend/data/emails-en"
+import authEn from "@/featurs/auth/i18n/auth-en"
+import sidebarEn from "@/featurs/system-layout/i18n/sidebar-en"
+import contentEn from "@/featurs/content/i18n/content-en"
+import { markdownEn } from "@/components/markdown/MarkdownTranslatoin"
 
 export default {
   locale: "en",
@@ -23,6 +27,7 @@ export default {
   error: dt('An error occurred {error}. Please try again later.', {}),
   errors: {
     emailExists: 'Email already exists!',
+    invalidEmail: "Incorrect Email, please try again.",
   },
   header: {
     navigation: {
@@ -84,7 +89,28 @@ export default {
     },
     copyright: dt('© {year:date} {appName}. All rights reserved.', { date: { year: { year: "numeric" } } }),
   },
+  system: {
+    mainNavigation: 'Main Navigation',
+    generalNavigation: 'General',
+    userMenu: {
+      profile: 'Profile',
+      settings: 'Settings',
+      logout: 'Logout',
+      login: 'Login',
+      register: 'Register',
+    },
+    notifications: {
+      title: 'Notifications',
+      markAllAsRead: 'Mark all as read',
+      noNotifications: 'No notifications yet.',
+    },
+  },
+  loading: "Loading...",
   ...landingEn,
   ...getStartedEn,
   ...emailsEn,
+  ...authEn,
+  ...sidebarEn,
+  ...contentEn,
+  ...markdownEn,
 } as const satisfies LanguageMessages

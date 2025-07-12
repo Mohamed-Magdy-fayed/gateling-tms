@@ -1,7 +1,11 @@
 import landingAr from "@/featurs/landing-page/landing-ar"
 import { dt, type LanguageMessages } from "../lib"
 import getStartedAr from "@/featurs/get-started/get-started-ar"
-import { emailsAr } from "@/services/resend/data/emails-ar"
+import emailsAr from "@/services/resend/data/emails-ar"
+import authAr from "@/featurs/auth/i18n/auth-ar"
+import sidebarAr from "@/featurs/system-layout/i18n/sidebar-ar"
+import contentAr from "@/featurs/content/i18n/content-ar"
+import { markdownAr } from "@/components/markdown/MarkdownTranslatoin"
 
 export default {
   locale: "ar",
@@ -22,6 +26,7 @@ export default {
   error: dt('حدث خطأ {error}. يرجى المحاولة مرة أخرى لاحقًا.', {}),
   errors: {
     emailExists: 'البريد الإلكتروني مستخدم بالفعل!',
+    invalidEmail: "البريد الإلكتروني غير صحيح، يرجى المحاولة مرة أخرى.",
   },
   header: {
     navigation: {
@@ -83,7 +88,12 @@ export default {
     },
     copyright: dt('© {year:date} {appName}. جميع الحقوق محفوظة.', { date: { year: { year: "numeric" } } }),
   },
+  loading: "جاري التحميل...",
   ...landingAr,
   ...getStartedAr,
   ...emailsAr,
+  ...authAr,
+  ...sidebarAr,
+  ...contentAr,
+  ...markdownAr,
 } as const satisfies LanguageMessages

@@ -9,6 +9,11 @@ const config = {
     eslint: {
         ignoreDuringBuilds: true,
     },
+    images: {
+        remotePatterns: [
+            { hostname: "firebasestorage.googleapis.com" },
+        ]
+    }
 };
 
 export default config;

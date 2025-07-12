@@ -3,6 +3,10 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { P } from "@/components/ui/typography"
+import type { LucideIcon } from "lucide-react"
+import { LoadingSpinner } from "@/components/general/loading-spinner"
+import { useTranslation } from "@/i18n/useTranslation"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -53,6 +57,29 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
+  )
+}
+
+export function SpinnerButton({ className, variant, size, asChild = false, children, disabled, text, loadingText, isLoading, icon: Icon, ...props }: React.ComponentProps<typeof Button> & { loadingText?: string, text: string, isLoading: boolean, icon: LucideIcon }) {
+  const { t } = useTranslation()
+
+  const Comp = asChild ? Slot : "button"
+
+  return (
+    <Comp
+      className={cn("!whitespace-nowrap !overflow-hidden !relative !px-8 !min-w-fit !m-0", buttonVariants({ variant, size, className }))}
+      disabled={disabled || isLoading}
+      {...props}
+    >
+      <div className={cn("flex items-center gap-2", isLoading && "opacity-0 transition-all")} >
+        <P>{text}</P>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className={cn("opacity-0 absolute flex items-center gap-2", isLoading && "opacity-100 transition-all")} >
+        <P>{loadingText || t("loading")}</P>
+        <LoadingSpinner className="w-4 h-4 animate-spin" />
+      </div>
+    </Comp>
   )
 }
 

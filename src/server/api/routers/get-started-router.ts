@@ -38,7 +38,7 @@ export const getStartedRouter = createTRPCRouter({
 
         await inngest.send({
           name: "app/org.created",
-          data: { email: user.email, name: user.name, orgId: org.id, locale: ctx.locale },
+          data: { email: user.email, name: user.name || "", orgId: org.id, locale: ctx.locale },
         })
 
         return { name: user.name }
@@ -71,8 +71,6 @@ export const getStartedRouter = createTRPCRouter({
         and(
           eq(UsersTable.organizationId, input),
           eq(UsersTable.roles, ["admin"]),
-          eq(UsersTable.status, "active"),
-          isNull(UsersTable.emailVerified)
         )
       );
       if (!!user) {

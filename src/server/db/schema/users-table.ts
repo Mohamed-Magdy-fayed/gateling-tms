@@ -1,5 +1,5 @@
+import { AuthenticatorTable } from "@/server/db/schema/auth/authenticators-table";
 import { OrganizationsTable } from "@/server/db/schema/organizations-table";
-import { WebAuthnCredentialsTable } from "@/server/db/schema/webauthn/webauthn-credentials-table";
 import { createdAt, id, updatedAt } from "@/server/db/schemaHelpers";
 import { relations } from "drizzle-orm";
 import { index, pgEnum, pgTable } from "drizzle-orm/pg-core";
@@ -28,13 +28,13 @@ export const UsersTable = pgTable(
     "users",
     (d) => ({
         id,
-        name: d.varchar({ length: 256 }).notNull(),
+        name: d.varchar({ length: 256 }),
         email: d.varchar({ length: 256 }).notNull().unique(),
         phone: d.varchar({ length: 256 }),
         image: d.varchar({ length: 255 }),
 
         emailVerified: d.timestamp("email_verified", { mode: "date" }),
-        organizationId: d.varchar({ length: 256 }).notNull(),
+        organizationId: d.uuid(),
         roles: userRolesEnum("user_roles").array().default(["member"]).notNull(),
         status: userStatusesEnum("statuses").notNull().default("pending_verification"),
 
@@ -54,5 +54,5 @@ export const userRelations = relations(UsersTable, ({ one, many }) => ({
         fields: [UsersTable.organizationId],
         references: [OrganizationsTable.id]
     }),
-    webAuthnCredentials: many(WebAuthnCredentialsTable),
+    AuthenticatorTable: many(AuthenticatorTable)
 }))

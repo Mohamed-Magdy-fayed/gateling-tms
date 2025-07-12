@@ -37,7 +37,7 @@ export function TranslationProvider({
   const searchParams = useSearchParams();
 
   const [locale, setLocale] = useState(() => {
-    if (defaultLocale == null) return locales.find(locale => pathname.includes(locale)) || navigator.language
+    if (defaultLocale == null) return locales.find(locale => pathname.startsWith(`/${locale}`)) || navigator.language
     return defaultLocale
   })
   const initRes = useMemo(() => {

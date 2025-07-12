@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { useWebAuthn } from "@/featurs/webauthn/use-webauthn";
 import { useTranslation } from "@/i18n/useTranslation";
 import { api } from "@/trpc/react";
 import {
@@ -10,13 +9,12 @@ import {
     Loader2Icon,
     ShieldCheckIcon,
     FingerprintIcon,
-    KeyIcon,
-    LaptopIcon,
-    UsbIcon
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { signIn } from "next-auth/webauthn";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { toast } from "sonner";
 
 export function VerifyEmail() {
@@ -29,37 +27,15 @@ export function VerifyEmail() {
 
 export function VerifyEmailEnhanced() {
     const searchParams = useSearchParams();
-    const token = searchParams.get("orgId");
-    const [showPasswordlessSetup, setShowPasswordlessSetup] = useState(false);
-    const [userInfo, setUserInfo] = useState<{
-        id: string;
-        name: string;
-        email: string;
-    } | null>(null);
+    const token = searchParams.get("token");
 
     const { t, locale } = useTranslation();
-
-    // WebAuthn hook
-    const {
-        webAuthnInfo,
-        isRegistering,
-        register,
-        getAuthenticatorDescription,
-    } = useWebAuthn({
-        userId: userInfo?.id,
-        userName: userInfo?.email,
-        userDisplayName: userInfo?.name,
-    });
+    const { status } = useSession();
 
     const verifyMutation = api.getStartedRouter.verifyEmail.useMutation({
         onSuccess: (data) => {
-            // Store user info for WebAuthn setup
-            if (data.user) {
-                setUserInfo(data.user);
-                // After successful email verification, show passwordless setup option if supported
-                if (webAuthnInfo.isSupported) {
-                    setShowPasswordlessSetup(true);
-                }
+            if (data.user?.email && status === "unauthenticated") {
+                signIn("passkey", { email: data.user.email });
             }
         },
         onError: (err) => {
@@ -74,57 +50,13 @@ export function VerifyEmailEnhanced() {
         verifyMutation.mutate(token);
     };
 
-    const handlePasswordlessSetup = async () => {
-        const success = await register();
-        if (success) {
-            setShowPasswordlessSetup(false);
-        }
-    };
-
-    const skipPasswordlessSetup = () => {
-        setShowPasswordlessSetup(false);
-    };
-
     useEffect(() => {
         handleVerify();
     }, []);
 
-    // Render authenticator icons based on supported types
-    const renderAuthenticatorIcons = () => {
-        const icons = [];
-
-        if (webAuthnInfo.supportedAuthenticators.some(auth =>
-            auth.includes('Touch ID') || auth.includes('Face ID') || auth.includes('Fingerprint') || auth.includes('Face Unlock')
-        )) {
-            icons.push(
-                <div key="biometric" className="flex items-center justify-center w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                    <FingerprintIcon className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                </div>
-            );
-        }
-
-        if (webAuthnInfo.supportedAuthenticators.some(auth => auth.includes('Windows Hello'))) {
-            icons.push(
-                <div key="windows" className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <LaptopIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-            );
-        }
-
-        if (webAuthnInfo.supportedAuthenticators.some(auth => auth.includes('Security Keys'))) {
-            icons.push(
-                <div key="security-key" className="flex items-center justify-center w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-lg">
-                    <UsbIcon className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-                </div>
-            );
-        }
-
-        return icons;
-    };
-
     return (
         <div className="space-y-6">
-            {verifyMutation.isPending && (
+            {(verifyMutation.isPending || verifyMutation.isIdle) && (
                 <div className="flex flex-col items-center gap-6 py-4">
                     {/* Enhanced loading animation */}
                     <div className="relative">
@@ -145,7 +77,7 @@ export function VerifyEmailEnhanced() {
                 </div>
             )}
 
-            {verifyMutation.isSuccess && !showPasswordlessSetup && (
+            {verifyMutation.isSuccess && (
                 <div className="flex flex-col items-center gap-6 py-4">
                     {/* Success animation */}
                     <div className="relative">
@@ -163,7 +95,7 @@ export function VerifyEmailEnhanced() {
                             {t("verifyEmail.success.title")}
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            {verifyMutation.data.message}
+                            {verifyMutation.data?.message}
                         </p>
                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
                             <div className="flex items-start gap-3">
@@ -187,7 +119,7 @@ export function VerifyEmailEnhanced() {
                 </div>
             )}
 
-            {verifyMutation.isSuccess && showPasswordlessSetup && (
+            {verifyMutation.isSuccess && (
                 <div className="flex flex-col items-center gap-6 py-4">
                     {/* Passwordless setup */}
                     <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-rose-600 rounded-full flex items-center justify-center shadow-lg">
@@ -201,46 +133,6 @@ export function VerifyEmailEnhanced() {
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
                             {t("verifyEmail.passwordless.description")}
                         </p>
-
-                        {/* Show available authenticators */}
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                            {renderAuthenticatorIcons()}
-                        </div>
-
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                            {t("verifyEmail.passwordless.availableMethod")}: {getAuthenticatorDescription()}
-                        </p>
-                    </div>
-
-                    {/* Passwordless options */}
-                    <div className="w-full space-y-3">
-                        <Button
-                            onClick={handlePasswordlessSetup}
-                            disabled={isRegistering || !webAuthnInfo.isSupported}
-                            className="w-full bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white shadow-lg"
-                        >
-                            {isRegistering ? (
-                                <>
-                                    <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
-                                    {t("verifyEmail.passwordless.settingUp")}
-                                </>
-                            ) : (
-                                <>
-                                    <FingerprintIcon className="w-4 h-4 mr-2" />
-                                    {t("verifyEmail.passwordless.setupButton")}
-                                </>
-                            )}
-                        </Button>
-
-                        <Button
-                            onClick={skipPasswordlessSetup}
-                            variant="outline"
-                            className="w-full border-gray-300 dark:border-gray-600"
-                            disabled={isRegistering}
-                        >
-                            <KeyIcon className="w-4 h-4 mr-2" />
-                            {t("verifyEmail.passwordless.skipButton")}
-                        </Button>
                     </div>
 
                     {/* Benefits list */}
@@ -264,23 +156,6 @@ export function VerifyEmailEnhanced() {
                             </li>
                         </ul>
                     </div>
-
-                    {/* Technical note for unsupported browsers */}
-                    {!webAuthnInfo.isSupported && (
-                        <div className="w-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                                <AlertCircleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                                <div className="text-left">
-                                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
-                                        {t("verifyEmail.passwordless.unsupported.title")}
-                                    </p>
-                                    <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                                        {t("verifyEmail.passwordless.unsupported.description")}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
 
