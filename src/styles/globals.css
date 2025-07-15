@@ -163,6 +163,6 @@
   }
 
   .in-table-link {
-    @apply font-medium hover:text-primary
+    @apply font-medium hover:text-primary cursor-pointer transition-colors;
   }
 }

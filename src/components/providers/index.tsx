@@ -8,6 +8,7 @@ import { TRPCReactProvider } from '@/trpc/react';
 import { Toaster } from 'sonner';
 import { Suspense } from 'react';
 import { SessionProvider } from 'next-auth/react';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 interface ProvidersProps {
     children: React.ReactNode;
@@ -31,7 +32,9 @@ export function Providers({ children }: ProvidersProps) {
                         disableTransitionOnChange
                     >
                         <Toaster />
-                        <TRPCReactProvider>{children}</TRPCReactProvider>
+                        <NuqsAdapter>
+                            <TRPCReactProvider>{children}</TRPCReactProvider>
+                        </NuqsAdapter>
                     </ThemeProvider>
                 </TranslationProvider>
             </SessionProvider>

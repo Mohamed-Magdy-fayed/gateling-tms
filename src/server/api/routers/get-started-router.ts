@@ -2,17 +2,15 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "@/server/api/trpc";
-import { getStartedFormSchema } from "@/featurs/get-started/schema";
-import { createOrganization, readOrganization } from "@/featurs/auth/organizations/actions/crud";
+import { getStartedFormSchema } from "@/features/get-started/schema";
+import { createOrganization, readOrganization } from "@/features/auth/organizations/actions/crud";
 import { TRPCError } from "@trpc/server";
-import { createUser } from "@/featurs/auth/users/actions/crud";
+import { createUser } from "@/features/auth/users/actions/crud";
 import { getI18n } from "@/i18n/lib/get-translations";
 import { inngest } from "@/services/inngest/client";
-import { err } from "inngest/types";
-import { verify } from "crypto";
 import z from "zod";
-import { OrganizationsTable, UsersTable } from "@/server/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { UsersTable } from "@/server/db/schema";
+import { and, eq } from "drizzle-orm";
 
 export const getStartedRouter = createTRPCRouter({
   init: publicProcedure

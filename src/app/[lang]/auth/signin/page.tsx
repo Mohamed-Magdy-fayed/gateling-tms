@@ -1,5 +1,5 @@
 import { FooterCopywrite } from "@/components/footer";
-import { LoginForm } from "@/featurs/auth/components/login-form";
+import { LoginForm } from "@/features/auth/components/login-form";
 import { getI18n } from "@/i18n/lib/get-translations";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";

@@ -1,13 +1,20 @@
-import landingAr from "@/featurs/landing-page/landing-ar"
+import landingAr from "@/features/landing-page/landing-ar"
 import { dt, type LanguageMessages } from "../lib"
-import getStartedAr from "@/featurs/get-started/get-started-ar"
+import getStartedAr from "@/features/get-started/get-started-ar"
 import emailsAr from "@/services/resend/data/emails-ar"
-import authAr from "@/featurs/auth/i18n/auth-ar"
-import sidebarAr from "@/featurs/system-layout/i18n/sidebar-ar"
-import contentAr from "@/featurs/content/i18n/content-ar"
+import authAr from "@/features/auth/i18n/auth-ar"
+import sidebarAr from "@/features/system-layout/i18n/sidebar-ar"
+import contentAr from "@/features/content/i18n/content-ar"
 import { markdownAr } from "@/components/markdown/MarkdownTranslatoin"
 
 export default {
+  common: {
+    selectAll: "تحديد الكل",
+    selectRow: "تحديد الصف",
+    openMenu: "فتح القائمة",
+    edit: "تعديل",
+    delete: "حذف",
+  },
   locale: "ar",
   greetings: "مرحبًا {name}! آخر تسجيل دخول لك كان في {lastLoginDate:date}.",
   inboxMessages: dt("مرحبًا {name}، لديك {messages:plural}.", {
@@ -94,6 +101,41 @@ export default {
   ...emailsAr,
   ...authAr,
   ...sidebarAr,
+  dataTable: {
+    from: "من",
+    to: "إلى",
+    slider: "شريط {title}",
+    clear: "مسح",
+    clearFilter: "مسح فلتر {title}",
+    export: {
+      export: "تصدير",
+      clear: "مسح",
+      searchPlaceholder: "ابحث في الأعمدة...",
+    },
+    noColumns: "لا توجد أعمدة.",
+    noResults: "لا توجد نتائج.",
+    selected: "{count:number} محدد",
+    rowsSelected: dt("تم اختيار {selected:number} من {rows:plural}", {
+      plural: { rows: { one: "{?} صف", two: "صفان", few: "{?} صفوف", other: "{?} صف" } }
+    }),
+    clearSelection: "مسح التحديد",
+    rowsPerPage: "عدد الصفوف في الصفحة",
+    sort: "ترتيب",
+    sortBy: "ترتيب حسب",
+    noSorting: "لا يوجد ترتيب!",
+    modifySorting: "عدّل الترتيب لتنظيم الصفوف.",
+    addSorting: "أضف ترتيبًا لتنظيم الصفوف.",
+    addSort: "أضف ترتيب",
+    resetSorting: "إعادة تعيين الترتيب",
+    searchFields: "ابحث في الحقول...",
+    noFieldsFound: "لم يتم العثور على حقول.",
+    pageOf: dt("صفحة {page:number} من {total:number}", {}),
+    asc: "تصاعدي",
+    desc: "تنازلي",
+    reset: "إعادة تعيين",
+    hide: "إخفاء",
+    view: "عرض",
+  },
   ...contentAr,
   ...markdownAr,
 } as const satisfies LanguageMessages

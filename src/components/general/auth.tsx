@@ -1,6 +1,6 @@
 import WrapWithTooltip from "@/components/general/wrap-with-tooltip"
 import { Button } from "@/components/ui/button"
-import { signInAction, signOutAction } from "@/featurs/auth/actions"
+import { signInAction, signOutAction } from "@/features/auth/actions"
 
 export function SignIn(props: React.ComponentPropsWithRef<typeof Button>) {
     return (

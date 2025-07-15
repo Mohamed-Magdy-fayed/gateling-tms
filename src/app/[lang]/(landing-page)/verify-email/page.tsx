@@ -1,4 +1,4 @@
-import { VerifyEmail } from "@/featurs/get-started/components/verify-email";
+import { VerifyEmail } from "@/features/get-started/components/verify-email";
 import { Suspense } from "react";
 import Image from "next/image";
 import { getI18n } from "@/i18n/lib/get-translations";

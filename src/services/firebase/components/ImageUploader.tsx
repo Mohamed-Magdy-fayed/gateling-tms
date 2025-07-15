@@ -22,6 +22,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 interface ImageUploaderProps {
     disabled?: boolean;
     value?: string;
+    folder?: string;
     onChange: (url: string) => void;
     onRemove?: () => void;
     onLoading?: Dispatch<SetStateAction<boolean>>;
@@ -35,6 +36,7 @@ export default function ImageUploader({
     onRemove,
     onLoading,
     value,
+    folder = "temp",
     disabled,
     customeImage,
     customeButton,
@@ -54,7 +56,7 @@ export default function ImageUploader({
         const filename = file.name;
         const storageRef = ref(
             storage,
-            `temp/${filename}`
+            `${folder}/${filename}`
         );
 
         const uploadTask = new Promise<StorageReference>((resolve, reject) => {

@@ -13,7 +13,7 @@ import { useSession } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import WrapWithTooltip from '@/components/general/wrap-with-tooltip';
-import QuickLoginForm from '@/featurs/auth/components/quick-login-form';
+import QuickLoginForm from '@/features/auth/components/quick-login-form';
 
 export function Header() {
   const { t } = useTranslation();

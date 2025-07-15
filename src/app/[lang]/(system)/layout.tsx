@@ -7,12 +7,12 @@ import { Separator } from "@/components/ui/separator";
 // import SidebarGeneralMenu from "@/components/pages/sidebar/sidebar-general-menu";
 import { Suspense, type ReactNode } from "react";
 import { getI18n } from "@/i18n/lib/get-translations";
-import { SidebarLogo } from "@/featurs/system-layout/components/sidebar-logo";
-import { SidebarUser } from "@/featurs/system-layout/components/sidebar-user";
+import { SidebarLogo } from "@/features/system-layout/components/sidebar-logo";
+import { SidebarUser } from "@/features/system-layout/components/sidebar-user";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
-import SidebarAdminMenu from "@/featurs/system-layout/components/sidebar-admin-menu";
-import SidebarGeneralMenu from "@/featurs/system-layout/components/sidebar-general-menu";
+import SidebarAdminMenu from "@/features/system-layout/components/sidebar-admin-menu";
+import SidebarGeneralMenu from "@/features/system-layout/components/sidebar-general-menu";
 import { DarkModeSwitcher } from "@/components/dark-mode-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 

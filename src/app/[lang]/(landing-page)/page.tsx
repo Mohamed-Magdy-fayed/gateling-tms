@@ -1,4 +1,4 @@
-import { HeroSection } from "@/featurs/landing-page/hero-section";
+import { HeroSection } from "@/features/landing-page/hero-section";
 import { Suspense } from "react";
 
 export default async function Home() {

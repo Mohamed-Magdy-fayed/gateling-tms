@@ -12,7 +12,7 @@ export const CoursesTable = pgTable(
 
         organizationId: d.uuid().references(() => OrganizationsTable.id).notNull(),
         name: d.varchar({ length: 256 }).notNull(),
-        description: d.varchar({ length: 256 }).notNull().unique(),
+        description: d.varchar({ length: 256 }).notNull(),
         image: d.varchar({ length: 255 }),
     }),
 );

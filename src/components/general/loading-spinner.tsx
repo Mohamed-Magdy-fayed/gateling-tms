@@ -7,11 +7,10 @@ export function LoadingSpinner({
     ...props
 }: ComponentProps<typeof Loader2Icon>) {
     return (
-        <div className="w-full h-full animate-spin flex items-center justify-center">
-            <Loader2Icon
-                className={cn("size-16", className)}
-                {...props}
-            />
-        </div>
-    )
+        <Loader2Icon
+            size={20}
+            className={cn("animate-spin", className)}
+            {...props}
+        />
+    );
 }
