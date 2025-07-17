@@ -6,6 +6,7 @@ export const createdAt = timestamp({ withTimezone: true })
   .defaultNow()
 export const createdBy = text()
   .notNull()
+
 export const updatedAt = timestamp({ withTimezone: true })
   .notNull()
   .defaultNow()

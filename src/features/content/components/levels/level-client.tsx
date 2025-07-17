@@ -1,46 +1,41 @@
 "use client";
 
-import type { Course } from "@/server/db/schema";
+import type { Level } from "@/server/db/schema";
 import type { DataTableRowAction } from "@/features/data-table/types/data-table";
 import * as React from "react";
 
 import { DataTableSortList } from "@/features/data-table/components/data-table-sort-list";
 import { DataTableToolbar } from "@/features/data-table/components/data-table-toolbar";
-import { DeleteCoursesDialog } from "./courses-delete-dialog";
-import { CoursesActionBar } from "./courses-action-bar";
-import { useCoursesColumns } from "./courses-columns";
+import { DeleteLevelsDialog } from "./level-delete-dialog";
+import { LevelsActionBar } from "./level-action-bar";
+import { useLevelsColumns } from "./level-columns";
 import { DataTable } from "@/features/data-table/components/data-table";
 import { useDataTable } from "@/features/data-table/hooks/use-data-table";
-import { CourseSheet } from "@/features/content/components/course-sheet";
-import type { api } from "@/trpc/server";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
+import { LevelSheet } from "@/features/content/components/levels/level-sheet";
+import { api } from "@/trpc/react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useParams, useSearchParams } from "next/navigation";
+import { searchParamsCache } from "@/features/content/schemas/level-schema";
 
-interface CoursesClientProps {
-    promises: Promise<
-        [
-            Awaited<ReturnType<typeof api.coursesRouter.queryCourses>>,
-        ]
-    >;
-}
-
-export function CoursesClient({ promises }: CoursesClientProps) {
+export function LevelsClient() {
     const { t } = useTranslation();
 
-    const [
-        { data, pageCount, error },
-    ] = React.use(promises);    
+    const { id }: { id: string } = useParams();
+    const searchParams = useSearchParams();
+    const searchObj = Object.fromEntries(searchParams.entries());
+    const search = searchParamsCache.parse(searchObj);
 
-    const [rowAction, setRowAction] = React.useState<DataTableRowAction<Course> | null>(null);
+    const { data } = api.levelsRouter.queryLevels.useQuery({ ...search, courseId: id });
+
+    const [rowAction, setRowAction] = React.useState<DataTableRowAction<Level> | null>(null);
     const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
-    const columns = useCoursesColumns({ setRowAction })
+    const columns = useLevelsColumns({ setRowAction })
 
     const { table } = useDataTable({
-        data,
+        data: data?.data ?? [],
         columns,
-        pageCount,
+        pageCount: data?.pageCount ?? 0,
         initialState: {
             sorting: [{ id: "createdAt", desc: true }],
             columnPinning: { right: ["actions"] },
@@ -53,33 +48,22 @@ export function CoursesClient({ promises }: CoursesClientProps) {
     return (
         <>
             <DataTable
-                error={error}
                 table={table}
-                actionBar={<CoursesActionBar table={table} />}
+                actionBar={<LevelsActionBar table={table} />}
             >
-                <div className="p-1 ml-auto">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsCreateOpen(true)}
-                    >
-                        <PlusIcon />
-                        {t("content.courseForm.create")}
-                    </Button>
-                </div>
                 <DataTableToolbar table={table}>
                     <DataTableSortList table={table} align="end" />
                 </DataTableToolbar>
             </DataTable>
-            <CourseSheet
+            <LevelSheet
                 open={rowAction?.variant === "update" || isCreateOpen}
                 onOpenChange={(val) => (setRowAction(null), setIsCreateOpen(val))}
-                course={rowAction?.row.original ?? null}
+                level={rowAction?.row.original}
             />
-            <DeleteCoursesDialog
+            <DeleteLevelsDialog
                 open={rowAction?.variant === "delete"}
                 onOpenChange={(val) => (setRowAction(null), setIsCreateOpen(val))}
-                courses={rowAction?.row.original ? [rowAction?.row.original] : []}
+                levels={rowAction?.row.original ? [rowAction?.row.original] : []}
                 showTrigger={false}
                 onSuccess={() => rowAction?.row.toggleSelected(false)}
             />

@@ -15,6 +15,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
+import { useTranslation } from "@/i18n/useTranslation"
 
 const Form = FormProvider
 
@@ -75,10 +76,12 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId()
+  const { isRtl } = useTranslation()
 
   return (
     <FormItemContext.Provider value={{ id }}>
       <div
+        dir={isRtl ? "rtl" : "ltr"}
         data-slot="form-item"
         className={cn("grid gap-2", className)}
         {...props}

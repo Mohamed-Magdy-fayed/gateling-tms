@@ -56,22 +56,6 @@ export async function exportToExcel(data: any[], fileName: string, sheetName: st
     a.click();
 }
 
-export function exportToExcelTest(data: any[]) {
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet("sheetName");
-
-    // Add headers
-    if (data.length > 0) {
-        worksheet.addRow(Object.keys(data[0]));
-    }
-
-    // Add rows
-    data.forEach(item => {
-        worksheet.addRow(Object.values(item));
-    });
-    return data
-}
-
 export async function downloadTemplate({ reqiredFields, sheetName, templateName }: { reqiredFields: string[], templateName: string, sheetName: string }) {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet(sheetName);

@@ -11,12 +11,12 @@ import {
   DataTableActionBarSelection,
 } from "@/features/data-table/components/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
-import { type Course } from "@/server/db/schema";
+import { type Level } from "@/server/db/schema";
 import { exportToExcel } from "@/features/data-table/lib/exceljs";
 import { api } from "@/trpc/react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useRouter } from "next/navigation";
-import { DeleteCoursesDialog } from "@/features/content/components/courses-delete-dialog";
+import { DeleteLevelsDialog } from "@/features/content/components/levels/level-delete-dialog";
 import ExportForm from "@/features/data-table/components/data-table-export-form";
 
 const actions = [
@@ -26,11 +26,11 @@ const actions = [
 
 type Action = (typeof actions)[number];
 
-interface CoursesActionBarProps {
-  table: Table<Course>;
+interface LevelsActionBarProps {
+  table: Table<Level>;
 }
 
-export function CoursesActionBar({ table }: CoursesActionBarProps) {
+export function LevelsActionBar({ table }: LevelsActionBarProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const rows = table.getFilteredSelectedRowModel().rows;
@@ -42,15 +42,15 @@ export function CoursesActionBar({ table }: CoursesActionBarProps) {
     [isPending, currentAction],
   );
 
-  const onCourseExport = React.useCallback(() => {
+  const onLevelExport = React.useCallback(() => {
     setCurrentAction("export");
     // startTransition(() => {
-    //   exportToExcel(table.getSelectedRowModel().rows.map(row => row.original), "Courses", "Courses");
+    //   exportToExcel(table.getSelectedRowModel().rows.map(row => row.original), "Levels", "Levels");
     // });
   }, [table]);
 
-  const deleteCoureses = api.coursesRouter.deleteCourses.useMutation()
-  const onCourseDelete = React.useCallback(() => {
+  const deleteCoureses = api.levelsRouter.deleteLevels.useMutation()
+  const onLevelDelete = React.useCallback(() => {
     setCurrentAction("delete");
     startTransition(async () => {
       const { error } = await deleteCoureses.mutateAsync({
@@ -69,39 +69,38 @@ export function CoursesActionBar({ table }: CoursesActionBarProps) {
   return (
     <DataTableActionBar table={table} visible={rows.length > 0}>
       <DataTableActionBarSelection table={table} />
-      <DeleteCoursesDialog
+      <DeleteLevelsDialog
         open={currentAction === "delete"}
         onOpenChange={() => setCurrentAction(null)}
-        courses={rows.map((row) => row.original)}
+        levels={rows.map((row) => row.original)}
         showTrigger={false}
-        onSuccess={onCourseDelete}
-      />
-      <ExportForm
-        data={table.getFilteredRowModel().rows.map(row => row.original)}
-        selectedData={table.getSelectedRowModel().rows.map(row => row.original)}
-        fileName={t("content.courseForm.courses")}
-        sheetName={t("content.courseForm.courses")}
-        isOpen={currentAction === "export"}
-        setIsOpen={(val) => setCurrentAction(!!val ? "export" : null)}
-        isLoading={getIsActionPending("export")}
-        handleExport={onCourseExport}
+        onSuccess={onLevelDelete}
       />
       <Separator
         orientation="vertical"
         className="hidden data-[orientation=vertical]:h-5 sm:block"
       />
       <div className="flex items-center gap-1.5">
-        <DataTableActionBarAction
+        {/* <DataTableActionBarAction
           size="icon"
-          tooltip={t("content.courses.actionBar.exportTooltip")}
+          tooltip={t("content.levels.actionBar.exportTooltip")}
           isPending={getIsActionPending("export")}
-          onClick={onCourseExport}
+          onClick={onLevelExport}
         >
           <Download />
-        </DataTableActionBarAction>
+        </DataTableActionBarAction> */}
+        <ExportForm
+          data={table.getFilteredRowModel().rows.map(row => row.original)}
+          selectedData={table.getSelectedRowModel().rows.map(row => row.original)}
+          fileName={t("content.courseForm.courses")}
+          sheetName={t("content.courseForm.courses")}
+          isOpen={currentAction === "export"}
+          setIsOpen={(val) => setCurrentAction(!!val ? "export" : null)}
+          isLoading={getIsActionPending("export")}
+        />
         <DataTableActionBarAction
           size="icon"
-          tooltip={t("content.courses.actionBar.deleteTooltip")}
+          tooltip={t("content.levels.actionBar.deleteTooltip")}
           isPending={getIsActionPending("delete")}
           onClick={() => setCurrentAction("delete")}
         >

@@ -14,6 +14,8 @@ export default {
     openMenu: "فتح القائمة",
     edit: "تعديل",
     delete: "حذف",
+    back: "رجوع",
+    actions: "الإجراءات",
   },
   locale: "ar",
   greetings: "مرحبًا {name}! آخر تسجيل دخول لك كان في {lastLoginDate:date}.",

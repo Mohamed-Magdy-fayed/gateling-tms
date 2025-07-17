@@ -19,6 +19,8 @@ declare module "next-auth" {
     accessToken?: string
     user: {
       id: string;
+      name: string;
+      email: string;
       organizationId: string;
       roles: UserRole[];
       // ...other properties

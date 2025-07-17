@@ -1,6 +1,6 @@
 "use client";
 
-import type { Course } from "@/server/db/schema";
+import type { Level } from "@/server/db/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SaveIcon } from "lucide-react";
 import * as React from "react";
@@ -19,57 +19,58 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 
-import CourseForm from "@/features/content/components/course-form";
-import { courseFormSchema, type CourseFormData } from "@/features/content/schemas/course-schema";
+import LevelForm from "@/features/content/components/levels/level-form";
+import { levelFormSchema, type LevelFormData } from "@/features/content/schemas/level-schema";
 import { api } from "@/trpc/react";
-import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
-interface CourseSheetProps
+interface LevelSheetProps
     extends React.ComponentPropsWithRef<typeof Sheet> {
-    course: Course | null;
+    level?: Level;
 }
 
-export function CourseSheet({ course, ...props }: CourseSheetProps) {
+export function LevelSheet({ level, ...props }: LevelSheetProps) {
     const { t } = useTranslation();
-    const router = useRouter()
+    const { id } = useParams()
 
-    const isUpdate = !!course;
-    const form = useForm<CourseFormData>({
-        resolver: zodResolver(courseFormSchema),
+    const isUpdate = !!level;
+    const form = useForm<LevelFormData>({
+        resolver: zodResolver(levelFormSchema),
         defaultValues: {
-            name: course?.name ?? "",
-            description: course?.description,
-            image: course?.image,
+            name: level?.id ?? "",
         },
+        values: { name: level?.name ?? "" },
     });
 
-    const updateCourse = api.coursesRouter.update.useMutation({
+    const trpcUtils = api.useUtils()
+    const updateLevel = api.levelsRouter.update.useMutation({
         onError: ({ message }) => toast.error(message),
         onSuccess: async (_, input) => {
             form.reset(input);
             props.onOpenChange?.(false);
-            toast.success(t("content.courseSheet.updateSuccess"));
-            router.refresh()
+            toast.success(t("content.levelSheet.updateSuccess"));
+            trpcUtils.levelsRouter.invalidate();
         }
     });
-    const createCourse = api.coursesRouter.create.useMutation({
+    const createLevel = api.levelsRouter.create.useMutation({
         onError: ({ message }) => toast.error(message),
         onSuccess: async (_, input) => {
             form.reset(input);
             props.onOpenChange?.(false);
-            toast.success(t("content.courseSheet.createSuccess"));
-            router.refresh()
+            toast.success(t("content.levelSheet.createSuccess"));
+            trpcUtils.levelsRouter.invalidate();
         }
     });
 
-    function onSubmit(input: CourseFormData) {
-        if (isUpdate && course) {
-            updateCourse.mutate({
-                ids: [course.id],
+    function onSubmit(input: LevelFormData) {
+        if (!id || typeof id !== "string") return toast.error(t("error", { error: "Course ID is required" }));
+        if (isUpdate && level) {
+            updateLevel.mutate({
+                ids: [level.id],
                 ...input,
             });
         } else {
-            createCourse.mutate(input);
+            createLevel.mutate({ ...input, courseId: id });
         }
     }
 
@@ -78,27 +79,27 @@ export function CourseSheet({ course, ...props }: CourseSheetProps) {
             <SheetContent className="flex flex-col gap-6 sm:max-w-md">
                 <SheetHeader className="text-left">
                     <SheetTitle>
-                        {isUpdate ? t("content.courseSheet.updateTitle") : t("content.courseSheet.createTitle")}
+                        {isUpdate ? t("content.levelSheet.updateTitle") : t("content.levelSheet.createTitle")}
                     </SheetTitle>
                     <SheetDescription>
-                        {isUpdate ? t("content.courseSheet.updateDescription") : t("content.courseSheet.createDescription")}
+                        {isUpdate ? t("content.levelSheet.updateDescription") : t("content.levelSheet.createDescription")}
                     </SheetDescription>
                 </SheetHeader>
-                <CourseForm<CourseFormData> form={form} onSubmit={onSubmit} courseId={course?.id}>
+                <LevelForm<LevelFormData> form={form} onSubmit={onSubmit}>
                     <SheetFooter className="gap-2 pt-2 sm:space-x-0">
                         <SheetClose asChild>
                             <Button type="button" variant="outline">
-                                {t("content.courseSheet.cancel")}
+                                {t("content.levelSheet.cancel")}
                             </Button>
                         </SheetClose>
                         <SpinnerButton
                             type="submit"
-                            text={isUpdate ? t("content.courseSheet.save") : t("content.courseSheet.create")}
+                            text={isUpdate ? t("content.levelSheet.save") : t("content.levelSheet.create")}
                             icon={SaveIcon}
-                            isLoading={updateCourse.isPending || createCourse.isPending}
+                            isLoading={updateLevel.isPending || createLevel.isPending}
                         />
                     </SheetFooter>
-                </CourseForm>
+                </LevelForm>
             </SheetContent>
         </Sheet>
     );

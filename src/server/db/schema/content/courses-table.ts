@@ -1,5 +1,6 @@
+import { LevelsTable } from "@/server/db/schema/content/levels-table";
 import { OrganizationsTable } from "@/server/db/schema/organizations-table";
-import { createdAt, id, updatedAt } from "@/server/db/schemaHelpers";
+import { createdAt, createdBy, id, updatedAt, updatedBy } from "@/server/db/schemaHelpers";
 import { relations } from "drizzle-orm";
 import { pgTable } from "drizzle-orm/pg-core";
 
@@ -9,11 +10,14 @@ export const CoursesTable = pgTable(
         id,
         createdAt,
         updatedAt,
+        createdBy,
+        updatedBy,
 
-        organizationId: d.uuid().references(() => OrganizationsTable.id).notNull(),
         name: d.varchar({ length: 256 }).notNull(),
         description: d.varchar({ length: 256 }).notNull(),
         image: d.varchar({ length: 255 }),
+
+        organizationId: d.uuid().references(() => OrganizationsTable.id).notNull(),
     }),
 );
 
@@ -22,6 +26,7 @@ export const courseRelations = relations(CoursesTable, ({ one, many }) => ({
         fields: [CoursesTable.organizationId],
         references: [OrganizationsTable.id]
     }),
+    LevelsTable: many(LevelsTable)
 }))
 
 export type Course = typeof CoursesTable.$inferSelect;

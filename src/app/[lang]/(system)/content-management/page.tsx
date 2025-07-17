@@ -1,7 +1,6 @@
 import { H3 } from "@/components/ui/typography";
-import { CourseSheet } from "@/features/content/components/course-sheet";
 import { CoursesClient } from "@/features/content/components/courses-client";
-import { searchParamsCache } from "@/features/content/schema";
+import { searchParamsCache } from "@/features/content/schemas/course-schema";
 import { DataTableSkeleton } from "@/features/data-table/components/data-table-skeleton";
 import { getI18n } from "@/i18n/lib/get-translations";
 import { api } from "@/trpc/server";

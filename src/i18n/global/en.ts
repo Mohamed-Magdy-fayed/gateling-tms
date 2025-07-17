@@ -14,6 +14,8 @@ export default {
     openMenu: "Open menu",
     edit: "Edit",
     delete: "Delete",
+    back: "Back",
+    actions: "Actions",
   },
   locale: "en",
   greetings: "Hello {name}! Your last login was {lastLoginDate:date}.",

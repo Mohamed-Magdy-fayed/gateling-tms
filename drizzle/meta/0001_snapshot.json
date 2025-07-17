@@ -1,6 +1,6 @@
 {
-  "id": "969ac370-84bd-4ee2-8d9e-ddac9e2dff99",
-  "prevId": "ed749b4d-6c2f-47ce-9255-38257186c027",
+  "id": "94340f59-8ff4-41da-ac8b-6222a77b3c0b",
+  "prevId": "e93febf8-773a-4c35-bbf3-653b4ecfe4fd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -560,11 +560,17 @@
           "notNull": true,
           "default": "now()"
         },
-        "organizationId": {
-          "name": "organizationId",
-          "type": "uuid",
+        "createdBy": {
+          "name": "createdBy",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "updatedBy": {
+          "name": "updatedBy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -583,6 +589,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "organizationId": {
+          "name": "organizationId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -602,15 +614,79 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "courses_description_unique": {
-          "name": "courses_description_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "description"
-          ]
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.levels": {
+      "name": "levels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "createdBy": {
+          "name": "createdBy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedBy": {
+          "name": "updatedBy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "courseId": {
+          "name": "courseId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         }
       },
+      "indexes": {},
+      "foreignKeys": {
+        "levels_courseId_courses_id_fk": {
+          "name": "levels_courseId_courses_id_fk",
+          "tableFrom": "levels",
+          "tableTo": "courses",
+          "columnsFrom": [
+            "courseId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

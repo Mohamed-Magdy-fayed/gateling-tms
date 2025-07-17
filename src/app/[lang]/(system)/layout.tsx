@@ -97,7 +97,7 @@ function Suspeneded({ locale, children, t, actions }: {
                     </div>
                 </header>
                 <Separator />
-                <div className="p-4">
+                <div className="p-4" >
                     {children}
                 </div>
             </SidebarInset>
