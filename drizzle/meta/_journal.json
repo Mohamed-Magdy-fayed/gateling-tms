@@ -15,6 +15,41 @@
       "when": 1752732216570,
       "tag": "0001_tired_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752789947136,
+      "tag": "0002_careful_human_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752790218030,
+      "tag": "0003_wet_jack_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1752954651315,
+      "tag": "0004_eager_forge",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753014670738,
+      "tag": "0005_petite_stark_industries",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1753014709210,
+      "tag": "0006_last_santa_claus",
+      "breakpoints": true
     }
   ]
 }

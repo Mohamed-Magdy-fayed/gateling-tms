@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LevelSheet } from "@/features/content/components/levels/level-sheet"
+import { MaterialSheet } from "@/features/content/components/materials/materials-sheet"
 import { useTranslation } from "@/i18n/useTranslation"
 import { ChevronDownIcon, PlusIcon, UploadCloudIcon, FilePlus2Icon, PackageCheckIcon, Trash2Icon } from "lucide-react"
 import { useState } from "react"
@@ -19,6 +20,10 @@ export default function CourseActions() {
         <>
             <LevelSheet
                 open={action === "createLevel"}
+                onOpenChange={(val) => !val && setAction(null)}
+            />
+            <MaterialSheet
+                open={action === "uploadMaterial"}
                 onOpenChange={(val) => !val && setAction(null)}
             />
             <DropdownMenu open={isOpen} onOpenChange={(val) => setIsOpen(val)}>
@@ -44,7 +49,7 @@ export default function CourseActions() {
                             setAction("uploadMaterial")
                         }}>
                             <UploadCloudIcon />
-                            <span>Upload Material</span>
+                            {t("content.materialForm.upload")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => {
                             setIsOpen(false)

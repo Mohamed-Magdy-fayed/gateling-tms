@@ -14,7 +14,7 @@ export const CoursesTable = pgTable(
         updatedBy,
 
         name: d.varchar({ length: 256 }).notNull(),
-        description: d.varchar({ length: 256 }).notNull(),
+        description: d.text().notNull(),
         image: d.varchar({ length: 255 }),
 
         organizationId: d.uuid().references(() => OrganizationsTable.id).notNull(),

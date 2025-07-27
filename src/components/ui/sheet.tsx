@@ -49,9 +49,11 @@ function SheetContent({
   className,
   children,
   side = "right",
+  hideCloseButton,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  hideCloseButton?: boolean;
 }) {
   return (
     <SheetPortal>
@@ -75,10 +77,10 @@ function SheetContent({
         <ScrollArea className="h-full pb-4">
           {children}
         </ScrollArea>
-        <SheetPrimitive.Close className="z-10 w-fit ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 ltr:left-4 rtl:right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+        {!hideCloseButton && <SheetPrimitive.Close className="z-10 w-fit ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 ltr:left-4 rtl:right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        </SheetPrimitive.Close>}
       </SheetPrimitive.Content>
     </SheetPortal>
   )

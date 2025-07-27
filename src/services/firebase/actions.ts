@@ -54,6 +54,15 @@ export async function uploadFile(
     })
 }
 
+export const uploadFiles = async (
+    path: string,
+    files: (Blob | Uint8Array | ArrayBuffer)[],
+    onProgress?: (progress: number) => void
+) => {
+    const uploadPromises = files.map((file) => uploadFile(path, file, onProgress));
+    return Promise.all(uploadPromises);
+}
+
 export async function copyFile(sourcePath: string, destinationPath: string) {
     const sourceRef = ref(storage, sourcePath)
     const destRef = ref(storage, destinationPath)

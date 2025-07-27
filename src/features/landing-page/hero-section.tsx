@@ -24,10 +24,10 @@ export function HeroSection() {
     ], [locale]);
 
     return (
-        <section className="relative overflow-hidden bg-gradient-to-br from-background dark:to-neutral-950 to-orange-50 py-20 sm:py-32">
+        <section className="relative overflow-hidden bg-gradient-to-br from-background dark:to-neutral-950 to-orange-50 py-12 sm:py-20 px-4 sm:px-8">
             {/* Background decoration */}
 
-            <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     {/* Left column - Content */}
                     <div className="space-y-8">

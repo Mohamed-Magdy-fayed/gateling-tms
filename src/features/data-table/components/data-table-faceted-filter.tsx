@@ -159,9 +159,9 @@ export function DataTableFacetedFilter<TData, TValue>({
                     {option.icon && <option.icon />}
                     <span className="truncate">{option.label}</span>
                     {option.count && (
-                      <span className="ml-auto font-mono text-xs">
+                      <Badge className="ltr:ml-auto rtl:mr-auto font-mono text-xs p-0 px-1 aspect-square rounded-md">
                         {option.count}
-                      </span>
+                      </Badge>
                     )}
                   </CommandItem>
                 );

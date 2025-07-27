@@ -3,7 +3,7 @@ import { MDXRemote, type MDXRemoteProps } from "next-mdx-remote/rsc"
 import remarkGfm from "remark-gfm"
 
 export const markdownClassNames =
-  "max-w-none prose prose-neutral font-sans"
+  "max-w-none prose prose-neutral font-sans dark:prose-invert"
 
 export function MarkdownRenderer({
   className,
@@ -11,7 +11,7 @@ export function MarkdownRenderer({
   ...props
 }: MDXRemoteProps & { className?: string }) {
   return (
-    <div dir="rtl" className={cn(markdownClassNames, className)}>
+    <div className={cn(markdownClassNames, className)}>
       <MDXRemote
         {...props}
         options={{

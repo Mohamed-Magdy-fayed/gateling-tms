@@ -4,7 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
+import { SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar"
 import { LogoPrimary } from "@/components/general/logos"
 import { useTranslation } from "@/i18n/useTranslation"
 import { H3 } from "@/components/ui/typography"
@@ -16,13 +16,15 @@ export function SidebarLogo() {
     return (
         <SidebarMenu>
             <SidebarMenuItem>
-                <Link href={'/'} className="flex items-center gap-1 justify-center w-full">
-                    <SidebarMenuButton
-                        tooltip={t("header.navigation.home")}
-                        size="lg"
-                        className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                    >
-                        <LogoPrimary className="!w-8 !h-8" />
+                <SidebarMenuButton
+                    tooltip={t("system.sidebar.toggle")}
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    asChild
+                >
+                    <div>
+                        <SidebarTrigger className="size-8" />
+                        <LogoPrimary className="!w-8 !h-8 rtl:scale-100" />
                         {/* {data?.siteIdentity ? (
                             <>
                                 <Image src={data?.siteIdentity.logoForeground} height={1000} width={1000} alt="Logo" className='w-8 rounded-full dark:hidden' />
@@ -37,8 +39,8 @@ export function SidebarLogo() {
                         <H3 className="!text-lg !leading-none !font-extrabold text-primary">
                             {"TMS"}
                         </H3>
-                    </SidebarMenuButton>
-                </Link>
+                    </div>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
     )

@@ -6,9 +6,14 @@ import authEn from "@/features/auth/i18n/auth-en"
 import sidebarEn from "@/features/system-layout/i18n/sidebar-en"
 import contentEn from "@/features/content/i18n/content-en"
 import { markdownEn } from "@/components/markdown/MarkdownTranslatoin"
+import aboutEn from "@/app/[lang]/(landing-page)/about/_shared/about-en"
+import featuresEn from "@/app/[lang]/(landing-page)/features/_shared/features-en"
+import pricingEn from "@/app/[lang]/(landing-page)/pricing/_shared/pricing-en"
+import contactEn from "@/app/[lang]/(landing-page)/contact/_shared/contact-en"
 
 export default {
   common: {
+    readMore: "Read More",
     selectAll: "Select all",
     selectRow: "Select row",
     openMenu: "Open menu",
@@ -16,6 +21,7 @@ export default {
     delete: "Delete",
     back: "Back",
     actions: "Actions",
+    clear: "Clear",
   },
   locale: "en",
   greetings: "Hello {name}! Your last login was {lastLoginDate:date}.",
@@ -31,72 +37,12 @@ export default {
   missingES: "This is a missing translation in es-ES",
   languageToggle: 'Switch language',
   themeToggle: 'Toggle theme',
-  getStarted: 'Get Started for Free',
+  getStarted: 'Get Started',
   premium: 'Premium',
   error: dt('An error occurred {error}. Please try again later.', {}),
   errors: {
     emailExists: 'Email already exists!',
     invalidEmail: "Incorrect Email, please try again.",
-  },
-  header: {
-    navigation: {
-      home: 'Home',
-      services: 'Services',
-      portfolio: 'Portfolio',
-      templates: 'Templates',
-      about: 'About',
-      contact: 'Contact',
-    },
-    themeToggle: 'Toggle theme',
-    languageToggle: 'Switch language',
-    ctaButton: 'Get Started',
-    mobileMenuToggle: 'Toggle menu',
-  },
-  footer: {
-    companyInfo: {
-      description: 'Professional website development services that help businesses grow online. From concept to launch, we create websites that convert visitors into customers.',
-      location: 'Remote Team • Serving Clients Worldwide',
-    },
-    navigation: {
-      services: {
-        title: 'Services',
-        websiteDevelopment: 'Development',
-        websiteDesign: 'Website Design',
-        ecommerceSolutions: 'E-commerce Solutions',
-        seoOptimization: 'SEO Optimization',
-        websiteMaintenance: 'Website Maintenance',
-      },
-      company: {
-        title: 'Company',
-        aboutUs: 'About Us',
-        ourProcess: 'Our Process',
-        portfolio: 'Portfolio',
-        testimonials: 'Testimonials',
-        blog: 'Blog',
-      },
-      resources: {
-        title: 'Resources',
-        templates: 'Templates',
-        pricing: 'Pricing',
-        faq: 'FAQ',
-        support: 'Support',
-        contact: 'Contact',
-      },
-      legal: {
-        title: 'Legal',
-        privacyPolicy: 'Privacy Policy',
-        termsOfService: 'Terms of Service',
-        cookiePolicy: 'Cookie Policy',
-        refundPolicy: 'Refund Policy',
-      },
-    },
-    newsletter: {
-      title: 'Stay Updated',
-      description: 'Get tips and insights delivered to your inbox',
-      placeholder: 'Enter email',
-      subscribeButton: 'Subscribe',
-    },
-    copyright: dt('© {year:date} {appName}. All rights reserved.', { date: { year: { year: "numeric" } } }),
   },
   system: {
     mainNavigation: 'Main Navigation',
@@ -113,9 +59,16 @@ export default {
       markAllAsRead: 'Mark all as read',
       noNotifications: 'No notifications yet.',
     },
+    sidebar: {
+      toggle: 'Toggle sidebar',
+    }
   },
   loading: "Loading...",
   ...landingEn,
+  ...aboutEn,
+  ...featuresEn,
+  ...pricingEn,
+  ...contactEn,
   ...getStartedEn,
   ...emailsEn,
   ...authEn,

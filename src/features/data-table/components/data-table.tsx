@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/table";
 import { getCommonPinningStyles } from "@/features/data-table/lib/data-table";
 import { cn } from "@/lib/utils";
+import { XCircleIcon } from "lucide-react";
+import { Lead } from "@/components/ui/typography";
 
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
-  error?: React.ReactNode;
+  error?: string;
 }
 
 export function DataTable<TData>({
@@ -60,7 +62,19 @@ export function DataTable<TData>({
             ))}
           </TableHeader>
           <TableBody>
-            {error ? error : table.getRowModel().rows?.length ? (
+            {error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center"
+                >
+                  <div className="grid">
+                    <XCircleIcon className="mx-auto text-destructive" />
+                    <Lead>{t("error", { error })}</Lead>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

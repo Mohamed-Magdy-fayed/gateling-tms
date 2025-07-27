@@ -68,7 +68,7 @@ export function useLevelsColumns({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("content.levels.name")} />
       ),
-      cell: ({ cell }) => <Link href={`/content-management/${cell.row.original.id}`} className="in-table-link">{cell.getValue<string>()}</Link>,
+      cell: ({ cell }) => <Link href={`/content-management/${cell.row.original.courseId}/${cell.row.original.id}`} className="in-table-link">{cell.getValue<string>()}</Link>,
       meta: {
         label: t("content.levels.name"),
         placeholder: t("content.levels.searchPlaceholder"),

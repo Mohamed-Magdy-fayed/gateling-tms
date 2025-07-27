@@ -1,10 +1,4 @@
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarProvider, SidebarRail, SidebarSeparator, SidebarTrigger } from "@/components/ui/sidebar";
-// import { SidebarLogo } from "@/components/pages/sidebar/sidebar-logo";
-// import { SidebarUser } from "@/components/pages/sidebar/sidebar-user";
-import { Separator } from "@/components/ui/separator";
-// import { SidebarNavBreadCrumb } from "@/components/pages/sidebar/sidebar-nav-breadcrumb";
-// import SidebarAdminMenu from "@/components/pages/sidebar/sidebar-admin-menu";
-// import SidebarGeneralMenu from "@/components/pages/sidebar/sidebar-general-menu";
 import { Suspense, type ReactNode } from "react";
 import { getI18n } from "@/i18n/lib/get-translations";
 import { SidebarLogo } from "@/features/system-layout/components/sidebar-logo";
@@ -13,14 +7,11 @@ import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import SidebarAdminMenu from "@/features/system-layout/components/sidebar-admin-menu";
 import SidebarGeneralMenu from "@/features/system-layout/components/sidebar-general-menu";
-import { DarkModeSwitcher } from "@/components/dark-mode-switcher";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 export const allowedByDefault = ["/redirects"]
 
-export default async function SystemLayout({ children, actions, params }: {
+export default async function SystemLayout({ children, params }: {
     children: ReactNode
-    actions: ReactNode
     params: Promise<{ lang: string }>
 }) {
     // useFCMToken()
@@ -45,16 +36,15 @@ export default async function SystemLayout({ children, actions, params }: {
 
     return (
         <Suspense>
-            <Suspeneded locale={locale} t={t} actions={actions}>
+            <Suspeneded locale={locale} t={t}>
                 {children}
             </Suspeneded>
         </Suspense>
     )
 };
 
-function Suspeneded({ locale, children, t, actions }: {
+function Suspeneded({ locale, children, t }: {
     children: ReactNode
-    actions: ReactNode
     locale: string
     t: Awaited<ReturnType<typeof getI18n>>["t"]
 }) {
@@ -62,7 +52,7 @@ function Suspeneded({ locale, children, t, actions }: {
         <SidebarProvider>
             <Sidebar collapsible="icon" variant="inset" side={locale === "ar" ? "right" : "left"}>
                 <SidebarHeader>
-                    <SidebarUser />
+                    <SidebarLogo />
                     <SidebarSeparator className="mx-0" />
                 </SidebarHeader>
                 <SidebarContent className="px-1">
@@ -81,25 +71,12 @@ function Suspeneded({ locale, children, t, actions }: {
                 </SidebarContent>
                 <SidebarFooter>
                     <SidebarSeparator className="mx-0" />
-                    <SidebarLogo />
+                    <SidebarUser />
                 </SidebarFooter>
                 <SidebarRail />
             </Sidebar>
             <SidebarInset>
-                <header className="flex items-center gap-2 p-4">
-                    <SidebarTrigger className="ltr:-ml-1 rtl:-mr-1" />
-                    <Separator orientation="vertical" className="ltr:mr-2 rtl:ml-2 h-4" />
-                    {/* <SidebarNavBreadCrumb /> */}
-                    <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-4">
-                        <DarkModeSwitcher />
-                        <LanguageSwitcher />
-                        {actions}
-                    </div>
-                </header>
-                <Separator />
-                <div className="p-4" >
-                    {children}
-                </div>
+                {children}
             </SidebarInset>
         </SidebarProvider>
     );

@@ -53,6 +53,23 @@ export const levelsRouter = createTRPCRouter({
                 });
             }
         }),
+    getLevel: protectedProcedure
+        .input(z.string())
+        .query(async ({ ctx, input }) => {
+            const { t } = await getI18n(ctx.locale)
+
+            try {
+                const level = await ctx.db.select().from(LevelsTable).where(eq(LevelsTable.id, input)).execute().then((res) => res[0]);
+                if (!level) throw new TRPCError({ code: "NOT_FOUND", message: t("error", { error: "Level not found" }) });
+
+                return level
+            } catch (error) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: t("error", { error: error instanceof Error ? error.message : "An unexpected error occurred" }),
+                });
+            }
+        }),
     queryLevels: protectedProcedure
         .input(getLevelsZodSchema)
         .query(async ({ ctx, input }) => {

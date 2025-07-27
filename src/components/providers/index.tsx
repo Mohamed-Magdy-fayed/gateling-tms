@@ -9,6 +9,8 @@ import { Toaster } from 'sonner';
 import { Suspense } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { ProgressProvider } from '@/components/general/progress-provider';
+import { ProgressBar } from '@/components/general/progress-bar';
 
 interface ProvidersProps {
     children: React.ReactNode;
@@ -31,10 +33,13 @@ export function Providers({ children }: ProvidersProps) {
                         enableSystem
                         disableTransitionOnChange
                     >
-                        <Toaster />
-                        <NuqsAdapter>
-                            <TRPCReactProvider>{children}</TRPCReactProvider>
-                        </NuqsAdapter>
+                        <ProgressProvider>
+                            <NuqsAdapter>
+                                <Toaster />
+                                <ProgressBar />
+                                <TRPCReactProvider>{children}</TRPCReactProvider>
+                            </NuqsAdapter>
+                        </ProgressProvider>
                     </ThemeProvider>
                 </TranslationProvider>
             </SessionProvider>

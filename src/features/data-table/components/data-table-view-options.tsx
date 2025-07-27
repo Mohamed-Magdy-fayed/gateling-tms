@@ -68,13 +68,14 @@ export function DataTableViewOptions<TData>({
                   onSelect={() =>
                     column.toggleVisibility(!column.getIsVisible())
                   }
+                  className="flex items-center gap-2 justify-between"
                 >
                   <span className="truncate">
                     {column.columnDef.meta?.label ?? column.id}
                   </span>
                   <Check
                     className={cn(
-                      "ml-auto size-4 shrink-0",
+                      "size-4 shrink-0 rtl:scale-100",
                       column.getIsVisible() ? "opacity-100" : "opacity-0",
                     )}
                   />

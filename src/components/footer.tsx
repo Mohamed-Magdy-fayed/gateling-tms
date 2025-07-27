@@ -11,21 +11,21 @@ export function Footer() {
 
   const navigation = {
     services: [
-      { name: t("footer.navigation.services.websiteDevelopment"), href: "/services/wordpress" },
-      { name: t("footer.navigation.services.websiteDesign"), href: "/services/design" },
-      { name: t("footer.navigation.services.ecommerceSolutions"), href: "/services/ecommerce" },
-      { name: t("footer.navigation.services.seoOptimization"), href: "/services/seo" },
-      { name: t("footer.navigation.services.websiteMaintenance"), href: "/services/maintenance" },
+      { name: t("footer.navigation.gettingStarted.gettingStarted"), href: "/get-started" },
+      { name: t("footer.navigation.gettingStarted.trainingResources"), href: "/guides" },
+      { name: t("footer.navigation.gettingStarted.integrations"), href: "/integrations" },
+      { name: t("footer.navigation.gettingStarted.tutorials"), href: "/tutorials" },
+      { name: t("footer.navigation.gettingStarted.documentation"), href: "/documentation" },
     ],
     company: [
       { name: t("footer.navigation.company.aboutUs"), href: "/about" },
-      { name: t("footer.navigation.company.ourProcess"), href: "/process" },
+      { name: t("footer.navigation.company.ourProcess"), href: "#process" },
       { name: t("footer.navigation.company.portfolio"), href: "/portfolio" },
-      { name: t("footer.navigation.company.testimonials"), href: "/testimonials" },
+      { name: t("footer.navigation.company.testimonials"), href: "#testimonials" },
       { name: t("footer.navigation.company.blog"), href: "/blog" },
     ],
     resources: [
-      { name: t("footer.navigation.resources.templates"), href: "/templates" },
+      { name: t("footer.navigation.resources.features"), href: "/features" },
       { name: t("footer.navigation.resources.pricing"), href: "/pricing" },
       { name: t("footer.navigation.resources.faq"), href: "/faq" },
       { name: t("footer.navigation.resources.support"), href: "/support" },
@@ -35,10 +35,10 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { name: "Facebook", href: "#", icon: FacebookIcon },
-    { name: "Youtube", href: "#", icon: YoutubeIcon },
-    { name: "LinkedIn", href: "#", icon: LinkedinIcon },
-    { name: "Instagram", href: "#", icon: InstagramIcon },
+    { name: "Facebook", href: APP_CONFIG.facebook, icon: FacebookIcon },
+    { name: "Youtube", href: APP_CONFIG.youtube, icon: YoutubeIcon },
+    { name: "LinkedIn", href: APP_CONFIG.linkedin, icon: LinkedinIcon },
+    { name: "Instagram", href: APP_CONFIG.instagram, icon: InstagramIcon },
   ];
 
   return (
@@ -85,7 +85,7 @@ export function Footer() {
                     href={social.href}
                     className="w-9 h-9 bg-muted rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                   >
-                    <social.icon className="h-4 w-4" />
+                    <social.icon className="h-4 w-4 scale-100" />
                     <span className="sr-only">{social.name}</span>
                   </Link>
                 ))}
@@ -94,7 +94,7 @@ export function Footer() {
 
             {/* Navigation links */}
             <div>
-              <H3 className="text-foreground mb-4 border-none pb-0">{t("footer.navigation.services.title")}</H3>
+              <H3 className="text-foreground mb-4 border-none pb-0">{t("footer.navigation.gettingStarted.title")}</H3>
               <ul className="space-y-3">
                 {navigation.services.map((item) => (
                   <li key={item.name}>

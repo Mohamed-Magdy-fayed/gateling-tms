@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LevelsClient } from "@/features/content/components/levels/level-client";
+import { MaterialsClient } from "@/features/content/components/materials/materials-client";
 
 const tabs = [
     { value: "levels", label: "Levels" },
@@ -31,6 +32,7 @@ export function CourseTabs({ courseId }: { courseId: string }) {
                 <LevelsClient />
             </TabsContent>
             <TabsContent value="materials">
+                <MaterialsClient />
             </TabsContent>
             <TabsContent value="assignments">
             </TabsContent>

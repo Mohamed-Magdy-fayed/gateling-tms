@@ -111,7 +111,7 @@ export default function ExportForm<TData>({ data, fileName, sheetName, selectedD
                                                     : "opacity-50 [&_svg]:invisible",
                                             )}
                                         >
-                                            <CheckIcon className={isSelected ? "text-primary-foreground" : ""} />
+                                            <CheckIcon className="rtl:scale-100 dark:text-foreground text-background" />
                                         </div>
                                         <span className="truncate">{key}</span>
                                     </CommandItem>
