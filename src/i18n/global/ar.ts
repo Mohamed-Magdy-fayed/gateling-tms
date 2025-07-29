@@ -10,6 +10,7 @@ import aboutAr from "@/app/[lang]/(landing-page)/about/_shared/about-ar"
 import featuresAr from "@/app/[lang]/(landing-page)/features/_shared/features-ar"
 import pricingAr from "@/app/[lang]/(landing-page)/pricing/_shared/pricing-ar"
 import contactAr from "@/app/[lang]/(landing-page)/contact/_shared/contact-ar"
+import plansAr from "@/features/plans/i18n/plans-ar"
 
 export default {
   common: {
@@ -72,6 +73,8 @@ export default {
   ...emailsAr,
   ...authAr,
   ...sidebarAr,
+  ...plansAr,
+  ...pricingAr,
   dataTable: {
     from: "من",
     to: "إلى",

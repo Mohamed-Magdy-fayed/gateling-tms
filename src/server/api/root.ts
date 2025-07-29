@@ -4,6 +4,7 @@ import { filesRouter } from "@/server/api/routers/content/files-router";
 import { levelsRouter } from "@/server/api/routers/content/levels-router";
 import { materialsRouter } from "@/server/api/routers/content/materials-router";
 import { getStartedRouter } from "@/server/api/routers/get-started-router";
+import { subscriptionRouter as subscription } from "@/server/api/routers/subscription-router";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   materialsRouter,
   filesRouter,
   authRouter,
+  subscription,
 });
 
 // export type definition of API

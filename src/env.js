@@ -17,6 +17,11 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     WEBAUTHN_RP_ID: z.string(),
     WEBAUTHN_ORIGIN: z.string().url(),
+    PAYMOB_BASE_URL: z.string().url(),
+    PAYMOB_API_KEY: z.string(),
+    PAYMOB_API_SECRET: z.string(),
+    PAYMOB_PUBLIC_KEY: z.string(),
+
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -50,6 +55,10 @@ export const env = createEnv({
     WEBAUTHN_RP_ID: process.env.WEBAUTHN_RP_ID,
     WEBAUTHN_ORIGIN: process.env.WEBAUTHN_ORIGIN,
     NODE_ENV: process.env.NODE_ENV,
+    PAYMOB_BASE_URL: process.env.PAYMOB_BASE_URL,
+    PAYMOB_API_KEY: process.env.PAYMOB_API_KEY,
+    PAYMOB_API_SECRET: process.env.PAYMOB_API_SECRET,
+    PAYMOB_PUBLIC_KEY: process.env.PAYMOB_PUBLIC_KEY,
 
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

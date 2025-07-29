@@ -1,5 +1,6 @@
 export * from "./users-table"
 export * from "./organizations-table"
+export * from "./plans-tables"
 export * from "./auth/accounts-table"
 export * from "./auth/sessions-table"
 export * from "./auth/authenticators-table"

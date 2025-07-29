@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type DependencyList } from "react";
 
-export const useScrollAnimation = () => {
+export const useScrollAnimation = (...deps: DependencyList) => {
     const [isVisible, setIsVisible] = useState(false);
     const elementRef = useRef<HTMLDivElement>(null);
 
@@ -19,7 +19,7 @@ export const useScrollAnimation = () => {
         }
 
         return () => observer.disconnect();
-    }, []);
+    }, deps);
 
     return { elementRef, isVisible };
 };

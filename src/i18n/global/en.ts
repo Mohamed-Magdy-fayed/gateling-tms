@@ -10,6 +10,7 @@ import aboutEn from "@/app/[lang]/(landing-page)/about/_shared/about-en"
 import featuresEn from "@/app/[lang]/(landing-page)/features/_shared/features-en"
 import pricingEn from "@/app/[lang]/(landing-page)/pricing/_shared/pricing-en"
 import contactEn from "@/app/[lang]/(landing-page)/contact/_shared/contact-en"
+import plansEn from "@/features/plans/i18n/plans-en"
 
 export default {
   common: {
@@ -73,6 +74,8 @@ export default {
   ...emailsEn,
   ...authEn,
   ...sidebarEn,
+  ...plansEn,
+  ...pricingEn,
   dataTable: {
     from: "From",
     to: "To",

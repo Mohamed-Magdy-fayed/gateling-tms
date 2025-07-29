@@ -3,116 +3,130 @@ import { dt, type LanguageMessages } from "@/i18n/lib";
 export default {
     pricing: {
         hero: {
+            badge: 'Flexible Pricing',
             title: 'Choose the Perfect Plan for Your Academy',
-            description: 'Start with our free tier and scale up as your academy grows. All plans include our core features with additional premium capabilities.',
-            monthlyBilling: 'Monthly Billing',
-            monthly: 'Monthly',
-            yearly: 'Yearly',
-            save20: 'Save 20%'
+            description: 'Start free and scale as you grow. Our transparent pricing is designed to support academies of all sizes with no hidden fees.',
         },
-        badges: {
-            popular: 'Most Popular',
-            enterprise: 'Enterprise'
-        },
-        tiers: {
+        plans: {
             free: {
-                name: 'Free',
-                description: 'Perfect for individuals or small academies just starting their online teaching journey.',
-                price: '$0',
-                period: '/month',
-                cta: 'Get Started Free'
+                name: 'Free Plan',
+                description: 'Perfect for getting started',
             },
             basic: {
-                name: 'Basic',
-                description: 'Ideal for growing academies needing robust management tools and premium features.',
-                price: '$29',
-                period: '/month',
-                cta: 'Start Basic Plan'
+                name: 'Basic Plan',
+                description: 'Great for small academies',
             },
             professional: {
-                name: 'Professional',
-                description: 'Perfect for established academies looking to optimize operations and student engagement.',
-                price: '$79',
-                period: '/month',
-                cta: 'Start Professional'
+                name: 'Professional Plan',
+                description: 'Most popular for growing academies',
             },
             enterprise: {
-                name: 'Enterprise',
-                description: 'The ultimate solution for large institutions requiring advanced features and dedicated support.',
-                price: '$199',
-                period: '/month',
-                cta: 'Contact Sales'
-            }
+                name: 'Enterprise Plan',
+                description: 'For large institutions',
+            },
         },
         features: {
-            contentLibrary: {
-                name: 'Content Library',
-                description: 'Centralized digital resource management for all your educational materials'
-            },
-            learningFlow: {
-                name: 'Learning Flow',
-                description: 'Structured learning pathways that guide students through their journey'
-            },
-            liveClasses: {
-                name: 'Live Classes',
-                description: 'Interactive live sessions with HD video streaming and collaboration tools'
-            },
-            hr: {
-                name: 'HR Management',
-                description: 'Comprehensive staff administration, payroll integration, and performance tracking'
-            },
-            courseStore: {
-                name: 'Course Store',
-                description: 'Built-in marketplace to sell courses online with payment processing'
-            },
-            crm: {
-                name: 'CRM System',
-                description: 'Customer relationship management to track leads and boost enrollment'
-            },
-            smartForms: {
-                name: 'Smart Forms',
-                description: 'Intelligent form builder with automated workflows and data collection'
-            },
-            community: {
-                name: 'Community Platform',
-                description: 'Social learning environment connecting students, teachers, and parents'
-            },
-            support: {
-                name: 'Support System',
-                description: 'Comprehensive help desk with ticketing, live chat, and priority support'
-            }
+            contentlibrary: 'Content Library',
+            learningflow: 'Learning Flow',
+            liveclasses: 'Live Classes',
+            hr: 'HR Management',
+            coursestore: 'Course Store',
+            crm: 'CRM System',
+            smartforms: 'Smart Forms',
+            community: 'Community Platform',
+            support: 'Support System',
+        },
+        billing: {
+            monthly: 'Monthly',
+            yearly: 'Yearly',
+            savePercent: 'Save {percent:number}%',
+            save: 'Save {amount:number} {currency}',
+            title: 'Billing Information',
+            description: 'Please provide your billing details to complete the subscription.',
+            firstName: 'First Name',
+            lastName: 'Last Name',
+            email: 'Email Address',
+            phone: 'Phone Number',
+            address: 'Address',
+            street: 'Street Address',
+            city: 'City',
+            state: 'State/Province',
+            postalCode: 'Postal Code',
+            cancel: 'Cancel',
+            proceedToPayment: 'Proceed to Payment',
+        },
+        payment: {
+            title: 'Complete Your Payment',
+            description: 'You will be redirected to our secure payment processor to complete your subscription.',
+            secureNotice: 'Your payment is processed securely through Paymob. We do not store your payment information.',
+        },
+        mostPopular: 'Most Popular',
+        free: 'Free',
+        currency: 'EGP',
+        month: 'month',
+        year: 'year',
+        unlimited: 'Unlimited',
+        status: {
+            current: 'Current Plan',
+        },
+        buttons: {
+            getStarted: 'Get Started Free',
+            subscribe: 'Subscribe Now',
+            changePlan: 'Change Plan',
+            current: 'Current Plan',
+        },
+        enterprise: {
+            contact: 'Contact us for custom pricing',
+        },
+        limits: {
+            students: 'Active Students',
+            courses: 'Courses',
+            storage: 'Storage',
+        },
+        usage: {
+            title: 'Your Current Usage',
+            description: 'Monitor your current usage against your plan limits.',
+            students: 'Active Students',
+            courses: 'Total Courses',
+            storage: 'Storage Used',
+        },
+        success: {
+            freeSubscription: 'Welcome to Gateling TMS! Your free account is ready.',
+            subscriptionCreated: 'Subscription created successfully!',
+            paymentCompleted: 'Payment completed! Welcome to your new plan.',
+            planDowngraded: 'Your plan will be downgraded at the end of the current billing period.',
+        },
+        errors: {
+            subscriptionFailed: 'Failed to create subscription. Please try again.',
+            paymentIntentFailed: 'Failed to initiate payment. Please try again.',
+            paymentConfirmationFailed: 'Payment confirmation failed. Please contact support.',
+            planChangeFailed: 'Failed to change plan. Please try again.',
         },
         faq: {
             title: 'Frequently Asked Questions',
-            description: 'Everything you need to know about our pricing and features.',
+            description: 'Find answers to common questions about our pricing and plans.',
             questions: {
                 q1: {
-                    question: 'Can I upgrade or downgrade my plan at any time?',
-                    answer: 'Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle, and we\'ll prorate any differences.'
+                    question: 'Can I change my plan at any time?',
+                    answer: 'Yes, you can upgrade or downgrade your plan at any time. Upgrades take effect immediately, while downgrades take effect at the end of your current billing period.',
                 },
                 q2: {
-                    question: 'Is there a free trial for paid plans?',
-                    answer: 'Yes, all paid plans come with a 14-day free trial. You can explore all features without any commitment. No credit card required for the trial.'
+                    question: 'What payment methods do you accept?',
+                    answer: 'We accept all major credit and debit cards, as well as local Egyptian payment methods including Fawry, Vodafone Cash, and bank transfers through our secure payment processor Paymob.',
                 },
                 q3: {
-                    question: 'What payment methods do you accept?',
-                    answer: 'We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for Enterprise plans. All payments are processed securely.'
+                    question: 'Is there a free trial for paid plans?',
+                    answer: 'Our Free plan serves as an extended trial, allowing you to explore core features with no time limit. You can upgrade to a paid plan whenever you need additional features or capacity.',
                 },
                 q4: {
-                    question: 'Do you offer discounts for educational institutions?',
-                    answer: 'Yes, we offer special pricing for educational institutions, non-profits, and bulk purchases. Contact our sales team to discuss custom pricing options.'
+                    question: 'What happens if I exceed my plan limits?',
+                    answer: 'If you approach your plan limits, we will notify you and suggest upgrading to a higher tier. We provide grace periods to ensure your service is not interrupted.',
                 },
                 q5: {
-                    question: 'What happens to my data if I cancel my subscription?',
-                    answer: 'Your data remains accessible for 30 days after cancellation. You can export all your data during this period. After 30 days, data is permanently deleted for security.'
-                }
-            }
+                    question: 'Do you offer refunds?',
+                    answer: 'We offer a 30-day money-back guarantee for all paid plans. If you are not satisfied with our service, contact us within 30 days for a full refund.',
+                },
+            },
         },
-        cta: {
-            title: 'Ready to Transform Your Academy?',
-            description: 'Join thousands of academies worldwide that have already transformed their operations with our comprehensive TMS platform.',
-            primaryButton: 'Start Free Today',
-            secondaryButton: 'Talk to Sales'
-        }
-    }
+    },
 } as const satisfies LanguageMessages;
