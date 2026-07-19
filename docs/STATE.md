@@ -8,14 +8,15 @@
 
 ## Status
 
-- **Current phase:** Phase 0 — Init & tooling (in progress)
+- **Current phase:** Phase 0 — Init & tooling (☑ complete, gate passed 2026-07-19)
 - **Target repo:** `G:\apps\gateling-tms` (this repo)
+- **Next action:** start Phase 1 (core platform). See `docs/rebuild/STATE.md` for full gate results and open blockers (CodeRabbit not yet authorized; Neon `DATABASE_URL` not yet in Vercel env scopes).
 
 ## Phase checklist
 
 | Phase | Status |
 |---|---|
-| 0 — Init & tooling | ◐ in progress |
+| 0 — Init & tooling | ☑ complete (2026-07-19) |
 | 1 — Core platform | ☐ not started |
 | 2 — Auth, orgs, onboarding | ☐ not started |
 | 3 — Landing pages | ☐ not started |
@@ -38,5 +39,12 @@ decisions log, D1 through D16, confirmed with Mohamed 2026-07-19. Highlights:
 - D13: Neon (prod + per-PR preview branches) + local Docker Postgres for dev.
 - D14: Vercel hosting, per-PR preview deployments.
 
-New decisions are appended as D17, D18, … in the canonical STATE.md first,
+- D17: GitHub repo name collision with old SOURCE repo resolved by renaming
+  the old repo to `gateling-tms-legacy`.
+- D18: Vercel project name collision resolved by relinking the existing
+  live-production project (serving `tms.gateling.com`) to the new repo,
+  rather than creating a separate project — every push to `master` now
+  deploys straight to production.
+
+New decisions are appended as D19, D20, … in the canonical STATE.md first,
 then mirrored here.

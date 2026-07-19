@@ -43,7 +43,7 @@ Versions mirror DONOR-B (`G:\apps\gateling.com\package.json`) and DONOR-C where 
 | `@tanstack/react-table` | ^8.21.3 | 1 |
 | `inngest` | ^4.2.4 | 1 |
 | `firebase-admin` | ^14 | 1 |
-| shadcn/ui deps: `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `radix-ui` (or per-primitive `@radix-ui/*`), `cmdk`, `sonner`, `vaul`, `next-themes`, `tw-animate-css` (dev) | latest | 1 |
+| shadcn/ui deps: `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `radix-ui` (or per-primitive `@radix-ui/*`), `@base-ui/react` (required by the `base-mira` style used in DONOR-B's `components.json`), `cmdk`, `sonner`, `vaul`, `next-themes`, `tw-animate-css` (dev) | latest | 1 |
 | `date-fns` (+ `@date-fns/tz`) | ^4.1 | 1 |
 | `nuqs` | ^2.8 | 1 (data-table URL state) |
 
