@@ -105,6 +105,7 @@ export function SwapOn({ asChild, className, ...props }: DivProps) {
   return (
     <Root
       data-slot="swap-on"
+      aria-hidden="true"
       {...props}
       className={cn(
         forceTransition
@@ -123,6 +124,7 @@ export function SwapOff({ asChild, className, ...props }: DivProps) {
   return (
     <Root
       data-slot="swap-off"
+      aria-hidden="true"
       {...props}
       className={cn(
         forceTransition

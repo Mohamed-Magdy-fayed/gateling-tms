@@ -18,15 +18,17 @@ import { setLocaleCookie } from "@/features/core/i18n/server";
 import { cn } from "@/lib/utils";
 import { createI18n, type LanguageMessages, LOCALE_COOKIE_NAME } from "./lib";
 
-const TranslationContext = createContext({
-  locale: "en",
-  dir: "ltr" as "rtl" | "ltr",
-  setLocale: (_: string) => {},
-  fallbackLocale: "en",
-});
+type TranslationContextValue = {
+  locale: string;
+  dir: "rtl" | "ltr";
+  setLocale: (locale: string) => void;
+  fallbackLocale: string;
+};
+
+const TranslationContext = createContext<TranslationContextValue | null>(null);
 
 export function TranslationProvider({
-  defaultLocale = navigator.language,
+  defaultLocale = "en",
   fallbackLocale = "en",
   children,
 }: {
@@ -72,7 +74,9 @@ export function useTranslation<
     document.dir = newDir;
     document.documentElement.setAttribute("dir", newDir);
     context.setLocale(newLocale);
-    document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(newLocale)}; path=/; samesite=lax`;
+    const secureAttribute =
+      process.env.NODE_ENV === "production" ? "; secure" : "";
+    document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(newLocale)}; path=/; samesite=lax${secureAttribute}`;
 
     startTransition(() => {
       void setLocaleCookie(newLocale).then(() => {
@@ -94,12 +98,13 @@ export function LanguageToggle({
   className,
   ...props
 }: ComponentProps<typeof Button>) {
-  const { locale, setLocale } = useTranslation();
+  const { locale, setLocale, t } = useTranslation();
 
   return (
     <Button
       variant="ghost"
       size="icon"
+      aria-label={t("languageToggle")}
       className={cn(
         "cursor-pointer hover:bg-accent! hover:text-accent-foreground! transition-all duration-300",
         className,
