@@ -58,24 +58,9 @@ export async function clearDb() {
   const quoteIdent = (s: string) => `"${s.replace(/"/g, '""')}"`;
   console.log("Sending cleanup query (truncate)");
 
-  await db.transaction(async (trx) => {
-    for (const tableName of tableNames) {
-      try {
-        const existsResult = (await trx.execute(
-          sql.raw(`SELECT to_regclass('public.${tableName}') AS regclass;`),
-        )) as unknown as { rows?: Array<{ regclass: string | null }> };
-
-        const existsRows = existsResult.rows ?? [];
-        const exists = existsRows[0]?.regclass;
-        if (!exists) continue;
-
-        const truncateSql = `TRUNCATE TABLE ${quoteIdent(tableName)} RESTART IDENTITY CASCADE;`;
-        await trx.execute(sql.raw(truncateSql));
-      } catch (err) {
-        console.warn(`Skipping table ${tableName}:`, err);
-      }
-    }
-  });
+  const quotedTableList = tableNames.map(quoteIdent).join(", ");
+  const truncateSql = `TRUNCATE TABLE ${quotedTableList} RESTART IDENTITY CASCADE;`;
+  await db.execute(sql.raw(truncateSql));
 
   console.log("Database cleanup complete");
 }
