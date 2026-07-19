@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17.0
+    container_name: gateling_tms_db
+    hostname: gateling_tms_db
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+    name: gateling_tms_pgdata
