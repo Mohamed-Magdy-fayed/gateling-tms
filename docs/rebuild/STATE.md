@@ -6,7 +6,7 @@
 
 - **Current phase:** Phase 0 — Init & tooling (☑ complete, gate passed 2026-07-19)
 - **Target repo:** `G:\apps\gateling-tms` — created, tooling in place.
-- **GitHub:** `https://github.com/Mohamed-Magdy-fayed/gateling-tms` (private). Old SOURCE repo renamed to `gateling-tms-legacy` (still public) to free the name.
+- **GitHub:** `https://github.com/Mohamed-Magdy-fayed/gateling-tms` (**public** — intentionally, see D19). Old SOURCE repo renamed to `gateling-tms-legacy` (still public) to free the name.
 - **Vercel:** project `gateling-tms` (id `prj_cT7oVrlzsKpFw1TY4mWYv3XZjIGK`) — the pre-existing production project serving `tms.gateling.com` — has been **relinked** to the new GitHub repo (done by Mohamed 2026-07-19). Any push to `master` now deploys to production immediately.
 - **Neon:** connection strings for preview and production provided by Mohamed, stored locally only in `.env.preview.local` / `.env.production.local` (gitignored, not committed). **Not yet pasted into Vercel's Preview/Production env var scopes** — no MCP tool available to do this remotely; needs manual entry in the Vercel dashboard.
 - **Last session:** 2026-07-19 — Phase 0 executed end-to-end (steps 1–11) and gate passed.
@@ -40,7 +40,7 @@ Statuses: `☐ not started` → `◐ in progress (step N done)` → `☑ complet
 - ✅ `npm run audit:gate` → **0 vulnerabilities**
 - ✅ No package outside `02-dependencies.md` (added `@base-ui/react` to the approved shadcn/ui deps row — see D18)
 - ✅ Grep repo for `HBS` → zero hits in application code (only appears in `docs/rebuild/` prose describing the ban itself, and coincidentally in unrelated base64 hashes in `package-lock.json` / `.next` build artifacts)
-- ✅ GitHub repo exists (`Mohamed-Magdy-fayed/gateling-tms`, private) and mirrors local master (11 commits)
+- ✅ GitHub repo exists (`Mohamed-Magdy-fayed/gateling-tms`, public — D19) and mirrors local master (13 commits)
 - ⏸ CodeRabbit: `.coderabbit.yaml` committed; **Mohamed still needs to install/authorize the CodeRabbit GitHub app on the repo** before the first Phase 1 PR
 - ⏸ Vercel preview deploy: project relinked to the new repo; not yet exercised with an actual PR (no PR opened yet — Phase 0 work went straight to `master` per the bootstrap exception in `06-workflow.md`)
 - ⏸ Neon prod DB reachable: connection strings in hand, not yet wired into Vercel env scopes (see Blockers)
@@ -70,13 +70,17 @@ Decisions made during planning (2026-07-19, confirmed with Mohamed in Q&A):
 | D17 | GitHub repo name collision: old SOURCE repo already occupied `gateling-tms` (public, last pushed 2025-07-29). Renamed it to `gateling-tms-legacy` rather than picking a different name for the rebuild, so the new repo keeps the canonical name. Decided with Mohamed 2026-07-19. |
 | D18 | Vercel project name collision: the existing `gateling-tms` Vercel project is **live in production** on `tms.gateling.com` / `courses.megz.pro` — unlike GitHub, renaming risked breaking domain bindings, so instead Mohamed relinked that same project's Git source to the new repo (2026-07-19). Consequence: every push to `master` from now on deploys straight to production; there is no separate "new" Vercel project. `@base-ui/react` added to `02-dependencies.md`'s approved shadcn/ui deps (required by the `base-mira` style DONOR-B uses); audited clean, 0 vulnerabilities. |
 
-Add new decisions here as `D19`, `D20`, … with date and one-line rationale.
+| D19 | The repo was flipped from private to public by Mohamed so CodeRabbit reviews stay on the free tier during the rebuild. Intentional, not an agent action. **Revert to private before/at launch** (Phase 8 close-out) — tracked as a blocker below so it isn't forgotten. |
+| D20 | Vercel's Build Command was changed (by Mohamed) to run `npm run db:migrate` as a pre-build step, ahead of Phase 1's actual Drizzle setup. Added a no-op placeholder `db:migrate` script to `package.json` (2026-07-19) so production builds don't fail; Phase 1 replaces it with the real `drizzle-kit migrate` invocation. |
+
+Add new decisions here as `D21`, `D22`, … with date and one-line rationale.
 
 ## Blockers
 
 - **Neon env vars not yet in Vercel.** Mohamed provided Neon preview + production `DATABASE_URL` values (stored in TARGET's gitignored `.env.preview.local` / `.env.production.local`). No MCP tool here can write Vercel project env vars remotely — Mohamed needs to paste these into Vercel's Preview and Production env var scopes manually before Phase 1's first migration/deploy.
 - **CodeRabbit not yet authorized** on the new repo — install before opening the first Phase 1 PR (required by the workflow gate).
 - **Production is now live-wired to `master`.** Because the Vercel project was relinked (D18) instead of created fresh, every future push to `master` deploys to `tms.gateling.com` immediately — there is no staging buffer beyond PR preview deploys. Every merge request to Mohamed from Phase 1 onward should call this out explicitly.
+- **Repo is public (D19), on purpose, for now.** Revert to private before/at Phase 8 launch close-out — add this to the phase-08 checklist when reached.
 
 ## Environment / credentials needed later
 
