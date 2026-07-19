@@ -16,7 +16,7 @@ export const BiometricCredentialsTable = pgTable(
   "biometric_credentials",
   {
     id,
-    userId: uuid("user_id")
+    userId: uuid()
       .notNull()
       .references(() => UsersTable.id, { onDelete: "cascade" }),
     credentialId: text().notNull(),

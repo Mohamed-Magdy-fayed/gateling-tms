@@ -8,9 +8,9 @@ export const createdAt = timestamp({ withTimezone: true })
   .defaultNow();
 
 export const updatedBy = varchar();
-export const updatedAt = timestamp({ withTimezone: true }).$onUpdate(
-  () => new Date(),
-);
+export const updatedAt = timestamp({ withTimezone: true })
+  .defaultNow()
+  .$onUpdate(() => new Date());
 
 export const deletedBy = varchar();
 export const deletedAt = timestamp({ withTimezone: true });

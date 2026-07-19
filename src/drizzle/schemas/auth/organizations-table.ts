@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   integer,
   pgEnum,
   pgTable,
@@ -34,7 +35,7 @@ export const OrganizationsTable = pgTable(
     plan: organizationPlanEnum().notNull().default("free"),
     studentCount: integer().notNull().default(0),
     courseCount: integer().notNull().default(0),
-    storageBytes: integer().notNull().default(0),
+    storageBytes: bigint({ mode: "number" }).notNull().default(0),
     ownerId: uuid().references(() => UsersTable.id, { onDelete: "set null" }),
     createdAt,
     updatedAt,

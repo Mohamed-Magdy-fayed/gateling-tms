@@ -26,7 +26,7 @@ export const organizationMembershipRoleEnum = pgEnum(
 export const OrganizationMembershipsTable = pgTable(
   "organization_memberships",
   {
-    isCurrent: boolean(),
+    isCurrent: boolean().notNull().default(false),
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),

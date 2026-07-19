@@ -4,7 +4,7 @@ CREATE TYPE "public"."oauth_provider" AS ENUM('google');--> statement-breakpoint
 CREATE TYPE "public"."user_token_type" AS ENUM('email_verification', 'password_reset', 'device_trust', 'otp', 'magic_link', 'org_invite');--> statement-breakpoint
 CREATE TABLE "biometric_credentials" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
+	"userId" uuid NOT NULL,
 	"credentialId" text NOT NULL,
 	"publicKey" text NOT NULL,
 	"label" text,
@@ -16,16 +16,16 @@ CREATE TABLE "biometric_credentials" (
 	"isUserVerified" boolean DEFAULT false NOT NULL,
 	"lastUsedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone
+	"updatedAt" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "organization_memberships" (
-	"isCurrent" boolean,
+	"isCurrent" boolean DEFAULT false NOT NULL,
 	"organizationId" uuid NOT NULL,
 	"userId" uuid NOT NULL,
 	"role" "organization_membership_role" DEFAULT 'student' NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone,
+	"updatedAt" timestamp with time zone DEFAULT now(),
 	CONSTRAINT "organization_memberships_organizationId_userId_pk" PRIMARY KEY("organizationId","userId")
 );
 --> statement-breakpoint
@@ -39,10 +39,10 @@ CREATE TABLE "organizations" (
 	"plan" "organization_plan" DEFAULT 'free' NOT NULL,
 	"studentCount" integer DEFAULT 0 NOT NULL,
 	"courseCount" integer DEFAULT 0 NOT NULL,
-	"storageBytes" integer DEFAULT 0 NOT NULL,
+	"storageBytes" bigint DEFAULT 0 NOT NULL,
 	"ownerId" uuid,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone
+	"updatedAt" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "user_credentials" (
@@ -53,13 +53,13 @@ CREATE TABLE "user_credentials" (
 	"mustChangePassword" boolean DEFAULT false NOT NULL,
 	"lastChangedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone
+	"updatedAt" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "user_oauth_accounts" (
 	"userId" uuid NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone,
+	"updatedAt" timestamp with time zone DEFAULT now(),
 	"provider" "oauth_provider" NOT NULL,
 	"providerAccountId" text NOT NULL,
 	"displayName" text,
@@ -92,16 +92,16 @@ CREATE TABLE "users" (
 	"parentId" uuid,
 	"emailVerifiedAt" timestamp with time zone,
 	"lastSignInAt" timestamp with time zone,
-	"age" integer,
+	"dateOfBirth" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"createdBy" varchar NOT NULL,
-	"updatedAt" timestamp with time zone,
+	"updatedAt" timestamp with time zone DEFAULT now(),
 	"updatedBy" varchar,
 	"deletedAt" timestamp with time zone,
 	"deletedBy" varchar
 );
 --> statement-breakpoint
-ALTER TABLE "biometric_credentials" ADD CONSTRAINT "biometric_credentials_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "biometric_credentials" ADD CONSTRAINT "biometric_credentials_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_memberships" ADD CONSTRAINT "organization_memberships_organizationId_organizations_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_memberships" ADD CONSTRAINT "organization_memberships_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_ownerId_users_id_fk" FOREIGN KEY ("ownerId") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

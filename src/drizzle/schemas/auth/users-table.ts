@@ -1,7 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  integer,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -44,7 +43,7 @@ export const UsersTable = pgTable(
     }),
     emailVerifiedAt: timestamp({ withTimezone: true }),
     lastSignInAt: timestamp({ withTimezone: true }),
-    age: integer(),
+    dateOfBirth: timestamp({ withTimezone: true }),
     createdAt,
     createdBy,
     updatedAt,
