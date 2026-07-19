@@ -13,7 +13,8 @@
     "check": "npm run typecheck && npm run lint",
     "audit:gate": "npm audit --audit-level=low",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:migrate": "echo \"no migrations yet — Phase 1 wires up drizzle-kit migrate here\""
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
