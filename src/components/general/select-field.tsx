@@ -27,6 +27,7 @@ type SelectManyFieldProps = {
   options: SelectOption[];
   setValue: (value: SelectOption[]) => void;
   value: SelectOption[];
+  disabled?: boolean;
 };
 
 export function SelectManyField({
@@ -34,6 +35,7 @@ export function SelectManyField({
   options,
   setValue,
   value,
+  disabled,
 }: SelectManyFieldProps) {
   const anchor = useComboboxAnchor();
   const { t } = useTranslation();
@@ -41,6 +43,7 @@ export function SelectManyField({
   return (
     <Combobox
       autoHighlight
+      disabled={disabled}
       isItemEqualToValue={(a, b) => a.value === b.value}
       items={options}
       itemToStringLabel={(option) => option.label}
@@ -89,6 +92,7 @@ type SelectOneFieldProps = {
   options: SelectOption[];
   setValue: (value: SelectOption | null) => void;
   value: SelectOption | null;
+  disabled?: boolean;
 };
 
 export function SelectOneField({
@@ -96,12 +100,14 @@ export function SelectOneField({
   options,
   setValue,
   value,
+  disabled,
 }: SelectOneFieldProps) {
   const { t } = useTranslation();
 
   return (
     <Combobox
       autoHighlight
+      disabled={disabled}
       isItemEqualToValue={(a, b) => a.value === b.value}
       items={options}
       itemToStringLabel={(option) => option.label}

@@ -23,10 +23,6 @@ export function FormEmailField({
   return (
     <FormBase {...props}>
       <InputGroup>
-        <InputGroupAddon align="inline-end">
-          <MailIcon />
-        </InputGroupAddon>
-        <Separator orientation="vertical" />
         <InputGroupInput
           aria-invalid={isInvalid}
           autoComplete="email"
@@ -38,8 +34,12 @@ export function FormEmailField({
           onChange={(e) => field.handleChange(e.target.value)}
           placeholder={placeholder}
           type="email"
-          value={field.state.value}
+          value={field.state.value ?? ""}
         />
+        <Separator orientation="vertical" />
+        <InputGroupAddon align="inline-end">
+          <MailIcon />
+        </InputGroupAddon>
       </InputGroup>
     </FormBase>
   );

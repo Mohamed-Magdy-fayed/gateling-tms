@@ -20,37 +20,43 @@ export function handleDatabaseError(err: unknown): TRPCError {
     const cause = err.cause as PostgresError;
     const errCode = Number(cause.code);
 
+    // cause.detail can contain raw column values (e.g. the conflicting email
+    // address) — log it server-side only, never in the client-facing message.
+    if (cause.detail) {
+      console.error("Database error detail:", cause.detail);
+    }
+
     switch (errCode) {
       case OPSTATUS.UNIQUE_VIOLATION:
         return new TRPCError({
           code: "CONFLICT",
-          message: cause.detail ?? "Unique constraint violation",
+          message: "Unique constraint violation",
         });
       case OPSTATUS.FOREIGN_KEY_VIOLATION:
         return new TRPCError({
           code: "BAD_REQUEST",
-          message: cause.detail ?? "Foreign key constraint violation",
+          message: "Foreign key constraint violation",
         });
       case OPSTATUS.NOT_NULL_VIOLATION:
         return new TRPCError({
           code: "BAD_REQUEST",
-          message: cause.detail ?? "Not-null constraint violation",
+          message: "Not-null constraint violation",
         });
       case OPSTATUS.CHECK_VIOLATION:
         return new TRPCError({
           code: "BAD_REQUEST",
-          message: cause.detail ?? "Check constraint violation",
+          message: "Check constraint violation",
         });
       case OPSTATUS.INVALID_TRANSACTION_STATE:
         return new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: cause.detail ?? "Invalid transaction state",
+          message: "Invalid transaction state",
         });
       case OPSTATUS.CONNECTION_FAILURE:
       case OPSTATUS.CONNECTION_DOES_NOT_EXIST:
         return new TRPCError({
           code: "SERVICE_UNAVAILABLE",
-          message: cause.detail ?? "Connection failure to the database server",
+          message: "Connection failure to the database server",
         });
       default:
         return new TRPCError({

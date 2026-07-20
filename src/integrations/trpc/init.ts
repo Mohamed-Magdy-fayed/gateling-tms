@@ -60,6 +60,7 @@ const databaseErrorMiddleware = t.middleware(async ({ next }) => {
   try {
     return await next();
   } catch (err) {
+    if (err instanceof TRPCError) throw err;
     throw handleDatabaseError(err);
   }
 });

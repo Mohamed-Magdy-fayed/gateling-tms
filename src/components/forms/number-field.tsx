@@ -7,17 +7,19 @@ import { useFieldContext } from "./hooks";
 export function FormNumberField({
   placeholder,
   autoFocus,
+  disabled,
   ...props
 }: FormFieldProps & { placeholder?: string }) {
   const field = useFieldContext<number | null>();
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
   return (
-    <FormBase {...props}>
+    <FormBase {...props} disabled={disabled}>
       <Input
         aria-invalid={isInvalid}
         autoComplete="off"
         autoFocus={autoFocus}
+        disabled={disabled}
         id={field.name}
         name={field.name}
         onBlur={field.handleBlur}

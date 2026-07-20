@@ -28,6 +28,7 @@ export function FormSelectField({
   options,
   placeholder,
   multiple,
+  disabled,
   ...props
 }: FormSelectFieldProps) {
   const field = useFieldContext();
@@ -54,8 +55,9 @@ export function FormSelectField({
 
   if (multiple) {
     return (
-      <FormBase {...props}>
+      <FormBase {...props} disabled={disabled}>
         <SelectManyField
+          disabled={disabled}
           options={options}
           placeholder={placeholder}
           setValue={(val) => setMultipleValue(val.map((item) => item.value))}
@@ -68,8 +70,9 @@ export function FormSelectField({
   const currentValue = (stateValue as string) || null;
 
   return (
-    <FormBase {...props}>
+    <FormBase {...props} disabled={disabled}>
       <Select
+        disabled={disabled}
         value={currentValue}
         onValueChange={(val) => setSingleValue((val as string) ?? null)}
       >

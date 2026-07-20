@@ -78,7 +78,7 @@ export function FormBase({
   }
 
   return (
-    <Field data-invalid={isInvalid} group-data-disabled={disabled}>
+    <Field data-invalid={isInvalid} data-disabled={disabled}>
       {labelElement}
       {children}
       {errorElement}

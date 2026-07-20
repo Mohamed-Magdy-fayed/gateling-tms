@@ -20,6 +20,7 @@ type FormComboboxOneFieldProps = FormFieldProps & {
 export function FormComboboxOneField({
   options,
   placeholder,
+  disabled,
   ...props
 }: FormComboboxOneFieldProps) {
   const field = useFieldContext<string>();
@@ -37,8 +38,9 @@ export function FormComboboxOneField({
   );
 
   return (
-    <FormBase {...props}>
+    <FormBase {...props} disabled={disabled}>
       <SelectOneField
+        disabled={disabled}
         options={options}
         placeholder={placeholder}
         setValue={setValue}

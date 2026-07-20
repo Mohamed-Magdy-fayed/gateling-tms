@@ -7,15 +7,17 @@ import { useFieldContext } from "./hooks";
 export function FormTextareaField({
   placeholder,
   rows = 4,
+  disabled,
   ...props
 }: FormFieldProps & { placeholder?: string; rows?: number }) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
   return (
-    <FormBase {...props}>
+    <FormBase {...props} disabled={disabled}>
       <Textarea
         aria-invalid={isInvalid}
+        disabled={disabled}
         id={field.name}
         name={field.name}
         onBlur={field.handleBlur}

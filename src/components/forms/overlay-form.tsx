@@ -29,7 +29,10 @@ export function OverlayFormBody({
   );
 }
 
-export type OverlayFormSubmitButtonProps = ComponentProps<typeof Button> & {
+export type OverlayFormSubmitButtonProps = Omit<
+  ComponentProps<typeof Button>,
+  "form" | "type"
+> & {
   formId: string;
 };
 
@@ -40,10 +43,10 @@ export function OverlayFormSubmitButton({
 }: OverlayFormSubmitButtonProps) {
   return (
     <Button
+      {...props}
       type="submit"
       form={formId}
       className={cn("flex-1", className)}
-      {...props}
     />
   );
 }
