@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TranslationProvider } from "@/features/core/i18n/client";
+import { TRPCReactProvider } from "@/integrations/trpc/client";
 
 type ProvidersProps = PropsWithChildren<{
   locale: string;
@@ -10,10 +11,12 @@ type ProvidersProps = PropsWithChildren<{
 export function Providers({ children, locale }: ProvidersProps) {
   return (
     <TranslationProvider defaultLocale={locale} fallbackLocale="en">
-      <TooltipProvider>
-        {children}
-        <Toaster visibleToasts={3} />
-      </TooltipProvider>
+      <TRPCReactProvider>
+        <TooltipProvider>
+          {children}
+          <Toaster visibleToasts={3} />
+        </TooltipProvider>
+      </TRPCReactProvider>
     </TranslationProvider>
   );
 }
