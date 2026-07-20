@@ -22,23 +22,21 @@ export const createTRPCContext = async () => {
   return { session, cookies: cookieStore, t, db, locale };
 };
 
-const t = initTRPC
-  .context<Awaited<ReturnType<typeof createTRPCContext>>>()
-  .create({
-    transformer: superjson,
-    errorFormatter({ shape, error }) {
-      return {
-        ...shape,
-        data: {
-          ...shape.data,
-          zodError:
-            error.cause instanceof ZodError
-              ? z.treeifyError(error.cause)
-              : null,
-        },
-      };
-    },
-  });
+export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
+
+const t = initTRPC.context<TRPCContext>().create({
+  transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? z.treeifyError(error.cause) : null,
+      },
+    };
+  },
+});
 
 const authMiddleware = t.middleware(({ ctx, next }) => {
   if (!ctx.session) {

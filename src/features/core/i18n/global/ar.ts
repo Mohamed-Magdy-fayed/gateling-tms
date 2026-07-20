@@ -47,13 +47,37 @@ export default {
     unauthorized: "غير مصرح لك بتنفيذ هذا الإجراء.",
     validationFailed: "يرجى مراجعة الحقول المظللة والمحاولة مرة أخرى.",
   },
+  forms: {
+    validation: {
+      required: "هذا الحقل مطلوب.",
+      max128: "يجب ألا يتجاوز 128 حرفًا.",
+    },
+  },
   systemPages: {
     auditInfoTitle: "معلومات التدقيق",
     auditInfoDescription: "بيانات التتبع لهذا السجل.",
+    demoItemsTitle: "عناصر تجريبية",
+    demoItemsLead:
+      "اختبار قبول المرحلة الأولى لعمل الجدول والنماذج و tRPC معًا.",
+    demoItemName: "الاسم",
+    demoItemActive: "نشط",
+    addDemoItem: "إضافة عنصر تجريبي",
+    editDemoItem: "تعديل عنصر تجريبي",
+    addDemoItemDescription: "إنشاء عنصر تجريبي جديد.",
+    editDemoItemDescription: "تحديث تفاصيل هذا العنصر التجريبي.",
+    demoItemCreated: "تم إنشاء العنصر التجريبي.",
+    demoItemUpdated: "تم تحديث العنصر التجريبي.",
+    demoItemSaveFailed: "تعذر حفظ العنصر التجريبي.",
+    deleteDemoItemTitle: "حذف العنصر التجريبي؟",
+    deleteDemoItemDescription:
+      "إزالة {name} نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+    demoItemDeleted: "تم حذف العنصر التجريبي.",
+    demoItemDeleteFailed: "تعذر حذف العنصر التجريبي.",
   },
   dataTable: {
     clear: "مسح",
     clearFilter: "مسح فلتر {title}",
+    searchDemoItemsHint: "بحث في العناصر التجريبية…",
     export: {
       export: "تصدير",
     },

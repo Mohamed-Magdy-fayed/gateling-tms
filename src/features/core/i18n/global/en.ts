@@ -47,13 +47,37 @@ export default {
     unauthorized: "You are not authorized to perform this action.",
     validationFailed: "Please check the highlighted fields and try again.",
   },
+  forms: {
+    validation: {
+      required: "This field is required.",
+      max128: "Must be at most 128 characters.",
+    },
+  },
   systemPages: {
     auditInfoTitle: "Audit info",
     auditInfoDescription: "Tracking metadata for this record.",
+    demoItemsTitle: "Demo items",
+    demoItemsLead:
+      "Phase 1 acceptance test for the data table, forms, and tRPC working together.",
+    demoItemName: "Name",
+    demoItemActive: "Active",
+    addDemoItem: "Add demo item",
+    editDemoItem: "Edit demo item",
+    addDemoItemDescription: "Create a new demo item.",
+    editDemoItemDescription: "Update this demo item's details.",
+    demoItemCreated: "Demo item created.",
+    demoItemUpdated: "Demo item updated.",
+    demoItemSaveFailed: "Could not save demo item.",
+    deleteDemoItemTitle: "Delete demo item?",
+    deleteDemoItemDescription:
+      "Permanently remove {name}. This action cannot be undone.",
+    demoItemDeleted: "Demo item deleted.",
+    demoItemDeleteFailed: "Could not delete demo item.",
   },
   dataTable: {
     clear: "Clear",
     clearFilter: "Clear {title} filter",
+    searchDemoItemsHint: "Search demo items…",
     export: {
       export: "Export",
     },
