@@ -43,7 +43,7 @@ export function FormBase({
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
   const translateErrorMessage = (message?: string) =>
     translateFormErrorMessage(
-      (key) => t(key as TranslationKey<typeof mainTranslations>),
+      (key) => t(key as TranslationKey<typeof mainTranslations>, {}),
       message,
       {
         locale,
