@@ -31,6 +31,7 @@ export default {
     back: "رجوع",
     next: "التالي",
     close: "إغلاق",
+    noOptionsFound: "لا توجد خيارات.",
   },
   errors: {
     generic: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
