@@ -31,6 +31,7 @@ export default {
     back: "Back",
     next: "Next",
     close: "Close",
+    noOptionsFound: "No options found.",
   },
   errors: {
     generic: "Something went wrong. Please try again.",
