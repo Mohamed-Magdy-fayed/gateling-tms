@@ -9,9 +9,11 @@ function buildWhereClause(input: ListDemoItemsInput) {
   return ilike(DemoItemsTable.name, `%${query}%`);
 }
 
+// Every branch appends `id` as a tiebreaker so ties in the primary sort don't
+// leave row order (and therefore offset pagination) nondeterministic.
 function sortExpr(input: ListDemoItemsInput) {
   const firstSort = input.sorting[0];
-  if (!firstSort) return [asc(DemoItemsTable.name)];
+  if (!firstSort) return [asc(DemoItemsTable.name), asc(DemoItemsTable.id)];
 
   switch (firstSort.id) {
     case "isActive":
@@ -19,16 +21,19 @@ function sortExpr(input: ListDemoItemsInput) {
         firstSort.desc
           ? desc(DemoItemsTable.isActive)
           : asc(DemoItemsTable.isActive),
+        asc(DemoItemsTable.id),
       ];
     case "createdAt":
       return [
         firstSort.desc
           ? desc(DemoItemsTable.createdAt)
           : asc(DemoItemsTable.createdAt),
+        asc(DemoItemsTable.id),
       ];
     default:
       return [
         firstSort.desc ? desc(DemoItemsTable.name) : asc(DemoItemsTable.name),
+        asc(DemoItemsTable.id),
       ];
   }
 }
@@ -55,5 +60,5 @@ export async function listDemoItems(
     .limit(input.perPage)
     .offset(offset);
 
-  return { rows, pageCount, total: Number(total) };
+  return { rows, page, pageCount, total: Number(total) };
 }

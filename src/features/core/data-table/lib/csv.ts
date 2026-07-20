@@ -27,15 +27,39 @@ export function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-function parseCsvLine(line: string): string[] {
-  const out: string[] = [];
+function exceedsMaxImportBytes(text: string): boolean {
+  return new TextEncoder().encode(text).length > MAX_IMPORT_BYTES;
+}
+
+/**
+ * Scans the whole text as one quote-aware state machine, so `\n`/`\r\n` only
+ * ends a record when it's outside an open quote — a real newline embedded in
+ * a quoted field (which escapeCell/rowsToCsv produce on export) stays part of
+ * that cell instead of splitting the row. Blank lines are dropped, matching
+ * the previous line-split behavior.
+ */
+function parseCsvRecords(text: string): string[][] {
+  const records: string[][] = [];
+  let row: string[] = [];
   let cur = "";
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
+
+  const pushCell = () => {
+    row.push(cur);
+    cur = "";
+  };
+  const pushRow = () => {
+    pushCell();
+    const isBlankLine = row.length === 1 && row[0] === "";
+    if (!isBlankLine) records.push(row);
+    row = [];
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
     if (inQuotes) {
       if (c === '"') {
-        if (line[i + 1] === '"') {
+        if (text[i + 1] === '"') {
           cur += '"';
           i++;
         } else {
@@ -44,33 +68,37 @@ function parseCsvLine(line: string): string[] {
       } else {
         cur += c;
       }
-    } else if (c === '"') {
+      continue;
+    }
+    if (c === '"') {
       inQuotes = true;
     } else if (c === ",") {
-      out.push(cur);
-      cur = "";
+      pushCell();
+    } else if (c === "\r") {
+      if (text[i + 1] === "\n") i++;
+      pushRow();
+    } else if (c === "\n") {
+      pushRow();
     } else {
       cur += c;
     }
   }
-  out.push(cur);
-  return out;
+  if (cur !== "" || row.length > 0) {
+    pushRow();
+  }
+
+  return records;
 }
 
 export function parseCsvToObjects(
   text: string,
 ): { headers: string[]; rows: Record<string, unknown>[] } | null {
-  if (text.length > MAX_IMPORT_BYTES) return null;
-  const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
-  if (lines.length === 0) return null;
-  const first = lines[0];
-  if (first === undefined) return null;
-  const headers = parseCsvLine(first);
+  if (exceedsMaxImportBytes(text)) return null;
+  const records = parseCsvRecords(text);
+  const headers = records[0];
+  if (headers === undefined) return null;
   const rows: Record<string, unknown>[] = [];
-  for (let li = 1; li < lines.length; li++) {
-    const line = lines[li];
-    if (line === undefined) continue;
-    const cells = parseCsvLine(line);
+  for (const cells of records.slice(1)) {
     const o: Record<string, unknown> = {};
     headers.forEach((h, i) => {
       o[h] = cells[i] ?? "";
@@ -84,12 +112,10 @@ export function parseCsvPreview(
   text: string,
   maxRows = 8,
 ): { headers: string[]; rows: string[][] } | null {
-  if (text.length > MAX_IMPORT_BYTES) return null;
-  const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
-  if (lines.length === 0) return null;
-  const first = lines[0];
-  if (first === undefined) return null;
-  const headers = parseCsvLine(first);
-  const rows = lines.slice(1, 1 + maxRows).map(parseCsvLine);
+  if (exceedsMaxImportBytes(text)) return null;
+  const records = parseCsvRecords(text);
+  const headers = records[0];
+  if (headers === undefined) return null;
+  const rows = records.slice(1, 1 + maxRows);
   return { headers, rows };
 }

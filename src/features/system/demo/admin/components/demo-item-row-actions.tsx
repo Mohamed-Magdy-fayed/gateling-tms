@@ -33,7 +33,12 @@ export function DemoItemRowActions({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon-sm" className="size-8">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="size-8"
+            aria-label={t("common.actions")}
+          >
             <MoreHorizontalIcon className="size-3.5" />
           </Button>
         }

@@ -24,22 +24,18 @@ export async function updateDemoItem(
   ctx: TRPCContext,
   input: DemoItemUpdateInput,
 ) {
-  const existing = await ctx.db.query.DemoItemsTable.findFirst({
-    columns: { id: true },
-    where: eq(DemoItemsTable.id, input.id),
-  });
+  const [updated] = await ctx.db
+    .update(DemoItemsTable)
+    .set({ name: input.name, isActive: input.isActive })
+    .where(eq(DemoItemsTable.id, input.id))
+    .returning({ id: DemoItemsTable.id });
 
-  if (!existing) {
+  if (!updated) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: ctx.t("errors.notFound"),
     });
   }
-
-  await ctx.db
-    .update(DemoItemsTable)
-    .set({ name: input.name, isActive: input.isActive })
-    .where(eq(DemoItemsTable.id, input.id));
 
   return { updated: true };
 }
@@ -48,19 +44,17 @@ export async function deleteDemoItem(
   ctx: TRPCContext,
   input: DemoItemDeleteInput,
 ) {
-  const existing = await ctx.db.query.DemoItemsTable.findFirst({
-    columns: { id: true },
-    where: eq(DemoItemsTable.id, input.id),
-  });
+  const [deleted] = await ctx.db
+    .delete(DemoItemsTable)
+    .where(eq(DemoItemsTable.id, input.id))
+    .returning({ id: DemoItemsTable.id });
 
-  if (!existing) {
+  if (!deleted) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: ctx.t("errors.notFound"),
     });
   }
-
-  await ctx.db.delete(DemoItemsTable).where(eq(DemoItemsTable.id, input.id));
 
   return { deleted: true };
 }

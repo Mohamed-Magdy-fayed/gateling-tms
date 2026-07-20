@@ -212,6 +212,7 @@ export function DataTableDateRangeFilter<TData, TValue>({
     <Calendar
       mode="range"
       locale={rdpLocale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
       numberOfMonths={1}
       defaultMonth={range?.from ?? today}
       selected={range}

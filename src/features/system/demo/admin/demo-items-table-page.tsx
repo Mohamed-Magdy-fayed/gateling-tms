@@ -7,7 +7,7 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 import { PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DemoItem } from "@/drizzle/schema";
 import {
@@ -68,6 +68,14 @@ export function DemoItemsTablePage() {
   );
 
   const { data, isFetching } = useQuery(trpc.demo.list.queryOptions(listInput));
+
+  // The server clamps an out-of-range requested page (e.g. after the last row
+  // on it was deleted) — sync local state to whatever it actually served.
+  useEffect(() => {
+    if (data && data.page !== pagination.pageIndex + 1) {
+      setPagination((prev) => ({ ...prev, pageIndex: data.page - 1 }));
+    }
+  }, [data, pagination.pageIndex, setPagination]);
 
   const controlled = useMemo<DataTableControlledState>(
     () => ({
