@@ -50,6 +50,45 @@ function Tag({
   children,
   ...props
 }: TagProps) {
+  const wrapperClassName = cn(
+    tagVariants({ color, selected, interactive: !!onClick }),
+    onRemove && "ps-3 pe-1.5",
+    className,
+  );
+
+  // A native <button> (remove) can't nest inside a role="button" element —
+  // when both actions exist, render them as sibling buttons inside a plain,
+  // non-interactive wrapper instead of making the whole tag clickable.
+  if (onRemove) {
+    return (
+      <span data-slot="tag" className={wrapperClassName} {...props}>
+        {onClick ? (
+          <button
+            type="button"
+            aria-pressed={selected ?? undefined}
+            onClick={onClick}
+            className="inline-flex items-center gap-1.5"
+          >
+            {children}
+          </button>
+        ) : (
+          children
+        )}
+        <button
+          type="button"
+          aria-label={removeLabel}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(event);
+          }}
+          className="inline-flex size-4 items-center justify-center rounded-full opacity-60 transition-opacity hover:opacity-100"
+        >
+          <XIcon className="size-3" />
+        </button>
+      </span>
+    );
+  }
+
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: role/tabIndex/onKeyDown are all applied together whenever onClick is provided, making this a proper keyboard-accessible interactive element
     <span
@@ -62,32 +101,15 @@ function Tag({
           ? (event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onClick(event as unknown as React.MouseEvent<HTMLSpanElement>);
+                event.currentTarget.click();
               }
             }
           : undefined
       }
-      className={cn(
-        tagVariants({ color, selected, interactive: !!onClick }),
-        onRemove && "ps-3 pe-1.5",
-        className,
-      )}
+      className={wrapperClassName}
       {...props}
     >
       {children}
-      {onRemove && (
-        <button
-          type="button"
-          aria-label={removeLabel}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove(event);
-          }}
-          className="inline-flex size-4 items-center justify-center rounded-full opacity-60 transition-opacity hover:opacity-100"
-        >
-          <XIcon className="size-3" />
-        </button>
-      )}
     </span>
   );
 }

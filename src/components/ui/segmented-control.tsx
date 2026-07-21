@@ -28,7 +28,6 @@ function SegmentedControl({
   return (
     <div
       data-slot="segmented-control"
-      role="tablist"
       className={cn(
         "inline-flex items-center gap-0.5 rounded-md bg-muted p-1",
         fullWidth && "flex w-full",
@@ -41,8 +40,7 @@ function SegmentedControl({
           <button
             key={option.value}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onValueChange(option.value)}
             className={cn(
               "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm text-xs font-semibold transition-all ease-spring",

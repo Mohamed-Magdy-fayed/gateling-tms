@@ -200,7 +200,7 @@
   --popover: var(--neutral-0);
   --popover-foreground: var(--neutral-900);
   --primary: var(--orange-500);
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--neutral-900);
   --secondary: var(--neutral-100);
   --secondary-foreground: var(--neutral-900);
   --accent: var(--orange-100);
@@ -208,7 +208,7 @@
   --muted: var(--neutral-50);
   --muted-foreground: var(--neutral-500);
   --destructive: var(--red-500);
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: var(--neutral-900);
   --success: var(--mint-600);
   --success-foreground: #ffffff;
   --info: var(--sky-600);

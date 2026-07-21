@@ -67,7 +67,7 @@ function CourseCard({
           ? (event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onClick(event as unknown as React.MouseEvent<HTMLDivElement>);
+                event.currentTarget.click();
               }
             }
           : undefined

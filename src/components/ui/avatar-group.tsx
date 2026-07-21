@@ -21,7 +21,7 @@ function AvatarGroup({
   size = "md",
   ...props
 }: AvatarGroupProps) {
-  const visible = items.slice(0, max);
+  const visible = items.slice(0, Math.max(0, max));
   const overflow = items.length - visible.length;
   const sizeClass = size === "sm" ? "size-7" : "size-9";
 
