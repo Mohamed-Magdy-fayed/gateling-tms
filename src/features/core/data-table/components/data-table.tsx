@@ -2,8 +2,9 @@
 
 import type { Table as TanstackTable } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
+import { InboxIcon } from "lucide-react";
 import type { ReactNode } from "react";
-
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -76,11 +77,12 @@ export function DataTable<T>({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={visible}
-                className="h-24 text-center text-muted-foreground"
-              >
-                {t("dataTable.noResults")}
+              <TableCell colSpan={visible}>
+                <EmptyState
+                  compact
+                  icon={<InboxIcon />}
+                  title={t("dataTable.noResults")}
+                />
               </TableCell>
             </TableRow>
           )}
