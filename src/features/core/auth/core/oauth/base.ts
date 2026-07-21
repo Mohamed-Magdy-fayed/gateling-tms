@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { z } from "zod";
-import { env } from "@/data/env/server";
+import { env, oauthRedirectUrlBase } from "@/data/env/server";
 import type { OAuthProvider } from "@/drizzle/schema";
 import type { Cookies } from "@/features/core/auth/types";
 import { createGoogleOAuthClient } from "./google";
@@ -8,6 +8,18 @@ import { createGoogleOAuthClient } from "./google";
 const STATE_COOKIE_KEY = "oAuthState";
 const CODE_VERIFIER_COOKIE_KEY = "oAuthCodeVerifier";
 const COOKIE_EXPIRATION_SECONDS = 60 * 10;
+const OAUTH_FETCH_TIMEOUT_MS = 10_000;
+
+// A slow/unresponsive OAuth provider would otherwise hang the calling
+// request indefinitely — bound every provider round trip with a timeout.
+function fetchWithTimeout(url: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), OAUTH_FETCH_TIMEOUT_MS);
+
+  return fetch(url, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timeout),
+  );
+}
 
 export class OAuthClient<T> {
   private readonly provider: OAuthProvider;
@@ -64,7 +76,7 @@ export class OAuthClient<T> {
   }
 
   private get redirectUrl() {
-    return new URL(this.provider, env.OAUTH_REDIRECT_URL_BASE);
+    return new URL(this.provider, oauthRedirectUrlBase);
   }
 
   createAuthUrl(cookies: Pick<Cookies, "set">) {
@@ -93,7 +105,7 @@ export class OAuthClient<T> {
       getCodeVerifier(cookies),
     );
 
-    const user = await fetch(this.urls.user, {
+    const user = await fetchWithTimeout(this.urls.user, {
       headers: {
         Authorization: `${tokenType} ${accessToken}`,
       },
@@ -110,7 +122,7 @@ export class OAuthClient<T> {
   }
 
   private fetchToken(code: string, codeVerifier: string) {
-    return fetch(this.urls.token, {
+    return fetchWithTimeout(this.urls.token, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -175,7 +187,10 @@ class InvalidCodeVerifierError extends Error {
 function createState(cookies: Pick<Cookies, "set">) {
   const state = crypto.randomBytes(64).toString("hex").normalize();
   cookies.set(STATE_COOKIE_KEY, state, {
-    secure: true,
+    // Matches session.ts's cookie policy — `secure: true` unconditionally
+    // would stop these cookies from being written at all on the default
+    // http://localhost:3000/api/oauth dev flow.
+    secure: env.NODE_ENV === "production",
     httpOnly: true,
     sameSite: "lax",
     expires: new Date(Date.now() + COOKIE_EXPIRATION_SECONDS * 1000),
@@ -186,7 +201,7 @@ function createState(cookies: Pick<Cookies, "set">) {
 function createCodeVerifier(cookies: Pick<Cookies, "set">) {
   const codeVerifier = crypto.randomBytes(64).toString("hex").normalize();
   cookies.set(CODE_VERIFIER_COOKIE_KEY, codeVerifier, {
-    secure: true,
+    secure: env.NODE_ENV === "production",
     httpOnly: true,
     sameSite: "lax",
     expires: new Date(Date.now() + COOKIE_EXPIRATION_SECONDS * 1000),

@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import crypto from "node:crypto";
+import { describe, expect, test, vi } from "vitest";
 import {
   comparePasswords,
   generateSalt,
@@ -55,5 +56,27 @@ describe("password hashing round trip", () => {
     const hashB = await hashPassword("same password", generateSalt());
 
     expect(hashA).not.toBe(hashB);
+  });
+
+  test("hashPassword rejects (not throws uncaught) when scrypt errors", async () => {
+    // Real crypto.scrypt always invokes its callback asynchronously (off the
+    // libuv thread pool) — schedule via setImmediate so this mock reproduces
+    // that timing. Without the early `return` after `reject(error)`, the
+    // subsequent `hash.toString(...)` call throws a TypeError in that later
+    // tick, outside the Promise executor's call stack, which is exactly the
+    // unhandled-rejection scenario this test guards against.
+    const scryptSpy = vi.spyOn(crypto, "scrypt").mockImplementation(((
+      ..._args: unknown[]
+    ) => {
+      const callback = _args[_args.length - 1] as (
+        error: Error | null,
+        hash: Buffer | null,
+      ) => void;
+      setImmediate(() => callback(new Error("scrypt failed"), null));
+    }) as typeof crypto.scrypt);
+
+    await expect(hashPassword("x", "y")).rejects.toThrow("scrypt failed");
+
+    scryptSpy.mockRestore();
   });
 });

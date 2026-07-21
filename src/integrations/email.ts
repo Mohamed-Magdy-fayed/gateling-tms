@@ -34,8 +34,13 @@ function getTransporter() {
 
 /**
  * SMTP credentials aren't provided until Mohamed sets them up (see STATE.md
- * "Environment / credentials needed later") — logs a warning and no-ops
- * instead of throwing so auth flows keep working locally without them.
+ * "Environment / credentials needed later") — logs a warning and no-ops in
+ * that case, since that's an expected pre-launch state, not a failure.
+ *
+ * Once SMTP *is* configured, a failed send throws instead of being swallowed
+ * — callers (e.g. Inngest functions) need to know delivery didn't happen so
+ * they can retry/report it, rather than reporting success for an email that
+ * was never sent.
  */
 export async function sendMail(options: SendMailOptions): Promise<void> {
   const transporter = getTransporter();
@@ -53,15 +58,11 @@ export async function sendMail(options: SendMailOptions): Promise<void> {
     ? `${options.toName} <${options.toEmail}>`
     : options.toEmail;
 
-  try {
-    await transporter.sendMail({
-      from: `${fromName} <${fromEmail}>`,
-      to,
-      subject: options.subject,
-      text: options.text,
-      html: options.html,
-    });
-  } catch (error) {
-    console.warn("[email] Failed to send:", options.subject, error);
-  }
+  await transporter.sendMail({
+    from: `${fromName} <${fromEmail}>`,
+    to,
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+  });
 }
