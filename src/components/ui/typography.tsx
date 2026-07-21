@@ -9,7 +9,7 @@ export function H1({
   return (
     <h1
       className={cn(
-        "scroll-m-20 text-balance font-extrabold text-4xl tracking-tight lg:text-5xl",
+        "scroll-m-20 text-balance font-bold text-4xl tracking-tight lg:text-5xl",
         className,
       )}
       {...props}
