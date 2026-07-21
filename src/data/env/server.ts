@@ -20,6 +20,24 @@ export const env = createEnv({
     INNGEST_SIGNING_KEY: z.string().min(1).optional(),
     INNGEST_EVENT_KEY: z.string().min(1).optional(),
 
+    // Used to build absolute links (email verification, OAuth redirect) —
+    // defaults to localhost so dev/build never needs it set.
+    BASE_URL: z.url().default("http://localhost:3000"),
+
+    // Dormant until Mohamed provides Google OAuth credentials (Phase 2).
+    OAUTH_REDIRECT_URL_BASE: z.url().default("http://localhost:3000/api/oauth"),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
+    // Dormant until Mohamed provides SMTP credentials (Phase 2) — sendMail
+    // logs a warning and no-ops instead of throwing when unset (dev-safe).
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().positive().optional(),
+    SMTP_USER: z.string().min(1).optional(),
+    SMTP_PASSWORD: z.string().min(1).optional(),
+    SMTP_FROM_EMAIL: z.email().optional(),
+    SMTP_FROM_NAME: z.string().min(1).optional(),
+
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
