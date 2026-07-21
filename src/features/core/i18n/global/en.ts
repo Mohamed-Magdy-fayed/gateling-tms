@@ -116,4 +116,32 @@ export default {
   },
   languageToggle: "Switch language",
   themeToggle: "Toggle theme",
+  auth: {
+    emails: {
+      common: {
+        fromName: "Gateling-TMS",
+        defaultRecipientName: "there",
+        greeting: "Hi {name},",
+        signature: "— The Gateling-TMS Team",
+        minuteSingular: "minute",
+        minutePlural: "minutes",
+      },
+      emailVerification: {
+        subject: "Verify your email address",
+        text: "Hi {name}, please verify your email within {expiryHours} hours: {verificationUrl}",
+        intro:
+          "Please confirm your email address. This link expires in {expiryHours} hours.",
+        ctaLabel: "Verify email",
+        ignore: "If you didn't create this account, you can ignore this email.",
+      },
+      passwordReset: {
+        subject: "Your password reset code",
+        text: "Hi {name}, your password reset code is {code}. It expires in {expiresIn} {minutesLabel}.",
+        intro:
+          "Use the code below to reset your password. It expires in {expiresIn} {minutesLabel}.",
+        ignore:
+          "If you didn't request a password reset, you can ignore this email.",
+      },
+    },
+  },
 } as const satisfies LanguageMessages;

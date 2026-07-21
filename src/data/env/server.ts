@@ -20,6 +20,27 @@ export const env = createEnv({
     INNGEST_SIGNING_KEY: z.string().min(1).optional(),
     INNGEST_EVENT_KEY: z.string().min(1).optional(),
 
+    // Used to build absolute links (email verification, OAuth redirect).
+    // Optional here so dev/build never needs them set — defaulted to
+    // localhost via `baseUrl`/`oauthRedirectUrlBase` below, but required in
+    // production (see the fail-closed check) so a deploy can't silently
+    // email out a localhost verification link or redirect OAuth there.
+    BASE_URL: z.url().optional(),
+    OAUTH_REDIRECT_URL_BASE: z.url().optional(),
+
+    // Dormant until Mohamed provides Google OAuth credentials (Phase 2).
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
+    // Dormant until Mohamed provides SMTP credentials (Phase 2) — sendMail
+    // logs a warning and no-ops instead of throwing when unset (dev-safe).
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().positive().optional(),
+    SMTP_USER: z.string().min(1).optional(),
+    SMTP_PASSWORD: z.string().min(1).optional(),
+    SMTP_FROM_EMAIL: z.email().optional(),
+    SMTP_FROM_NAME: z.string().min(1).optional(),
+
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -41,3 +62,21 @@ if (
     "INNGEST_SIGNING_KEY and INNGEST_EVENT_KEY are required in production.",
   );
 }
+
+// Fail closed: with `emptyStringAsUndefined`, a blank BASE_URL/
+// OAUTH_REDIRECT_URL_BASE in a deployed environment would silently fall back
+// to localhost — emailing out an unusable verification link, or sending
+// Google's OAuth redirect to a localhost URL, instead of failing the build.
+if (
+  env.NODE_ENV === "production" &&
+  (!env.BASE_URL || !env.OAUTH_REDIRECT_URL_BASE)
+) {
+  throw new Error(
+    "BASE_URL and OAUTH_REDIRECT_URL_BASE are required in production.",
+  );
+}
+
+// Local/dev-only fallbacks — never reached in production, see the check above.
+export const baseUrl = env.BASE_URL ?? "http://localhost:3000";
+export const oauthRedirectUrlBase =
+  env.OAUTH_REDIRECT_URL_BASE ?? "http://localhost:3000/api/oauth";

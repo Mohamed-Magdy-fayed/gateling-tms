@@ -116,4 +116,31 @@ export default {
   },
   languageToggle: "تغيير اللغة",
   themeToggle: "تغيير المظهر",
+  auth: {
+    emails: {
+      common: {
+        fromName: "Gateling-TMS",
+        defaultRecipientName: "عزيزي المستخدم",
+        greeting: "مرحبًا {name}،",
+        signature: "— فريق Gateling-TMS",
+        minuteSingular: "دقيقة",
+        minutePlural: "دقائق",
+      },
+      emailVerification: {
+        subject: "تأكيد عنوان بريدك الإلكتروني",
+        text: "مرحبًا {name}، يرجى تأكيد بريدك الإلكتروني خلال {expiryHours} ساعة: {verificationUrl}",
+        intro:
+          "يرجى تأكيد عنوان بريدك الإلكتروني. تنتهي صلاحية هذا الرابط خلال {expiryHours} ساعة.",
+        ctaLabel: "تأكيد البريد الإلكتروني",
+        ignore: "إذا لم تقم بإنشاء هذا الحساب، يمكنك تجاهل هذه الرسالة.",
+      },
+      passwordReset: {
+        subject: "رمز إعادة تعيين كلمة المرور",
+        text: "مرحبًا {name}، رمز إعادة تعيين كلمة المرور هو {code}. تنتهي صلاحيته خلال {expiresIn} {minutesLabel}.",
+        intro:
+          "استخدم الرمز أدناه لإعادة تعيين كلمة المرور. تنتهي صلاحيته خلال {expiresIn} {minutesLabel}.",
+        ignore: "إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذه الرسالة.",
+      },
+    },
+  },
 } as const satisfies LanguageMessages;
