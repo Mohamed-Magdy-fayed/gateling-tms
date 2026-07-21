@@ -1,0 +1,58 @@
+import "server-only";
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { headers } from "next/headers";
+
+import { normalizeEmail } from "@/features/core/auth/core/helpers";
+import { redisClient } from "@/integrations/redis";
+
+/**
+ * One limiter per auth endpoint so a burst on one flow (e.g. password-reset
+ * OTP guessing) can't be worked around by hitting a different endpoint that
+ * shares a budget.
+ */
+export const signInRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(10, "5 m"),
+  prefix: "ratelimit:sign-in",
+});
+
+export const signUpRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(5, "60 m"),
+  prefix: "ratelimit:sign-up",
+});
+
+export const passwordResetRequestRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(5, "60 m"),
+  prefix: "ratelimit:password-reset-request",
+});
+
+// Tighter window than the request limiter above — a 6-digit OTP has only
+// 1,000,000 combinations, so submission attempts need a stricter budget than
+// requesting a fresh code does.
+export const passwordResetSubmitRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(10, "15 m"),
+  prefix: "ratelimit:password-reset-submit",
+});
+
+export async function getRequestIp() {
+  const headerList = await headers();
+  const forwardedFor = headerList.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  }
+  return headerList.get("x-real-ip") || "unknown";
+}
+
+export function buildRatelimitKey(ip: string, email: string) {
+  return `${ip}:${normalizeEmail(email)}`;
+}
+
+/** Returns true when the caller has exceeded the limiter's budget. */
+export async function isRateLimited(limiter: Ratelimit, identifier: string) {
+  const { success } = await limiter.limit(identifier);
+  return !success;
+}

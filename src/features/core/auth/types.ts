@@ -1,5 +1,6 @@
 import type z from "zod";
 
+import type { OAuthProvider, User } from "@/drizzle/schema";
 import type { sessionSchema } from "./schemas";
 
 export type SessionPayload = z.infer<typeof sessionSchema>;
@@ -10,6 +11,39 @@ type SessionUser = SessionPayload["user"];
 export type PartialUser = Omit<SessionUser, "emailVerifiedAt"> & {
   emailVerifiedAt?: Date | string | null;
 };
+
+export type AuthState =
+  | { isAuthenticated: false; session: null }
+  | { isAuthenticated: true; session: { user: User; hasPassword: boolean } };
+
+export type OAuthConnection = {
+  provider: OAuthProvider;
+  displayName: string;
+  connected: boolean;
+  connectedAt: Date | null;
+};
+
+export type PasskeyListItem = {
+  id: string;
+  label: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  isBackupEligible: boolean;
+  isBackupState: boolean;
+  transports: string[];
+};
+
+export type RegistrationOptionsResult =
+  | { isError: false; options: PublicKeyCredentialCreationOptionsJSON }
+  | { isError: true; message: string };
+
+export type AuthenticationOptionsResult =
+  | {
+      isError: false;
+      options: PublicKeyCredentialRequestOptionsJSON;
+      email: string | null;
+    }
+  | { isError: true; message: string };
 
 export type Cookies = {
   set: (
