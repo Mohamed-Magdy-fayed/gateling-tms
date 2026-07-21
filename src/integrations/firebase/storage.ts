@@ -5,6 +5,11 @@ import { TRPCError } from "@trpc/server";
 import { getStorageBucket } from "./admin";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
+// Base64 inflates raw bytes by 4/3 — reject oversized/malformed input by
+// length and charset *before* decoding, so an oversized request can't force
+// a large allocation ahead of the post-decode size check.
+const MAX_BASE64_LENGTH = Math.ceil(MAX_IMAGE_BYTES / 3) * 4;
+const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
@@ -53,6 +58,18 @@ export async function uploadImage(
     });
   }
 
+  if (
+    !base64 ||
+    base64.length > MAX_BASE64_LENGTH ||
+    !BASE64_PATTERN.test(base64)
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "Image exceeds the maximum allowed size (8MB) or is not valid base64",
+    });
+  }
+
   const buffer = Buffer.from(base64, "base64");
 
   if (!buffer.length || buffer.length > MAX_IMAGE_BYTES) {
@@ -77,20 +94,26 @@ export async function uploadImage(
 }
 
 /**
- * Delete an image from Firebase Storage given its public URL.
- * Silently ignores errors (file already deleted, wrong bucket, etc.)
+ * Delete an image from Firebase Storage given its public URL. Never throws —
+ * callers can fire-and-forget — but only a confirmed "already gone" (404) is
+ * treated as success; permission, config, and network failures are logged
+ * server-side instead of being silently swallowed.
  */
 export async function deleteImage(publicUrl: string): Promise<void> {
+  const bucket = getStorageBucket();
+  const bucketName = bucket.name;
+  const prefix = `https://storage.googleapis.com/${bucketName}/`;
+
+  if (!publicUrl.startsWith(prefix)) return;
+
+  const filePath = decodeURIComponent(publicUrl.slice(prefix.length));
+
   try {
-    const bucket = getStorageBucket();
-    const bucketName = bucket.name;
-    const prefix = `https://storage.googleapis.com/${bucketName}/`;
-
-    if (!publicUrl.startsWith(prefix)) return;
-
-    const filePath = decodeURIComponent(publicUrl.slice(prefix.length));
     await bucket.file(filePath).delete();
-  } catch {
-    // Ignore failures — image already deleted or wrong URL format
+  } catch (err) {
+    const code = (err as { code?: number } | undefined)?.code;
+    if (code === 404) return; // already deleted — not an error
+
+    console.error("Failed to delete Firebase Storage object:", filePath, err);
   }
 }

@@ -27,3 +27,17 @@ export const env = createEnv({
   experimental__runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 });
+
+// Fail closed: INNGEST_DEV=1 disables Inngest's request signature
+// verification. That's fine for local dev (see .env.example) but must never
+// reach a deployed environment un-keyed, or the /api/inngest endpoint is
+// unprotected. Both keys are `.optional()` above only so local dev/build
+// doesn't require them before Phase 1 close-out actually sets them in Vercel.
+if (
+  env.NODE_ENV === "production" &&
+  (!env.INNGEST_SIGNING_KEY || !env.INNGEST_EVENT_KEY)
+) {
+  throw new Error(
+    "INNGEST_SIGNING_KEY and INNGEST_EVENT_KEY are required in production.",
+  );
+}
