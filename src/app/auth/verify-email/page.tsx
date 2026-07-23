@@ -1,4 +1,4 @@
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, KeyRoundIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -63,14 +63,29 @@ async function VerifyEmailBody({
     }
 
     return (
-      <Status variant={result.isError ? "error" : "success"}>
-        <StatusIndicator />
-        <StatusLabel>
-          {result.isError
-            ? result.message
-            : t("auth.emailVerification.success.verified")}
-        </StatusLabel>
-      </Status>
+      <div className="space-y-4">
+        <Status variant={result.isError ? "error" : "success"}>
+          <StatusIndicator />
+          <StatusLabel>
+            {result.isError
+              ? result.message
+              : t("auth.emailVerification.success.verified")}
+          </StatusLabel>
+        </Status>
+        {!result.isError ? (
+          // Post-verify optional passkey prompt (phase-02.md step 7) —
+          // skippable, straight to the dashboard either way.
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <LinkButton href="/auth/passkeys" className="flex-1">
+              <KeyRoundIcon />
+              {t("auth.emailVerification.passkeyPrompt.setUp")}
+            </LinkButton>
+            <LinkButton href="/dashboard" variant="outline" className="flex-1">
+              {t("auth.emailVerification.passkeyPrompt.skip")}
+            </LinkButton>
+          </div>
+        ) : null}
+      </div>
     );
   }
 

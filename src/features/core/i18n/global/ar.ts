@@ -220,6 +220,10 @@ export default {
       alreadyVerifiedNote: "بريدك الإلكتروني مؤكد بالفعل.",
       sent: "تم إرسال رسالة التأكيد.",
       success: { verified: "تم تأكيد بريدك الإلكتروني." },
+      passkeyPrompt: {
+        setUp: "إعداد مفتاح مرور",
+        skip: "تخطي، الانتقال إلى لوحة التحكم",
+      },
       notice: {
         missingEmail: "لا يوجد بريد إلكتروني مسجّل لتأكيده.",
         signInRequired: "سجّل الدخول لتأكيد بريدك الإلكتروني.",
@@ -366,6 +370,41 @@ export default {
         ctaLabel: "قبول الدعوة",
         ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
       },
+    },
+  },
+  dashboard: {
+    nav: {
+      generalGroup: "عام",
+    },
+    placeholder: {
+      title: "مرحبًا بك في Gateling-TMS",
+      description:
+        "لوحة التحكم جاهزة. مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة.",
+    },
+  },
+  getStarted: {
+    hero: {
+      title: "أنشئ مركزك التدريبي",
+      description: "مجاني للبدء. يستغرق حوالي دقيقة واحدة.",
+    },
+    step1: {
+      title: "أخبرنا عن نشاطك التجاري",
+      contactNameLabel: "اسمك",
+      businessNameLabel: "اسم النشاط التجاري",
+      emailLabel: "البريد الإلكتروني",
+      phoneLabel: "رقم الهاتف",
+      passwordLabel: "كلمة المرور",
+    },
+    step2: {
+      title: "مراجعة وإرسال",
+      submitting: "جاري إعداد حسابك…",
+      submit: "لنبدأ",
+    },
+    orgOnly: {
+      title: "سمِّ مركزك التدريبي",
+    },
+    validation: {
+      businessNameRequired: "اسم النشاط التجاري مطلوب.",
     },
   },
 } as const satisfies LanguageMessages;

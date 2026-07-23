@@ -221,6 +221,10 @@ export default {
       alreadyVerifiedNote: "Your email is already verified.",
       sent: "Verification email sent.",
       success: { verified: "Your email has been verified." },
+      passkeyPrompt: {
+        setUp: "Set up a passkey",
+        skip: "Skip, go to dashboard",
+      },
       notice: {
         missingEmail: "No email on file to verify.",
         signInRequired: "Sign in to verify your email.",
@@ -367,6 +371,41 @@ export default {
         ignore:
           "If you weren't expecting this invitation, you can ignore this email.",
       },
+    },
+  },
+  dashboard: {
+    nav: {
+      generalGroup: "General",
+    },
+    placeholder: {
+      title: "Welcome to Gateling-TMS",
+      description:
+        "Your dashboard is ready. Content Library, Learning Flow, and Live Classes land in upcoming phases.",
+    },
+  },
+  getStarted: {
+    hero: {
+      title: "Set up your training center",
+      description: "Free to start. Takes about a minute.",
+    },
+    step1: {
+      title: "Tell us about your business",
+      contactNameLabel: "Your name",
+      businessNameLabel: "Business name",
+      emailLabel: "Email",
+      phoneLabel: "Phone number",
+      passwordLabel: "Password",
+    },
+    step2: {
+      title: "Review and submit",
+      submitting: "Setting up your account…",
+      submit: "Let's go",
+    },
+    orgOnly: {
+      title: "Name your training center",
+    },
+    validation: {
+      businessNameRequired: "Business name is required.",
     },
   },
 } as const satisfies LanguageMessages;

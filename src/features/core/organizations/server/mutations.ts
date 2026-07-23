@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import type { PostgresError } from "postgres";
+import type { db as Database } from "@/drizzle";
 import {
   OrganizationMembershipsTable,
   OrganizationsTable,
@@ -41,22 +42,29 @@ function isShortCodeConflict(error: unknown): boolean {
   );
 }
 
-export async function createOrganization(
-  ctx: TRPCContext,
+/**
+ * Core org+admin-membership creation, independent of a tRPC context — reused
+ * by both the `organizations.create` mutation (an already-signed-in caller
+ * adding an org) and the get-started onboarding action (a brand-new user who
+ * doesn't have a session yet at the point their org is created, see
+ * `src/features/core/organizations/nextjs/actions/complete-onboarding.ts`).
+ * Does not touch cookies/session — callers decide whether/when to activate
+ * the new org.
+ */
+export async function createOrganizationForUser(
+  database: typeof Database,
+  userId: string,
   input: OrganizationProfileInput,
-) {
-  const session = ctx.session;
-  if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
-
+): Promise<{ organizationId: string }> {
   // generateUniqueOrganizationShortCode's own pre-check (findFirst) can't
-  // fully prevent two concurrent createOrganization calls from generating
-  // and inserting the same code before either commits — the pre-check is
-  // just an optimization to make a collision rare, not impossible. On a
-  // real 23505 against the short-code index, retry with a fresh code
-  // instead of failing the request for something the caller never chose.
+  // fully prevent two concurrent calls from generating and inserting the
+  // same code before either commits — the pre-check is just an optimization
+  // to make a collision rare, not impossible. On a real 23505 against the
+  // short-code index, retry with a fresh code instead of failing the
+  // request for something the caller never chose.
   for (let attempt = 1; attempt <= MAX_SHORT_CODE_ATTEMPTS; attempt++) {
     try {
-      const organizationId = await ctx.db.transaction(async (trx) => {
+      const organizationId = await database.transaction(async (trx) => {
         const shortCode = await generateUniqueOrganizationShortCode(
           trx,
           input.name,
@@ -71,20 +79,19 @@ export async function createOrganization(
             phone: nullableTrim(input.phone),
             website: nullableTrim(input.website),
             plan: "free",
-            ownerId: session.user.id,
+            ownerId: userId,
           })
           .returning({ id: OrganizationsTable.id });
 
         await trx.insert(OrganizationMembershipsTable).values({
           organizationId: organization.id,
-          userId: session.user.id,
+          userId,
           role: "admin",
         });
 
         return organization.id;
       });
 
-      await setActiveOrganization(organizationId, ctx.cookies);
       return { organizationId };
     } catch (error) {
       if (!isShortCodeConflict(error) || attempt === MAX_SHORT_CODE_ATTEMPTS) {
@@ -96,10 +103,23 @@ export async function createOrganization(
   // Unreachable — the loop above always either returns or throws on its
   // last attempt — but keeps the function's return type from needing
   // `undefined`.
-  throw new TRPCError({
-    code: "INTERNAL_SERVER_ERROR",
-    message: ctx.t("errors.generic"),
-  });
+  throw new Error("createOrganizationForUser: retry loop exited without a result");
+}
+
+export async function createOrganization(
+  ctx: TRPCContext,
+  input: OrganizationProfileInput,
+) {
+  const session = ctx.session;
+  if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  const { organizationId } = await createOrganizationForUser(
+    ctx.db,
+    session.user.id,
+    input,
+  );
+  await setActiveOrganization(organizationId, ctx.cookies);
+  return { organizationId };
 }
 
 export async function updateOrganization(
