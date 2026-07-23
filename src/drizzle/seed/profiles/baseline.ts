@@ -1,36 +1,127 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
+  type OrganizationMembershipRole,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UserCredentialsTable,
   UsersTable,
 } from "@/drizzle/schema";
+import { generateSalt, hashPassword } from "@/features/core/auth/core/passwordHasher";
 import { seedIfMissing } from "../base";
 import {
   SEED_ADMIN_EMAIL,
   SEED_ADMIN_ID,
+  SEED_DEFAULT_PASSWORD,
   SEED_ORG_ID,
   SEED_ORG_NAME,
   SEED_ORG_SHORT_CODE,
+  SEED_STUDENT_1_EMAIL,
+  SEED_STUDENT_1_ID,
+  SEED_STUDENT_2_EMAIL,
+  SEED_STUDENT_2_ID,
   SEED_SYSTEM_ACTOR,
+  SEED_TEACHER_EMAIL,
+  SEED_TEACHER_ID,
 } from "../constants";
 
-/**
- * NOT a real password hash — real hashing (argon2/bcrypt) is wired up in
- * Phase 2 alongside the auth feature. This placeholder exists only so the
- * `user_credentials` row satisfies its NOT NULL columns; it can never
- * authenticate anything until Phase 2 replaces it.
- */
-const PLACEHOLDER_PASSWORD_HASH = "UNSET_PENDING_PHASE_2_AUTH";
-const PLACEHOLDER_PASSWORD_SALT = "UNSET_PENDING_PHASE_2_AUTH";
+async function seedMember({
+  id,
+  email,
+  name,
+  organizationId,
+  role,
+}: {
+  id: string;
+  email: string;
+  name: string;
+  organizationId: string;
+  role: OrganizationMembershipRole;
+}) {
+  const user = await seedIfMissing({
+    label: `${role} user ${email}`,
+    find: async () => {
+      const [row] = await db
+        .select()
+        .from(UsersTable)
+        .where(eq(UsersTable.email, email))
+        .limit(1);
+      return row;
+    },
+    insert: async () => {
+      const [row] = await db
+        .insert(UsersTable)
+        .values({
+          id,
+          email,
+          name,
+          emailVerifiedAt: new Date(),
+          createdBy: SEED_SYSTEM_ACTOR,
+        })
+        .returning();
+      return row;
+    },
+  });
+
+  await seedIfMissing({
+    label: `credentials for ${email}`,
+    find: async () => {
+      const [row] = await db
+        .select()
+        .from(UserCredentialsTable)
+        .where(eq(UserCredentialsTable.userId, user.id))
+        .limit(1);
+      return row;
+    },
+    insert: async () => {
+      const salt = generateSalt();
+      const passwordHash = await hashPassword(SEED_DEFAULT_PASSWORD, salt);
+      const [row] = await db
+        .insert(UserCredentialsTable)
+        .values({
+          userId: user.id,
+          passwordHash,
+          passwordSalt: salt,
+        })
+        .returning();
+      return row;
+    },
+  });
+
+  await seedIfMissing({
+    label: `membership of ${email} in org ${organizationId} as ${role}`,
+    find: async () => {
+      const [row] = await db
+        .select()
+        .from(OrganizationMembershipsTable)
+        .where(
+          and(
+            eq(OrganizationMembershipsTable.organizationId, organizationId),
+            eq(OrganizationMembershipsTable.userId, user.id),
+          ),
+        )
+        .limit(1);
+      return row;
+    },
+    insert: async () => {
+      const [row] = await db
+        .insert(OrganizationMembershipsTable)
+        .values({ organizationId, userId: user.id, role })
+        .returning();
+      return row;
+    },
+  });
+
+  return user;
+}
 
 /**
- * Minimal dev bootstrap: one organization + one admin user + the membership
- * linking them. Additive-only and idempotent — each record is looked up by
- * a stable natural key (org short code, user email) and only inserted if
- * missing. Existing rows are never updated or deleted, so running this
- * profile twice in a row is a no-op the second time.
+ * Dev bootstrap: one organization, one admin, one teacher, two students —
+ * all signed in with the same known dev password (`SEED_DEFAULT_PASSWORD`,
+ * documented in README.md). Additive-only and idempotent — each record is
+ * looked up by a stable natural key (org short code, user email) and only
+ * inserted if missing. Existing rows are never updated or deleted, so
+ * running this profile twice in a row is a no-op the second time.
  */
 export async function seedBaselineProfile() {
   const organization = await seedIfMissing({
@@ -44,6 +135,10 @@ export async function seedBaselineProfile() {
       return row;
     },
     insert: async () => {
+      // `ownerId` is left unset here (nullable column) rather than pointed
+      // at SEED_ADMIN_ID — the admin user row doesn't exist yet at this
+      // point in the seed (seedMember for the admin runs next), and
+      // ownerId's FK would fail against a not-yet-inserted row.
       const [row] = await db
         .insert(OrganizationsTable)
         .values({
@@ -57,88 +152,43 @@ export async function seedBaselineProfile() {
     },
   });
 
-  const adminUser = await seedIfMissing({
-    label: `admin user ${SEED_ADMIN_EMAIL}`,
-    find: async () => {
-      const [row] = await db
-        .select()
-        .from(UsersTable)
-        .where(eq(UsersTable.email, SEED_ADMIN_EMAIL))
-        .limit(1);
-      return row;
-    },
-    insert: async () => {
-      const [row] = await db
-        .insert(UsersTable)
-        .values({
-          id: SEED_ADMIN_ID,
-          email: SEED_ADMIN_EMAIL,
-          name: "Gateling-TMS Admin",
-          emailVerifiedAt: new Date(),
-          createdBy: SEED_SYSTEM_ACTOR,
-        })
-        .returning();
-      return row;
-    },
+  await seedMember({
+    id: SEED_ADMIN_ID,
+    email: SEED_ADMIN_EMAIL,
+    name: "Gateling-TMS Admin",
+    organizationId: organization.id,
+    role: "admin",
   });
 
-  await seedIfMissing({
-    label: `credentials placeholder for ${SEED_ADMIN_EMAIL}`,
-    find: async () => {
-      const [row] = await db
-        .select()
-        .from(UserCredentialsTable)
-        .where(eq(UserCredentialsTable.userId, adminUser.id))
-        .limit(1);
-      return row;
-    },
-    insert: async () => {
-      const [row] = await db
-        .insert(UserCredentialsTable)
-        .values({
-          userId: adminUser.id,
-          passwordHash: PLACEHOLDER_PASSWORD_HASH,
-          passwordSalt: PLACEHOLDER_PASSWORD_SALT,
-          mustChangePassword: true,
-        })
-        .returning();
-      return row;
-    },
+  await seedMember({
+    id: SEED_TEACHER_ID,
+    email: SEED_TEACHER_EMAIL,
+    name: "Gateling-TMS Teacher",
+    organizationId: organization.id,
+    role: "teacher",
   });
 
-  await seedIfMissing({
-    label: `membership of ${SEED_ADMIN_EMAIL} in "${organization.name}"`,
-    find: async () => {
-      const [row] = await db
-        .select()
-        .from(OrganizationMembershipsTable)
-        .where(
-          and(
-            eq(OrganizationMembershipsTable.organizationId, organization.id),
-            eq(OrganizationMembershipsTable.userId, adminUser.id),
-          ),
-        )
-        .limit(1);
-      return row;
-    },
-    insert: async () => {
-      const [row] = await db
-        .insert(OrganizationMembershipsTable)
-        .values({
-          organizationId: organization.id,
-          userId: adminUser.id,
-          role: "admin",
-        })
-        .returning();
-      return row;
-    },
+  await seedMember({
+    id: SEED_STUDENT_1_ID,
+    email: SEED_STUDENT_1_EMAIL,
+    name: "Gateling-TMS Student One",
+    organizationId: organization.id,
+    role: "student",
+  });
+
+  await seedMember({
+    id: SEED_STUDENT_2_ID,
+    email: SEED_STUDENT_2_EMAIL,
+    name: "Gateling-TMS Student Two",
+    organizationId: organization.id,
+    role: "student",
   });
 
   console.info(
-    'Baseline profile ready: organization "%s" (%s), admin user %s.',
+    'Baseline profile ready: organization "%s" (%s) with admin/teacher/2 students, all password "%s".',
     organization.name,
     SEED_ORG_SHORT_CODE,
-    SEED_ADMIN_EMAIL,
+    SEED_DEFAULT_PASSWORD,
   );
 
   return { profile: "baseline" as const };
