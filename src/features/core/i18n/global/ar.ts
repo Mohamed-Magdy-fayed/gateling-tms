@@ -220,6 +220,10 @@ export default {
       alreadyVerifiedNote: "بريدك الإلكتروني مؤكد بالفعل.",
       sent: "تم إرسال رسالة التأكيد.",
       success: { verified: "تم تأكيد بريدك الإلكتروني." },
+      passkeyPrompt: {
+        setUp: "إعداد مفتاح مرور",
+        skip: "تخطي، الانتقال إلى لوحة التحكم",
+      },
       notice: {
         missingEmail: "لا يوجد بريد إلكتروني مسجّل لتأكيده.",
         signInRequired: "سجّل الدخول لتأكيد بريدك الإلكتروني.",

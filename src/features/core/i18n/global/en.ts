@@ -221,6 +221,10 @@ export default {
       alreadyVerifiedNote: "Your email is already verified.",
       sent: "Verification email sent.",
       success: { verified: "Your email has been verified." },
+      passkeyPrompt: {
+        setUp: "Set up a passkey",
+        skip: "Skip, go to dashboard",
+      },
       notice: {
         missingEmail: "No email on file to verify.",
         signInRequired: "Sign in to verify your email.",
