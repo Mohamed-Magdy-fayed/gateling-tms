@@ -1,6 +1,6 @@
 import { H3, Muted } from "@/components/ui/typography";
-import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
 import { PasskeyManager } from "@/features/core/auth/nextjs/components/passkey-manager";
+import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
 import { getT } from "@/features/core/i18n/server";
 
 // Temporary home for passkey management until the dashboard shell (phase-02

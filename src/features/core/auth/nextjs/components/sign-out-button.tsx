@@ -45,7 +45,11 @@ export function SignOutButton({
       variant={variant}
       {...buttonProps}
     >
-      {isLoading ? <Spinner /> : (children ?? t("auth.signOut"))}
+      {isLoading ? (
+        <Spinner label={t("common.loading")} />
+      ) : (
+        (children ?? t("auth.signOut"))
+      )}
     </Button>
   );
 }

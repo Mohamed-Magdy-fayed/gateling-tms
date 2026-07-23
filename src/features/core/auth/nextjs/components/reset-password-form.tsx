@@ -79,7 +79,11 @@ export function ResetPasswordForm({
         </form.AppField>
       </FieldSet>
       <ButtonGroup className="w-full gap-2">
-        <BackLink href="/auth/forgot-password" variant="outline" />
+        <BackLink
+          aria-label={t("auth.signIn.back")}
+          href="/auth/forgot-password"
+          variant="outline"
+        />
         <form.Subscribe selector={(state) => state.isSubmitting}>
           {(isSubmitting) => (
             <Button disabled={isPending || isSubmitting} type="submit">
