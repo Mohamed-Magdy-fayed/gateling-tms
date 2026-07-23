@@ -71,4 +71,5 @@ Setup happens in Phase 0 (Vercel project + Neon project + env scaffolding); cred
 
 - Every working message: **current segment**, what changed, **how to test it right now**, what's next.
 - Ask Mohamed only for: merges, credentials, and genuine product decisions (recorded as D-numbers in STATE.md). Everything else: decide per this blueprint and record it.
+- **The agent never drives a live browser to perform functional/manual verification** (OAuth consent screens, passkey ceremonies, full user journeys, anything a phase's verification gate marks as needing a human). The agent's responsibility stops at the automated gate (`check`/`build`/`test`/`audit:gate`) and code review; functional walkthroughs are Mohamed's, on localhost or together in a live session.
 - End-of-session: STATE.md updated (segment status, open PR links, next action) so the next session resumes cold from the kickoff command.
