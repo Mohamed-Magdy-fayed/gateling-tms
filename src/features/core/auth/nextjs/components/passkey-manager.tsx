@@ -16,6 +16,13 @@ import {
 import type { PasskeyListItem } from "@/features/core/auth/types";
 import { useTranslation } from "@/features/core/i18n/client";
 
+// Fixed locale/timeZone rather than the environment default — this data is
+// only ever populated after mount (see the effect below), but pinning the
+// format removes any dependency on server vs. client locale/timezone.
+function formatPasskeyTimestamp(iso: string) {
+  return new Date(iso).toLocaleString("en-US", { timeZone: "UTC" });
+}
+
 export function PasskeyManager() {
   const { t } = useTranslation();
   const [passkeys, setPasskeys] = useState<PasskeyListItem[]>([]);
@@ -77,6 +84,10 @@ export function PasskeyManager() {
   }
 
   async function handleDelete(id: string) {
+    // A passkey may be the account's only sign-in method — confirm before
+    // an irreversible removal instead of firing immediately on click.
+    if (!window.confirm(t("auth.passkeys.delete.confirm"))) return;
+
     setBusyId(id);
 
     try {
@@ -124,12 +135,12 @@ export function PasskeyManager() {
               </p>
               <p className="text-muted-foreground text-xs">
                 {t("auth.passkeys.list.created")}{" "}
-                {new Date(item.createdAt).toLocaleString()}
+                {formatPasskeyTimestamp(item.createdAt)}
               </p>
               {item.lastUsedAt && (
                 <p className="text-muted-foreground text-xs">
                   {t("auth.passkeys.list.lastUsed")}{" "}
-                  {new Date(item.lastUsedAt).toLocaleString()}
+                  {formatPasskeyTimestamp(item.lastUsedAt)}
                 </p>
               )}
             </div>
