@@ -31,6 +31,7 @@ import { hashTokenValue } from "@/features/core/auth/core/token";
 import { validateInput } from "@/features/core/auth/nextjs/actions/helpers";
 import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
 import { getPostAuthRedirect } from "@/features/core/auth/nextjs/lib/post-auth-redirect";
+import { resolveDefaultActiveOrganizationId } from "@/features/core/organizations/server";
 import type {
   AuthenticationOptionsResult,
   PartialUser,
@@ -423,7 +424,8 @@ export async function completePasskeyAuthenticationAction(
     .set({ lastSignInAt: new Date() })
     .where(eq(UsersTable.id, user.id));
 
-  await createUserSession({ user }, await cookies());
+  const activeOrganizationId = await resolveDefaultActiveOrganizationId(user.id);
+  await createUserSession({ user, activeOrganizationId }, await cookies());
   redirect(getPostAuthRedirect(user, returnTo));
 }
 
