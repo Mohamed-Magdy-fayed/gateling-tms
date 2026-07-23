@@ -69,9 +69,9 @@ describe("organizationOnlySchema", () => {
     ).toBe(false);
   });
 
-  test("rejects extra fields not in the org-only step", () => {
-    // Not the point of the test to enforce strict() (schema doesn't use it),
-    // but confirms the picked schema only requires businessName.
+  test("accepts extra fields not in the org-only step (schema doesn't use strict())", () => {
+    // Confirms the picked schema only *requires* businessName — passing
+    // along fields from a shared form value object isn't itself a failure.
     const result = organizationOnlySchema.safeParse({
       businessName: "Nile Academy",
       email: "ignored@example.com",

@@ -47,3 +47,10 @@ short code `DEV1`) with four accounts, all sharing the same dev password:
 | Student | `student2@gateling-tms.dev` | `DevPass123!` |
 
 Dev-only credentials — never reused for preview/production seed data.
+
+**Already had a database seeded before this table existed?** `db:seed` never
+updates an existing row (additive-only by design), so a stale admin
+credential row from before won't pick up the real password on its own. Run
+`npm run db:seed:clear` (wipes seeded data — never run this against
+preview/prod) followed by `npm run db:seed` once to pick up the real
+credentials.

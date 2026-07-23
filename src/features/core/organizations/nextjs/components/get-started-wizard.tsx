@@ -39,7 +39,13 @@ export function GetStartedWizard() {
     onSubmit: ({ value }) => {
       startTransition(async () => {
         try {
-          await completeOnboardingAction(value);
+          const result = await completeOnboardingAction(value);
+          // Only expected failures (validation, rate limiting) return here —
+          // success redirects, which Next.js implements by throwing, so this
+          // line is never reached on the happy path.
+          if (result.isError) {
+            toast.error(result.message);
+          }
         } catch (error) {
           if (isNextRedirectError(error)) throw error;
           toast.error(
