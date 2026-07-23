@@ -14,7 +14,7 @@ import {
 // (accepting an org invite) are deliberately absent from this list — both
 // must be reachable by an authed user who doesn't have an org yet, since
 // they're how that user gets one in the first place.
-const PROTECTED_PATH_PREFIXES = ["/demo", "/organizations"];
+const PROTECTED_PATH_PREFIXES = ["/demo", "/organizations", "/dashboard"];
 
 const AUTH_ROUTE_PREFIX = "/auth";
 

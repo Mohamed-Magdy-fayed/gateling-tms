@@ -368,4 +368,14 @@ export default {
       },
     },
   },
+  dashboard: {
+    nav: {
+      generalGroup: "عام",
+    },
+    placeholder: {
+      title: "مرحبًا بك في Gateling-TMS",
+      description:
+        "لوحة التحكم جاهزة. مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة.",
+    },
+  },
 } as const satisfies LanguageMessages;

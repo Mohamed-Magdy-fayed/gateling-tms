@@ -369,4 +369,14 @@ export default {
       },
     },
   },
+  dashboard: {
+    nav: {
+      generalGroup: "General",
+    },
+    placeholder: {
+      title: "Welcome to Gateling-TMS",
+      description:
+        "Your dashboard is ready. Content Library, Learning Flow, and Live Classes land in upcoming phases.",
+    },
+  },
 } as const satisfies LanguageMessages;

@@ -68,14 +68,14 @@ describe("getPostAuthRedirect", () => {
     );
   });
 
-  test("falls back to home for a verified user with no returnTo", () => {
+  test("falls back to the dashboard for a verified user with no returnTo", () => {
     const user = buildUser();
-    expect(getPostAuthRedirect(user, undefined)).toBe("/");
+    expect(getPostAuthRedirect(user, undefined)).toBe("/dashboard");
   });
 
-  test("falls back to home for a verified user with an unsafe returnTo", () => {
+  test("falls back to the dashboard for a verified user with an unsafe returnTo", () => {
     const user = buildUser();
-    expect(getPostAuthRedirect(user, "//evil.example.com")).toBe("/");
+    expect(getPostAuthRedirect(user, "//evil.example.com")).toBe("/dashboard");
   });
 });
 

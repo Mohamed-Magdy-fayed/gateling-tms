@@ -27,7 +27,7 @@ export function getPostAuthRedirect(user: PartialUser, returnTo?: string) {
     return "/auth/verify-email";
   }
   if (isSafeReturnTo(returnTo)) return returnTo;
-  return "/";
+  return "/dashboard";
 }
 
 /**

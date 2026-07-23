@@ -3,9 +3,8 @@ import { PasskeyManager } from "@/features/core/auth/nextjs/components/passkey-m
 import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
 import { getT } from "@/features/core/i18n/server";
 
-// Temporary home for passkey management until the dashboard shell (phase-02
-// step 8) exists — this is the only authed page in this segment, so it's
-// where Mohamed can register/remove a passkey to test the sign-in flow.
+// Reachable from the dashboard sidebar's user menu (phase-02 step 8) and
+// from the post-verify passkey prompt (phase-02 step 7).
 export default async function PasskeysPage() {
   await getCurrentUser({ redirectIfNotFound: true });
   const { t } = await getT();
