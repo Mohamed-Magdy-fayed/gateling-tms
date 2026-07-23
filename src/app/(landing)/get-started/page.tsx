@@ -1,8 +1,8 @@
-import { GetStartedWizard } from "@/features/core/organizations/nextjs/components/get-started-wizard";
-import { OrganizationOnlyOnboardingForm } from "@/features/core/organizations/nextjs/components/organization-only-onboarding-form";
+import { H1, Lead } from "@/components/ui/typography";
 import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
 import { getT } from "@/features/core/i18n/server";
-import { H1, Lead } from "@/components/ui/typography";
+import { GetStartedWizard } from "@/features/core/organizations/nextjs/components/get-started-wizard";
+import { OrganizationOnlyOnboardingForm } from "@/features/core/organizations/nextjs/components/organization-only-onboarding-form";
 
 // Reachable both by a brand-new anonymous visitor (the primary entry point,
 // phase-02.md step 7) and by an authed-without-org user redirected here by
