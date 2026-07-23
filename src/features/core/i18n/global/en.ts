@@ -420,4 +420,131 @@ export default {
       businessNameRequired: "Business name is required.",
     },
   },
+  landing: {
+    header: {
+      signIn: "Sign in",
+      getStarted: "Get Started Free",
+      dashboard: "Dashboard",
+    },
+    footer: {
+      tagline:
+        "Gateling-TMS is your gateway to manage your online teaching business — course management, live classes, and student tracking in one place.",
+      copyright: "© {year} Gateling. All rights reserved.",
+    },
+    hero: {
+      title: "Your gateway to manage your online teaching business",
+      subtitle:
+        "Sign up free, create your academy, and start managing classes and students in minutes — no sales call, no setup project.",
+      primaryCta: "Get Started Free",
+      secondaryCta: "Sign in",
+      highlights: {
+        free: "Free plan, no time limit",
+        noCard: "No credit card required",
+        bilingual: "Bilingual — English & Arabic",
+      },
+    },
+    valueProposition: {
+      instantOnboarding: {
+        title: "Instant onboarding",
+        description:
+          "Sign up and start managing classes in one sitting — no mandatory setup, no sales call.",
+      },
+      excelFirst: {
+        title: "Excel-first",
+        description:
+          "Import students and content from the spreadsheets you already use, with templates for every major list.",
+      },
+      freeForever: {
+        title: "Free means free",
+        description:
+          "No time limit, no credit card. Limits are generous enough to run a small academy — upgrade only when you outgrow them.",
+      },
+      bilingual: {
+        title: "Bilingual by design",
+        description:
+          "English and Arabic are equals, with full right-to-left support built in.",
+      },
+    },
+    featuresPreview: {
+      title: "Everything your academy needs",
+      subtitle:
+        "The free tier covers content, classes, and live sessions today. More is on the way.",
+      free: "Free",
+      comingSoon: "Coming soon",
+      modules: {
+        contentLibrary: {
+          title: "Content Library",
+          description:
+            "Store lecture content, organize it by course, and find anything with search and filters.",
+        },
+        learningFlow: {
+          title: "Learning Flow",
+          description:
+            "Structure courses into levels, track student progress, and run assessments.",
+        },
+        liveClasses: {
+          title: "Live Classes",
+          description:
+            "Host HD video sessions, share your screen, and record classes — powered by Zoom.",
+        },
+        hr: {
+          title: "HR Management",
+          description:
+            "Manage staff, payroll, performance, and attendance in one place.",
+        },
+        courseStore: {
+          title: "Course Store",
+          description:
+            "Sell courses online with built-in payments and sales analytics.",
+        },
+        crm: {
+          title: "CRM System",
+          description: "Track leads, student profiles, and enrollment history.",
+        },
+        smartForms: {
+          title: "Smart Forms",
+          description:
+            "Build custom forms with workflow automation across your organization.",
+        },
+        community: {
+          title: "Community Platform",
+          description: "Discussion forums, student groups, and peer-to-peer learning.",
+        },
+        support: {
+          title: "Support System",
+          description:
+            "Ticketing, live chat, and a knowledge base for your students.",
+        },
+      },
+    },
+    process: {
+      title: "From sign-up to your first class",
+      subtitle: "No master data, no setup project — just four steps.",
+      steps: {
+        signUp: {
+          title: "Sign up",
+          description: "Create your account — free, no credit card.",
+        },
+        setUp: {
+          title: "Set up your academy",
+          description: "Name your organization and verify your email.",
+        },
+        addClasses: {
+          title: "Add classes & students",
+          description:
+            "Create a class and add students — type them in or import from Excel.",
+        },
+        teach: {
+          title: "Teach",
+          description:
+            "Schedule sessions, share content, and track progress from your dashboard.",
+        },
+      },
+    },
+    finalCta: {
+      title: "Ready to run your academy online?",
+      subtitle: "Join for free — no credit card, no time limit.",
+      cta: "Get Started Free",
+    },
+  },
 } as const satisfies LanguageMessages;
