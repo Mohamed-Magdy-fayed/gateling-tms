@@ -429,6 +429,7 @@ export default {
     footer: {
       tagline:
         "Gateling-TMS is your gateway to manage your online teaching business — course management, live classes, and student tracking in one place.",
+      linksHeading: "Quick links",
       copyright: "© {year} Gateling. All rights reserved.",
     },
     hero: {
@@ -442,8 +443,37 @@ export default {
         noCard: "No credit card required",
         bilingual: "Bilingual — English & Arabic",
       },
+      demo: {
+        courseTitle: "Intro to Algebra",
+        courseCategory: "Mathematics",
+        courseLevel: "Beginner",
+        lessonsLabel: "24 lessons",
+        durationLabel: "6h",
+        priceLabel: "Free",
+      },
+      socialProof: {
+        count: "1,000+ academies",
+        suffix: "already teach on Gateling",
+      },
+    },
+    logos: {
+      eyebrow: "Trusted by academies everywhere",
+    },
+    testimonial: {
+      eyebrow: "What academies say",
+      quote:
+        "“We moved our whole academy onto Gateling in a weekend. Enrollment is up and I finally stopped juggling spreadsheets.”",
+      initials: "PN",
+      name: "Priya N.",
+      role: "Founder, BrightPath Academy",
     },
     valueProposition: {
+      header: {
+        eyebrow: "Why Gateling",
+        title: "Built for how you actually teach",
+        description:
+          "No fluff, no lock-in — just the tools your academy needs from day one.",
+      },
       instantOnboarding: {
         title: "Instant onboarding",
         description:
@@ -466,6 +496,7 @@ export default {
       },
     },
     featuresPreview: {
+      eyebrow: "Everything in one place",
       title: "Everything your academy needs",
       subtitle:
         "The free tier covers content, classes, and live sessions today. More is on the way.",
@@ -508,7 +539,8 @@ export default {
         },
         community: {
           title: "Community Platform",
-          description: "Discussion forums, student groups, and peer-to-peer learning.",
+          description:
+            "Discussion forums, student groups, and peer-to-peer learning.",
         },
         support: {
           title: "Support System",
@@ -518,6 +550,7 @@ export default {
       },
     },
     process: {
+      eyebrow: "How it works",
       title: "From sign-up to your first class",
       subtitle: "No master data, no setup project — just four steps.",
       steps: {

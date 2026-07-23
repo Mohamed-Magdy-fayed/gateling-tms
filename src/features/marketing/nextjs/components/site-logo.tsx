@@ -1,8 +1,14 @@
-import { SparklesIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export function SiteLogo({ className }: { className?: string }) {
+export function SiteLogo({
+  className,
+  priority = false,
+}: {
+  className?: string;
+  priority?: boolean;
+}) {
   return (
     <Link
       href="/"
@@ -11,9 +17,14 @@ export function SiteLogo({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <SparklesIcon className="size-4" />
-      </span>
+      <Image
+        src="/brand/logo-mark.png"
+        alt=""
+        width={32}
+        height={32}
+        className="size-8"
+        priority={priority}
+      />
       Gateling
     </Link>
   );

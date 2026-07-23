@@ -5,6 +5,7 @@ import {
   RocketIcon,
   ShieldCheckIcon,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { getT } from "@/features/core/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -31,24 +32,41 @@ export async function ValuePropositionSection() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="font-bold text-primary text-xs uppercase tracking-wider">
+          {t("landing.valueProposition.header.eyebrow")}
+        </p>
+        <h2 className="mt-2 font-display font-bold text-3xl text-foreground">
+          {t("landing.valueProposition.header.title")}
+        </h2>
+        <p className="mt-3 text-muted-foreground">
+          {t("landing.valueProposition.header.description")}
+        </p>
+      </div>
+
+      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ key, icon: Icon, tone }) => (
-          <div key={key} className="space-y-3 rounded-lg border bg-card p-5">
-            <span
-              className={cn(
-                "flex size-10 items-center justify-center rounded-lg",
-                toneClasses[tone],
-              )}
-            >
-              <Icon className="size-5" />
-            </span>
-            <h3 className="font-display font-semibold text-foreground">
-              {t(`landing.valueProposition.${key}.title`)}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {t(`landing.valueProposition.${key}.description`)}
-            </p>
-          </div>
+          <Card
+            key={key}
+            className="transition-transform duration-300 ease-out-soft hover:-translate-y-1"
+          >
+            <CardContent className="space-y-3">
+              <span
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-lg",
+                  toneClasses[tone],
+                )}
+              >
+                <Icon className="size-5" />
+              </span>
+              <h3 className="font-display font-semibold text-foreground">
+                {t(`landing.valueProposition.${key}.title`)}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t(`landing.valueProposition.${key}.description`)}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>
