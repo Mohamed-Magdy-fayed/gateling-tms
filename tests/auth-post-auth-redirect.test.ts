@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildCrossAuthLink,
   getPostAuthRedirect,
   isSafeReturnTo,
 } from "../src/features/core/auth/nextjs/lib/post-auth-redirect";
@@ -75,5 +76,31 @@ describe("getPostAuthRedirect", () => {
   test("falls back to home for a verified user with an unsafe returnTo", () => {
     const user = buildUser();
     expect(getPostAuthRedirect(user, "//evil.example.com")).toBe("/");
+  });
+});
+
+describe("buildCrossAuthLink", () => {
+  test("returns the bare path when there's nothing to carry over", () => {
+    const params = new URLSearchParams();
+    expect(buildCrossAuthLink("/auth/sign-up", params)).toBe("/auth/sign-up");
+  });
+
+  test("carries returnTo and email over to the other form", () => {
+    // e.g. an invite link routed the visitor to sign-up with these params —
+    // clicking over to sign-in instead must not lose that context.
+    const params = new URLSearchParams({
+      returnTo: "/invite/abc123",
+      email: "trainer@example.com",
+    });
+    expect(buildCrossAuthLink("/auth/sign-in", params)).toBe(
+      "/auth/sign-in?returnTo=%2Finvite%2Fabc123&email=trainer%40example.com",
+    );
+  });
+
+  test("carries only the params that are actually present", () => {
+    const params = new URLSearchParams({ email: "trainer@example.com" });
+    expect(buildCrossAuthLink("/auth/sign-in", params)).toBe(
+      "/auth/sign-in?email=trainer%40example.com",
+    );
   });
 });

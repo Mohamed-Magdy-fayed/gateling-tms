@@ -26,6 +26,10 @@ export const organizationMemberInvitedEvent = eventType(
       email: z.string(),
       role: z.enum(organizationMembershipRoleValues),
       invitedByUserId: z.string(),
+      // Captured from ctx.locale at the point the invite mutation ran (a
+      // real request scope) — this function has no browser-sent locale
+      // cookie to read, see send-organization-invite.ts.
+      locale: z.string(),
     }),
   },
 );
@@ -34,7 +38,8 @@ export const onOrganizationMemberInvited = inngest.createFunction(
   { id: "on-organization-member-invited", triggers: [organizationMemberInvitedEvent] },
   async ({ event, step }) => {
     return step.run("create-token-and-send-invite-email", async () => {
-      const { organizationId, email, role, invitedByUserId } = event.data;
+      const { organizationId, email, role, invitedByUserId, locale } =
+        event.data;
 
       const [organization, inviter] = await Promise.all([
         db.query.OrganizationsTable.findFirst({
@@ -54,27 +59,40 @@ export const onOrganizationMemberInvited = inngest.createFunction(
         columns: { id: true },
       });
 
-      // Inngest can retry/redeliver this step — delete any prior invite
-      // token for this exact org+email pair first, mirroring
-      // on-user-registered.ts's idempotency pattern, so a retry never
-      // accumulates extra live tokens for the same invite.
-      await db
-        .delete(UserTokensTable)
-        .where(
-          and(
-            eq(UserTokensTable.type, "org_invite"),
-            sql`${UserTokensTable.metadata}->>'organizationId' = ${organizationId}`,
-            sql`${UserTokensTable.metadata}->>'email' = ${email}`,
-          ),
+      const rawToken = createTokenValue();
+
+      await db.transaction(async (trx) => {
+        // A double-click (or Inngest redelivery racing a fresh invite for
+        // the same org+email) could otherwise interleave two concurrent
+        // delete-then-insert sequences and leave two live tokens for the
+        // same pair. An advisory lock keyed on (organizationId, email)
+        // serializes concurrent invocations for that exact pair — cheap,
+        // no schema change, and released automatically at commit.
+        await trx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${organizationId}:${email}`}, 0))`,
         );
 
-      const rawToken = createTokenValue();
-      await db.insert(UserTokensTable).values({
-        userId: existingUser?.id ?? null,
-        tokenHash: hashTokenValue(rawToken),
-        type: "org_invite",
-        expiresAt: new Date(Date.now() + EMAIL_TOKEN_TTL_MS),
-        metadata: { organizationId, email, role },
+        // Delete any prior invite token for this exact org+email pair
+        // first, mirroring on-user-registered.ts's idempotency pattern, so
+        // a retry (or the lock above releasing into a second invocation)
+        // never leaves more than one active token for the same invite.
+        await trx
+          .delete(UserTokensTable)
+          .where(
+            and(
+              eq(UserTokensTable.type, "org_invite"),
+              sql`${UserTokensTable.metadata}->>'organizationId' = ${organizationId}`,
+              sql`${UserTokensTable.metadata}->>'email' = ${email}`,
+            ),
+          );
+
+        await trx.insert(UserTokensTable).values({
+          userId: existingUser?.id ?? null,
+          tokenHash: hashTokenValue(rawToken),
+          type: "org_invite",
+          expiresAt: new Date(Date.now() + EMAIL_TOKEN_TTL_MS),
+          metadata: { organizationId, email, role },
+        });
       });
 
       const acceptUrl = new URL(`/invite/${rawToken}`, baseUrl);
@@ -84,6 +102,7 @@ export const onOrganizationMemberInvited = inngest.createFunction(
         organizationName: organization.name,
         inviterName: inviter?.name ?? null,
         acceptUrl: acceptUrl.toString(),
+        locale,
       });
 
       return { sent: true };

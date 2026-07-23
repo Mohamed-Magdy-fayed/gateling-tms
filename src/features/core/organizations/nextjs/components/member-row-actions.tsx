@@ -80,7 +80,7 @@ export function MemberRowActions({
       />
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
+          <DropdownMenuSubTrigger disabled={updateRoleMut.isPending}>
             <ShieldIcon className="size-3.5" />
             {t("organizations.members.changeRole")}
           </DropdownMenuSubTrigger>
@@ -92,7 +92,11 @@ export function MemberRowActions({
               }
             >
               {organizationMembershipRoleValues.map((role) => (
-                <DropdownMenuRadioItem key={role} value={role}>
+                <DropdownMenuRadioItem
+                  key={role}
+                  value={role}
+                  disabled={updateRoleMut.isPending}
+                >
                   {t(`organizations.members.role.${role}`)}
                 </DropdownMenuRadioItem>
               ))}
@@ -100,7 +104,10 @@ export function MemberRowActions({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setRemoveTarget(row)}>
+        <DropdownMenuItem
+          disabled={updateRoleMut.isPending}
+          onClick={() => setRemoveTarget(row)}
+        >
           <Trash2Icon className="size-3.5 text-destructive" />
           <span className="text-destructive">{t("actions.delete")}</span>
         </DropdownMenuItem>

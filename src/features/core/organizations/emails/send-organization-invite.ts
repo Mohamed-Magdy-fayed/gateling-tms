@@ -1,7 +1,8 @@
 import "server-only";
 
 import { renderBaseEmail } from "@/features/core/auth/emails/base-email";
-import { getLocaleCookie, getT } from "@/features/core/i18n/server";
+import { mainTranslations } from "@/features/core/i18n/global";
+import { createI18n } from "@/features/core/i18n/lib";
 import { sendMail } from "@/integrations/email";
 
 type SendOrganizationInviteEmail = (options: {
@@ -9,12 +10,21 @@ type SendOrganizationInviteEmail = (options: {
   organizationName: string;
   inviterName?: string | null;
   acceptUrl: string;
+  /**
+   * The inviting admin's locale at the moment they submitted the invite —
+   * captured from `ctx.locale` in the mutation (a real request scope) and
+   * carried through the Inngest event, rather than read here via
+   * `getT()`/`getLocaleCookie()`. This function runs inside an Inngest
+   * function invocation, which has no browser-sent locale cookie to read;
+   * calling those would have silently always fallen back to "en".
+   */
+  locale: string;
 }) => Promise<void>;
 
 export const sendOrganizationInviteEmail: SendOrganizationInviteEmail = async (
   options,
 ) => {
-  const [{ t }, locale] = await Promise.all([getT(), getLocaleCookie()]);
+  const { t } = createI18n(mainTranslations, options.locale, "en");
   const inviterName =
     options.inviterName?.trim() || t("auth.emails.common.defaultRecipientName");
 
@@ -28,7 +38,7 @@ export const sendOrganizationInviteEmail: SendOrganizationInviteEmail = async (
   });
 
   const html = renderBaseEmail({
-    dir: locale === "ar" ? "rtl" : "ltr",
+    dir: options.locale === "ar" ? "rtl" : "ltr",
     greeting: t("auth.emails.common.greeting", {
       name: t("auth.emails.common.defaultRecipientName"),
     }),

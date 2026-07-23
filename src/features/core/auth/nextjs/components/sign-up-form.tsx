@@ -19,6 +19,7 @@ import { oAuthSignIn, signUpAction } from "@/features/core/auth/nextjs/actions";
 import FormAlert from "@/features/core/auth/nextjs/components/form-alert";
 import { useOauthProviderIcon } from "@/features/core/auth/nextjs/components/useOauthProviderIcon";
 import { authErrorMessageKey } from "@/features/core/auth/nextjs/lib/error-codes";
+import { buildCrossAuthLink } from "@/features/core/auth/nextjs/lib/post-auth-redirect";
 import { signUpSchema } from "@/features/core/auth/schemas";
 import { useTranslation } from "@/features/core/i18n/client";
 
@@ -170,7 +171,7 @@ export function SignUpForm() {
         {t("auth.signIn.hasAccount")}{" "}
         <Link
           className="font-medium underline-offset-4 hover:underline"
-          href="/auth/sign-in"
+          href={buildCrossAuthLink("/auth/sign-in", searchParams)}
         >
           {t("auth.signUp.toSignIn")}
         </Link>

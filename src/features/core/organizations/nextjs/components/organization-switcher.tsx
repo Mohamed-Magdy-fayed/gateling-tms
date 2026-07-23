@@ -62,6 +62,7 @@ export function OrganizationSwitcher({
           <Button
             variant="outline"
             className="w-full justify-between gap-2 sm:w-56"
+            disabled={switchMut.isPending}
           >
             <span className="flex min-w-0 items-center gap-2">
               <Building2Icon className="size-3.5 shrink-0" />
@@ -75,7 +76,11 @@ export function OrganizationSwitcher({
       />
       <DropdownMenuContent align="start" className="w-56">
         {organizations.map((org) => (
-          <DropdownMenuItem key={org.id} onClick={() => handleSelect(org.id)}>
+          <DropdownMenuItem
+            key={org.id}
+            disabled={switchMut.isPending}
+            onClick={() => handleSelect(org.id)}
+          >
             <span className="flex-1 truncate">{org.name}</span>
             {org.id === activeOrganizationId ? (
               <CheckIcon className="size-3.5" />

@@ -24,7 +24,21 @@ function startsWithAny(pathname: string, prefixes: string[]) {
 
 export async function proxy(request: NextRequest) {
   const response = (await middlewareAuth(request)) ?? NextResponse.next();
-  await updateUserSessionExpiration(response.cookies);
+
+  // request.cookies reflects what the browser actually sent (the session-id
+  // cookie); response.cookies only reflects what's been explicitly set on
+  // this response so far (nothing, at this point) — reading the session id
+  // from response.cookies would always see nothing and silently no-op,
+  // leaving the session to expire on its original 7-day TTL regardless of
+  // activity. Read from the request, write the refreshed cookie to the
+  // response that's actually returned to the browser.
+  await updateUserSessionExpiration({
+    get: (name) => request.cookies.get(name),
+    set: (name, value, options) => {
+      response.cookies.set(name, value, options);
+    },
+  });
+
   return response;
 }
 

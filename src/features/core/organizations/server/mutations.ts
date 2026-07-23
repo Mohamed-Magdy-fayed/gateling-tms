@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, eq } from "drizzle-orm";
+import { and, DrizzleQueryError, eq } from "drizzle-orm";
+import type { PostgresError } from "postgres";
 import {
   OrganizationMembershipsTable,
   OrganizationsTable,
@@ -29,6 +30,17 @@ function nullableTrim(value: string | undefined): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
+const MAX_SHORT_CODE_ATTEMPTS = 5;
+
+function isShortCodeConflict(error: unknown): boolean {
+  if (!(error instanceof DrizzleQueryError)) return false;
+  const cause = error.cause as PostgresError | undefined;
+  return (
+    cause?.code === "23505" &&
+    cause?.constraint_name === "organizations_short_code_idx"
+  );
+}
+
 export async function createOrganization(
   ctx: TRPCContext,
   input: OrganizationProfileInput,
@@ -36,37 +48,58 @@ export async function createOrganization(
   const session = ctx.session;
   if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-  const organizationId = await ctx.db.transaction(async (trx) => {
-    const shortCode = await generateUniqueOrganizationShortCode(
-      trx,
-      input.name,
-    );
+  // generateUniqueOrganizationShortCode's own pre-check (findFirst) can't
+  // fully prevent two concurrent createOrganization calls from generating
+  // and inserting the same code before either commits — the pre-check is
+  // just an optimization to make a collision rare, not impossible. On a
+  // real 23505 against the short-code index, retry with a fresh code
+  // instead of failing the request for something the caller never chose.
+  for (let attempt = 1; attempt <= MAX_SHORT_CODE_ATTEMPTS; attempt++) {
+    try {
+      const organizationId = await ctx.db.transaction(async (trx) => {
+        const shortCode = await generateUniqueOrganizationShortCode(
+          trx,
+          input.name,
+        );
 
-    const [organization] = await trx
-      .insert(OrganizationsTable)
-      .values({
-        shortCode,
-        name: input.name.trim(),
-        businessName: nullableTrim(input.businessName),
-        phone: nullableTrim(input.phone),
-        website: nullableTrim(input.website),
-        plan: "free",
-        ownerId: session.user.id,
-      })
-      .returning({ id: OrganizationsTable.id });
+        const [organization] = await trx
+          .insert(OrganizationsTable)
+          .values({
+            shortCode,
+            name: input.name.trim(),
+            businessName: nullableTrim(input.businessName),
+            phone: nullableTrim(input.phone),
+            website: nullableTrim(input.website),
+            plan: "free",
+            ownerId: session.user.id,
+          })
+          .returning({ id: OrganizationsTable.id });
 
-    await trx.insert(OrganizationMembershipsTable).values({
-      organizationId: organization.id,
-      userId: session.user.id,
-      role: "admin",
-    });
+        await trx.insert(OrganizationMembershipsTable).values({
+          organizationId: organization.id,
+          userId: session.user.id,
+          role: "admin",
+        });
 
-    return organization.id;
+        return organization.id;
+      });
+
+      await setActiveOrganization(organizationId, ctx.cookies);
+      return { organizationId };
+    } catch (error) {
+      if (!isShortCodeConflict(error) || attempt === MAX_SHORT_CODE_ATTEMPTS) {
+        throw error;
+      }
+    }
+  }
+
+  // Unreachable — the loop above always either returns or throws on its
+  // last attempt — but keeps the function's return type from needing
+  // `undefined`.
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: ctx.t("errors.generic"),
   });
-
-  await setActiveOrganization(organizationId, ctx.cookies);
-
-  return { organizationId };
 }
 
 export async function updateOrganization(
@@ -154,6 +187,7 @@ export async function inviteMember(
         email: normalizedEmail,
         role: input.role,
         invitedByUserId: session.user.id,
+        locale: ctx.locale,
       }),
     );
   } catch (error) {
@@ -205,55 +239,71 @@ export async function acceptInvite(ctx: TRPCContext, input: AcceptInviteInput) {
   return { organizationId };
 }
 
-async function countAdmins(ctx: OrgTRPCContext) {
-  const [{ value: adminCount }] = await ctx.db
-    .select({ value: count() })
+/**
+ * Locks every admin row for this org (SELECT ... FOR UPDATE) until the
+ * enclosing transaction commits, so a concurrent demotion/removal of a
+ * *different* admin can't read the same "N admins" snapshot and also pass
+ * the last-admin check — without the lock, two concurrent requests could
+ * both see 2 admins, both proceed, and leave the org with zero.
+ */
+async function lockAdminRowsForUpdate(
+  trx: Parameters<Parameters<OrgTRPCContext["db"]["transaction"]>[0]>[0],
+  organizationId: string,
+) {
+  return trx
+    .select({ userId: OrganizationMembershipsTable.userId })
     .from(OrganizationMembershipsTable)
     .where(
       and(
-        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+        eq(OrganizationMembershipsTable.organizationId, organizationId),
         eq(OrganizationMembershipsTable.role, "admin"),
       ),
-    );
-  return Number(adminCount);
+    )
+    .for("update");
 }
 
 export async function updateMemberRole(
   ctx: OrgTRPCContext,
   input: UpdateMemberRoleInput,
 ) {
-  const membership = await ctx.db.query.OrganizationMembershipsTable.findFirst(
-    {
-      where: and(
-        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-        eq(OrganizationMembershipsTable.userId, input.userId),
-      ),
-      columns: { role: true },
-    },
-  );
+  await ctx.db.transaction(async (trx) => {
+    const membership = await trx.query.OrganizationMembershipsTable.findFirst(
+      {
+        where: and(
+          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+          eq(OrganizationMembershipsTable.userId, input.userId),
+        ),
+        columns: { role: true },
+      },
+    );
 
-  if (!membership) {
-    throw new TRPCError({ code: "NOT_FOUND", message: ctx.t("errors.notFound") });
-  }
-
-  if (membership.role === "admin" && input.role !== "admin") {
-    if ((await countAdmins(ctx)) <= 1) {
+    if (!membership) {
       throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: ctx.t("organizations.members.lastAdmin"),
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
       });
     }
-  }
 
-  await ctx.db
-    .update(OrganizationMembershipsTable)
-    .set({ role: input.role })
-    .where(
-      and(
-        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-        eq(OrganizationMembershipsTable.userId, input.userId),
-      ),
-    );
+    if (membership.role === "admin" && input.role !== "admin") {
+      const admins = await lockAdminRowsForUpdate(trx, ctx.organizationId);
+      if (admins.length <= 1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: ctx.t("organizations.members.lastAdmin"),
+        });
+      }
+    }
+
+    await trx
+      .update(OrganizationMembershipsTable)
+      .set({ role: input.role })
+      .where(
+        and(
+          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+          eq(OrganizationMembershipsTable.userId, input.userId),
+        ),
+      );
+  });
 
   return { updated: true };
 }
@@ -262,35 +312,43 @@ export async function removeMember(
   ctx: OrgTRPCContext,
   input: RemoveMemberInput,
 ) {
-  const membership = await ctx.db.query.OrganizationMembershipsTable.findFirst(
-    {
-      where: and(
-        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-        eq(OrganizationMembershipsTable.userId, input.userId),
-      ),
-      columns: { role: true },
-    },
-  );
-
-  if (!membership) {
-    throw new TRPCError({ code: "NOT_FOUND", message: ctx.t("errors.notFound") });
-  }
-
-  if (membership.role === "admin" && (await countAdmins(ctx)) <= 1) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: ctx.t("organizations.members.lastAdmin"),
-    });
-  }
-
-  await ctx.db
-    .delete(OrganizationMembershipsTable)
-    .where(
-      and(
-        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-        eq(OrganizationMembershipsTable.userId, input.userId),
-      ),
+  await ctx.db.transaction(async (trx) => {
+    const membership = await trx.query.OrganizationMembershipsTable.findFirst(
+      {
+        where: and(
+          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+          eq(OrganizationMembershipsTable.userId, input.userId),
+        ),
+        columns: { role: true },
+      },
     );
+
+    if (!membership) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    if (membership.role === "admin") {
+      const admins = await lockAdminRowsForUpdate(trx, ctx.organizationId);
+      if (admins.length <= 1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: ctx.t("organizations.members.lastAdmin"),
+        });
+      }
+    }
+
+    await trx
+      .delete(OrganizationMembershipsTable)
+      .where(
+        and(
+          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+          eq(OrganizationMembershipsTable.userId, input.userId),
+        ),
+      );
+  });
 
   return { removed: true };
 }
