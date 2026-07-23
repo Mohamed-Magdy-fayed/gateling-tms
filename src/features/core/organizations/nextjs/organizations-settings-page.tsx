@@ -8,8 +8,15 @@ import type {
 } from "@tanstack/react-table";
 import { MailPlusIcon, PencilIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
 import {
   DataTable,
   type DataTableControlledState,
@@ -23,7 +30,7 @@ import {
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
-
+import type { OrganizationMemberRow } from "../server/queries";
 import {
   InviteMemberDialog,
   MemberRemoveDialog,
@@ -31,7 +38,6 @@ import {
   OrganizationSwitcher,
 } from "./components";
 import { buildMemberColumns } from "./components/members-table-columns";
-import type { OrganizationMemberRow } from "../server/queries";
 
 export function OrganizationsSettingsPage() {
   const trpc = useTRPC();
@@ -57,9 +63,8 @@ export function OrganizationsSettingsPage() {
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() =>
     getEntityColumnPinning(),
   );
-  const [removeTarget, setRemoveTarget] = useState<OrganizationMemberRow | null>(
-    null,
-  );
+  const [removeTarget, setRemoveTarget] =
+    useState<OrganizationMemberRow | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -143,36 +148,36 @@ export function OrganizationsSettingsPage() {
       </div>
 
       {activeOrganization ? (
-        <div className="rounded-lg border p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-lg">
-                  {activeOrganization.name}
-                </h2>
-                <Badge variant="secondary">
-                  {t(`organizations.plan.${activeOrganization.plan}`)}
-                </Badge>
-              </div>
-              {activeOrganization.businessName ? (
-                <p className="text-muted-foreground text-sm">
-                  {activeOrganization.businessName}
-                </p>
-              ) : null}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">
+                {activeOrganization.name}
+              </CardTitle>
+              <Tag color="violet">
+                {t(`organizations.plan.${activeOrganization.plan}`)}
+              </Tag>
             </div>
-            {canManage ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setEditProfileOpen(true)}
-              >
-                <PencilIcon className="size-3.5" />
-                {t("actions.edit")}
-              </Button>
+            {activeOrganization.businessName ? (
+              <CardDescription>
+                {activeOrganization.businessName}
+              </CardDescription>
             ) : null}
-          </div>
-        </div>
+            {canManage ? (
+              <CardAction>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditProfileOpen(true)}
+                >
+                  <PencilIcon className="size-3.5" />
+                  {t("actions.edit")}
+                </Button>
+              </CardAction>
+            ) : null}
+          </CardHeader>
+        </Card>
       ) : null}
 
       <div className="space-y-4">
