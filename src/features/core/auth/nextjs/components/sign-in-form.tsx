@@ -28,6 +28,7 @@ import {
 } from "@/features/core/auth/nextjs/actions";
 import FormAlert from "@/features/core/auth/nextjs/components/form-alert";
 import { useOauthProviderIcon } from "@/features/core/auth/nextjs/components/useOauthProviderIcon";
+import { authErrorMessageKey } from "@/features/core/auth/nextjs/lib/error-codes";
 import { signInSchema } from "@/features/core/auth/schemas";
 import { useTranslation } from "@/features/core/i18n/client";
 
@@ -98,7 +99,16 @@ export function SignInForm() {
         return;
       }
       const returnTo = searchParams.get("returnTo") ?? undefined;
-      await completePasskeyAuthenticationAction(email, assertion, returnTo);
+      // Only returns (rather than redirecting) on failure — success
+      // navigates away via redirect(), so there's nothing to toast then.
+      const result = await completePasskeyAuthenticationAction(
+        email,
+        assertion,
+        returnTo,
+      );
+      if (result?.isError) {
+        toast.error(result.message);
+      }
     });
   }
 
@@ -110,7 +120,7 @@ export function SignInForm() {
   }
 
   async function handleContinueEmail() {
-    form.validateField("email", "submit");
+    await form.validateField("email", "submit");
     if (!form.getFieldMeta("email")?.isValid) return;
 
     setStep("password");
@@ -143,10 +153,14 @@ export function SignInForm() {
       </div>
 
       {searchParams.get("error") != null && (
-        <FormAlert message={searchParams.get("error") || ""} />
+        <FormAlert
+          message={t(authErrorMessageKey(searchParams.get("error")))}
+        />
       )}
       {searchParams.get("oauthError") != null && (
-        <FormAlert message={searchParams.get("oauthError") || ""} />
+        <FormAlert
+          message={t(authErrorMessageKey(searchParams.get("oauthError")))}
+        />
       )}
 
       {oAuthProviderValues.length > 0 && (

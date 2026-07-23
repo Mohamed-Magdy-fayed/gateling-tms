@@ -34,8 +34,8 @@ import type {
   TypedResponse,
 } from "@/features/core/auth/types";
 import { getT } from "@/features/core/i18n/server";
-import { userRegisteredEvent } from "@/integrations/inngest/functions/on-user-registered";
 import { inngest } from "@/integrations/inngest/client";
+import { userRegisteredEvent } from "@/integrations/inngest/functions/on-user-registered";
 import {
   buildRatelimitKey,
   getRequestIp,
@@ -49,7 +49,15 @@ export async function signInAction(
   returnTo?: string,
 ): Promise<TypedResponse<{ user: PartialUser }>> {
   const { t } = await getT();
-  const { password, email } = await validateInput(signInSchema, rawInput);
+
+  let email: string;
+  let password: string;
+  try {
+    ({ password, email } = await validateInput(signInSchema, rawInput));
+  } catch (error) {
+    return authError(error);
+  }
+
   const normalizedEmail = normalizeEmail(email);
 
   const ip = await getRequestIp();
@@ -98,10 +106,20 @@ export async function signUpAction(
   returnTo?: string,
 ): Promise<TypedResponse<{ user: PartialUser }>> {
   const { t } = await getT();
-  const { name, email, phone, password } = await validateInput(
-    signUpSchema,
-    rawInput,
-  );
+
+  let name: string;
+  let email: string;
+  let phone: string;
+  let password: string;
+  try {
+    ({ name, email, phone, password } = await validateInput(
+      signUpSchema,
+      rawInput,
+    ));
+  } catch (error) {
+    return authError(error);
+  }
+
   const normalizedEmail = normalizeEmail(email);
 
   const ip = await getRequestIp();
@@ -147,8 +165,29 @@ export async function signUpAction(
     return createdUser;
   });
 
-  await inngest.send(userRegisteredEvent.create({ userId: user.id }));
-  await createUserSession({ user, hasPassword: true }, await cookies());
+  // The account already exists in the DB at this point — a failure past
+  // here must not surface as a generic signup error (the client would
+  // toast it and the user would retry sign-up into a duplicate-email
+  // rejection). The verification email is non-critical: log and continue,
+  // the user can request a resend from /auth/verify-email. Losing the
+  // session is not recoverable here, so send them to sign in manually
+  // instead of throwing.
+  try {
+    await inngest.send(userRegisteredEvent.create({ userId: user.id }));
+  } catch (error) {
+    console.error(
+      "Failed to enqueue user/registered event after sign-up",
+      error,
+    );
+  }
+
+  try {
+    await createUserSession({ user, hasPassword: true }, await cookies());
+  } catch (error) {
+    console.error("Failed to create session after sign-up", error);
+    redirect("/auth/sign-in?error=session_failed");
+  }
+
   redirect(getPostAuthRedirect(user, returnTo));
 }
 

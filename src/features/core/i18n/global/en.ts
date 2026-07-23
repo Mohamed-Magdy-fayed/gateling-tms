@@ -190,6 +190,13 @@ export default {
       error: {
         duplicate: "An account with this email already exists.",
         generic: "Could not create your account. Please try again.",
+        sessionFailed:
+          "Your account was created, but we couldn't sign you in automatically. Please sign in.",
+      },
+    },
+    oauth: {
+      error: {
+        failed: "Failed to connect. Please try again.",
       },
     },
     passwordReset: {
@@ -235,6 +242,8 @@ export default {
       deleting: "Removing…",
       delete: {
         label: "Remove",
+        confirm:
+          "Remove this passkey? You may not be able to sign in with it again.",
         notFound: "Passkey not found.",
         success: "Passkey removed.",
         error: "Could not remove passkey.",

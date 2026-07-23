@@ -1,4 +1,4 @@
-import { and, DrizzleError, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
@@ -21,7 +21,6 @@ import { getPostAuthRedirect } from "@/features/core/auth/nextjs/lib/post-auth-r
 import type { PartialUser } from "@/features/core/auth/types";
 
 const OAUTH_RETURN_TO_COOKIE = "oAuthReturnTo";
-const GENERIC_OAUTH_ERROR = "Failed to connect. Please try again.";
 
 export async function GET(
   request: NextRequest,
@@ -36,16 +35,14 @@ export async function GET(
     .safeParse(rawProvider);
 
   if (typeof code !== "string" || typeof state !== "string" || !success) {
-    redirect(
-      `/auth/sign-in?oauthError=${encodeURIComponent(GENERIC_OAUTH_ERROR)}`,
-    );
+    redirect("/auth/sign-in?oauthError=oauth_failed");
   }
 
   const currentSession = await getUserSession(cookieJar);
   const oAuthClient = getOAuthClient(provider);
 
   let authenticatedUser: PartialUser | null = null;
-  let oAuthErrorMessage: string | null = null;
+  let didFail = false;
 
   try {
     const oAuthUser = await oAuthClient.fetchUser(code, state, cookieJar);
@@ -58,17 +55,15 @@ export async function GET(
     await createUserSession({ user, hasPassword: false }, cookieJar);
     authenticatedUser = user;
   } catch (error) {
+    // Only a fixed, non-leaking code goes to the client (see
+    // lib/error-codes.ts) — provider/DB error details (which can include
+    // internal identifiers or query fragments) are logged server-side only.
     console.error(error);
-    oAuthErrorMessage =
-      error instanceof Error || error instanceof DrizzleError
-        ? error.message || GENERIC_OAUTH_ERROR
-        : GENERIC_OAUTH_ERROR;
+    didFail = true;
   }
 
-  if (oAuthErrorMessage) {
-    redirect(
-      `/auth/sign-in?oauthError=${encodeURIComponent(oAuthErrorMessage)}`,
-    );
+  if (didFail) {
+    redirect("/auth/sign-in?oauthError=oauth_failed");
   }
 
   const returnTo = cookieJar.get(OAUTH_RETURN_TO_COOKIE)?.value;

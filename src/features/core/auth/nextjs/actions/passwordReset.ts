@@ -10,14 +10,14 @@ import {
   UsersTable,
   UserTokensTable,
 } from "@/drizzle/schema";
-import { normalizeEmail } from "@/features/core/auth/core/helpers";
+import { authError, normalizeEmail } from "@/features/core/auth/core/helpers";
 import {
   generateSalt,
   hashPassword,
 } from "@/features/core/auth/core/passwordHasher";
 import { hashTokenValue } from "@/features/core/auth/core/token";
-import { validateInput } from "@/features/core/auth/nextjs/actions/helpers";
 import { sendPasswordResetCodeEmail } from "@/features/core/auth/emails/send-password-reset-code";
+import { validateInput } from "@/features/core/auth/nextjs/actions/helpers";
 import {
   passwordResetRequestSchema,
   passwordResetSubmissionSchema,
@@ -50,7 +50,14 @@ export async function requestPasswordResetAction(
   rawInput: z.infer<typeof passwordResetRequestSchema>,
 ): Promise<TypedResponse<object>> {
   const { t } = await getT();
-  const { email } = await validateInput(passwordResetRequestSchema, rawInput);
+
+  let email: string;
+  try {
+    ({ email } = await validateInput(passwordResetRequestSchema, rawInput));
+  } catch (error) {
+    return authError(error);
+  }
+
   const normalizedEmail = normalizeEmail(email);
 
   const ip = await getRequestIp();
@@ -121,10 +128,19 @@ export async function resetPasswordAction(
   rawInput: unknown,
 ): Promise<TypedResponse<{ message: string }>> {
   const { t } = await getT();
-  const { email, otp, password } = await validateInput(
-    passwordResetSubmissionSchema,
-    rawInput,
-  );
+
+  let email: string;
+  let otp: string;
+  let password: string;
+  try {
+    ({ email, otp, password } = await validateInput(
+      passwordResetSubmissionSchema,
+      rawInput,
+    ));
+  } catch (error) {
+    return authError(error);
+  }
+
   const normalizedEmail = normalizeEmail(email);
 
   const ip = await getRequestIp();

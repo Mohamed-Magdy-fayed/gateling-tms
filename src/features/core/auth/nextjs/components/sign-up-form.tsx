@@ -18,6 +18,7 @@ import { type OAuthProvider, oAuthProviderValues } from "@/drizzle/schema";
 import { oAuthSignIn, signUpAction } from "@/features/core/auth/nextjs/actions";
 import FormAlert from "@/features/core/auth/nextjs/components/form-alert";
 import { useOauthProviderIcon } from "@/features/core/auth/nextjs/components/useOauthProviderIcon";
+import { authErrorMessageKey } from "@/features/core/auth/nextjs/lib/error-codes";
 import { signUpSchema } from "@/features/core/auth/schemas";
 import { useTranslation } from "@/features/core/i18n/client";
 
@@ -83,7 +84,9 @@ export function SignUpForm() {
       </div>
 
       {searchParams.get("error") && (
-        <FormAlert message={searchParams.get("error") || ""} />
+        <FormAlert
+          message={t(authErrorMessageKey(searchParams.get("error")))}
+        />
       )}
 
       {oAuthProviderValues.length > 0 && (
