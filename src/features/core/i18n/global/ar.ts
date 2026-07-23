@@ -378,4 +378,29 @@ export default {
         "لوحة التحكم جاهزة. مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة.",
     },
   },
+  getStarted: {
+    hero: {
+      title: "أنشئ مركزك التدريبي",
+      description: "مجاني للبدء. يستغرق حوالي دقيقة واحدة.",
+    },
+    step1: {
+      title: "أخبرنا عن نشاطك التجاري",
+      contactNameLabel: "اسمك",
+      businessNameLabel: "اسم النشاط التجاري",
+      emailLabel: "البريد الإلكتروني",
+      phoneLabel: "رقم الهاتف",
+      passwordLabel: "كلمة المرور",
+    },
+    step2: {
+      title: "مراجعة وإرسال",
+      submitting: "جاري إعداد حسابك…",
+      submit: "لنبدأ",
+    },
+    orgOnly: {
+      title: "سمِّ مركزك التدريبي",
+    },
+    validation: {
+      businessNameRequired: "اسم النشاط التجاري مطلوب.",
+    },
+  },
 } as const satisfies LanguageMessages;
