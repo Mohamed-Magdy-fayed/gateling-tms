@@ -5,13 +5,17 @@ This folder is the **complete, self-contained plan** for rebuilding Gateling-TMS
 ## Kickoff command (paste into any new agent session)
 
 ```
-Read C:\Users\moham\OneDrive\Desktop\gateling-tms\docs\rebuild\README.md and
-C:\Users\moham\OneDrive\Desktop\gateling-tms\docs\rebuild\STATE.md, then continue the
+Read G:\apps\gateling-tms\docs\rebuild\README.md and
+G:\apps\gateling-tms\docs\rebuild\STATE.md, then continue the
 Gateling-TMS rebuild from the phase and "Next action" recorded in STATE.md. Open the
 matching phase file in docs\rebuild\phases\, execute its steps in order, run its
 verification gate, and update STATE.md (status, checklists, decisions, next action)
 before stopping. Never violate docs\rebuild\02-dependencies.md.
 ```
+
+> Canonicity moved from the Desktop SOURCE copy to this repo copy on 2026-07-23, ahead of
+> the originally planned Phase 8 cut-over (see "Blueprint mirror" below and STATE.md D50)
+> — start every new session from this path, not `C:\Users\moham\OneDrive\Desktop\gateling-tms\docs\rebuild\`.
 
 ## The four source repositories
 
@@ -77,4 +81,4 @@ Phases are sequential; each assumes all previous gates passed. Within a phase, s
 
 ## Blueprint mirror in the target repo
 
-From Phase 0 onward, this folder is **mirrored** into TARGET `G:\apps\gateling-tms\docs\rebuild\` so the plan is versioned on GitHub with the code. Until the Phase 8 cut-over, **this Desktop folder stays canonical** — STATE.md is updated here, the kickoff command points here, and the mirror is refreshed (Desktop → repo) in each phase's final PR. Never edit the repo copy directly before cut-over. At Phase 8 close-out, canonicity transfers to the repo copy and this folder becomes an archive.
+**This repo copy (`G:\apps\gateling-tms\docs\rebuild\`) is canonical as of 2026-07-23** (STATE.md D50) — update it directly, same as any other file in this repo, through the normal branch → PR → CodeRabbit → merge workflow (`06-workflow.md`). The original plan was to keep the Desktop SOURCE copy (`C:\Users\moham\OneDrive\Desktop\gateling-tms\docs\rebuild\`) canonical until the Phase 8 cut-over and mirror into the repo per phase; Mohamed moved the cutover earlier instead, since the repo copy is what's actually versioned with the code and what every session should be reading from. The Desktop copy is retired — do not read or write it.
