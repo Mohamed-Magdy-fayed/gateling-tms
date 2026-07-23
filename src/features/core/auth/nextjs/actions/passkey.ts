@@ -13,7 +13,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -26,6 +26,7 @@ import {
   UserTokensTable,
 } from "@/drizzle/schema";
 import { createUserSession } from "@/features/core/auth/core";
+import { authError } from "@/features/core/auth/core/helpers";
 import { hashTokenValue } from "@/features/core/auth/core/token";
 import { validateInput } from "@/features/core/auth/nextjs/actions/helpers";
 import { getCurrentUser } from "@/features/core/auth/nextjs/currentUser";
@@ -38,12 +39,39 @@ import type {
   TypedResponse,
 } from "@/features/core/auth/types";
 import { getT } from "@/features/core/i18n/server";
+import {
+  buildRatelimitKey,
+  getRequestIp,
+  isRateLimited,
+  passkeyAuthRatelimit,
+} from "@/integrations/ratelimit";
 
 const PASSKEY_CHALLENGE_TTL_MS = 1000 * 60 * 10;
 
 const deletePasskeySchema = z.object({ passkeyId: z.uuid() });
-const authResponseSchema = z.custom<AuthenticationResponseJSON>();
-const registrationResponseSchema = z.custom<RegistrationResponseJSON>();
+
+// `z.custom()` alone accepts any value at runtime — these predicates check
+// the top-level shape the WebAuthn spec guarantees before the response ever
+// reaches `.id`/`verify*Response()`, without hand-rolling the full spec.
+function isWebAuthnResponseShape(
+  value: unknown,
+): value is { id: string; rawId: string; type: string; response: object } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).id === "string" &&
+    typeof (value as Record<string, unknown>).rawId === "string" &&
+    typeof (value as Record<string, unknown>).type === "string" &&
+    typeof (value as Record<string, unknown>).response === "object" &&
+    (value as Record<string, unknown>).response !== null
+  );
+}
+const authResponseSchema = z.custom<AuthenticationResponseJSON>(
+  isWebAuthnResponseShape,
+);
+const registrationResponseSchema = z.custom<RegistrationResponseJSON>(
+  isWebAuthnResponseShape,
+);
 
 const textEncoder = new TextEncoder();
 
@@ -80,12 +108,16 @@ async function upsertChallengeToken(options: {
   const challengeHash = hashTokenValue(options.challenge);
   const expiresAt = new Date(Date.now() + PASSKEY_CHALLENGE_TTL_MS);
 
+  // Scoped to the same operation only — a user with a registration
+  // challenge open in one tab and an authentication challenge open in
+  // another (or vice versa) shouldn't have one invalidate the other.
   await db
     .delete(UserTokensTable)
     .where(
       and(
         eq(UserTokensTable.userId, options.userId),
         eq(UserTokensTable.type, "device_trust"),
+        sql`${UserTokensTable.metadata}->>'operation' = ${options.operation}`,
       ),
     );
 
@@ -150,7 +182,18 @@ export async function beginPasskeyAuthenticationAction(
   rawEmail: string,
 ): Promise<AuthenticationOptionsResult> {
   const { t } = await getT();
-  const email = await validateInput(z.email(), rawEmail);
+
+  let email: string;
+  try {
+    email = await validateInput(z.email(), rawEmail);
+  } catch (error) {
+    return authError(error);
+  }
+
+  const ip = await getRequestIp();
+  if (await isRateLimited(passkeyAuthRatelimit, buildRatelimitKey(ip, email))) {
+    return { isError: true, message: t("auth.error.rateLimited") };
+  }
 
   const user = await db.query.UsersTable.findFirst({
     columns: { id: true, email: true },
@@ -162,17 +205,13 @@ export async function beginPasskeyAuthenticationAction(
     },
   });
 
-  if (!user) {
+  // Same generic message for "no account" and "no passkeys on this
+  // account" — distinguishing them lets an attacker enumerate registered
+  // emails by probing this action.
+  if (!user || user.biometricCredentials.length === 0) {
     return {
       isError: true,
       message: t("auth.passkeys.auth.error.userNotFound"),
-    };
-  }
-
-  if (user.biometricCredentials.length === 0) {
-    return {
-      isError: true,
-      message: t("auth.passkeys.auth.error.noCredentials"),
     };
   }
 
@@ -190,7 +229,10 @@ export async function beginPasskeyAuthenticationAction(
         ? (credential.transports as AuthenticatorTransportFuture[])
         : undefined,
     })),
-    userVerification: "preferred",
+    // "required" here matches `requireUserVerification: true` at the
+    // verify step below — generating with "preferred" would let a
+    // ceremony complete without UV and then fail verification anyway.
+    userVerification: "required",
   });
 
   await upsertChallengeToken({
@@ -243,7 +285,7 @@ export async function beginPasskeyRegistrationAction(): Promise<RegistrationOpti
     attestationType: "none",
     authenticatorSelection: {
       residentKey: "preferred",
-      userVerification: "preferred",
+      userVerification: "required",
     },
     excludeCredentials: existing.map((credential) => ({
       id: credential.credentialId,
@@ -269,8 +311,20 @@ export async function completePasskeyAuthenticationAction(
   returnTo?: string,
 ): Promise<TypedResponse<PartialUser>> {
   const { t } = await getT();
-  const email = await validateInput(z.email(), rawEmail);
-  const assertion = await validateInput(authResponseSchema, rawAssertion);
+
+  let email: string;
+  let assertion: z.infer<typeof authResponseSchema>;
+  try {
+    email = await validateInput(z.email(), rawEmail);
+    assertion = await validateInput(authResponseSchema, rawAssertion);
+  } catch (error) {
+    return authError(error);
+  }
+
+  const ip = await getRequestIp();
+  if (await isRateLimited(passkeyAuthRatelimit, buildRatelimitKey(ip, email))) {
+    return { isError: true, message: t("auth.error.rateLimited") };
+  }
 
   const user = await db.query.UsersTable.findFirst({
     columns: { id: true, email: true, name: true, emailVerifiedAt: true },
@@ -378,10 +432,16 @@ export async function completePasskeyRegistrationAction(
 ): Promise<TypedResponse<{ userId: string }>> {
   const { t } = await getT();
   const { id: userId } = await getCurrentUser({ redirectIfNotFound: true });
-  const attestation = await validateInput(
-    registrationResponseSchema,
-    rawAttestation,
-  );
+
+  let attestation: z.infer<typeof registrationResponseSchema>;
+  try {
+    attestation = await validateInput(
+      registrationResponseSchema,
+      rawAttestation,
+    );
+  } catch (error) {
+    return authError(error);
+  }
 
   const challenge = await consumeChallengeToken({
     userId,
@@ -422,9 +482,22 @@ export async function completePasskeyRegistrationAction(
       ? attestation.response.transports
       : null;
 
-  await db
-    .delete(BiometricCredentialsTable)
-    .where(eq(BiometricCredentialsTable.credentialId, credential.id));
+  // The same physical authenticator can only ever belong to one account —
+  // if `credential.id` already belongs to someone else, reject instead of
+  // silently unlinking their passkey and handing it to this session.
+  const conflicting = await db.query.BiometricCredentialsTable.findFirst({
+    columns: { id: true, userId: true },
+    where: eq(BiometricCredentialsTable.credentialId, credential.id),
+  });
+  if (conflicting && conflicting.userId !== userId) {
+    await revokeChallengeToken(challenge.id);
+    return { isError: true, message: t("auth.passkeys.register.error") };
+  }
+  if (conflicting) {
+    await db
+      .delete(BiometricCredentialsTable)
+      .where(eq(BiometricCredentialsTable.id, conflicting.id));
+  }
 
   await db.insert(BiometricCredentialsTable).values({
     userId,

@@ -38,6 +38,23 @@ export const passwordResetSubmitRatelimit = new Ratelimit({
   prefix: "ratelimit:password-reset-submit",
 });
 
+// Shared by begin + complete passkey authentication — they're one logical
+// attempt from the caller's perspective, so they draw from the same budget.
+export const passkeyAuthRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(10, "5 m"),
+  prefix: "ratelimit:passkey-auth",
+});
+
+/**
+ * Trusts `x-forwarded-for`/`x-real-ip` as set by the platform's own edge
+ * network (per `06-workflow.md` §5, this app deploys on Vercel) — Vercel's
+ * routing layer overwrites these headers with the real client IP before a
+ * request reaches the function, so a client can't spoof them in practice.
+ * This assumption does NOT hold if the app is ever run directly behind an
+ * untrusted/arbitrary reverse proxy; revisit if the hosting target changes
+ * (D14).
+ */
 export async function getRequestIp() {
   const headerList = await headers();
   const forwardedFor = headerList.get("x-forwarded-for");
