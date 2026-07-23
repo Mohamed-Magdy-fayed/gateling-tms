@@ -1,4 +1,5 @@
 import { HomeIcon } from "lucide-react";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { LinkButton } from "@/components/general/link-button";
@@ -8,17 +9,18 @@ import { getAuth } from "@/features/core/auth/nextjs/actions";
 import { verifyEmailTokenAction } from "@/features/core/auth/nextjs/actions/email";
 import { AuthProvider } from "@/features/core/auth/nextjs/components/auth-provider";
 import { EmailVerificationNotice } from "@/features/core/auth/nextjs/components/email-verification-notice";
+import { isSafeReturnTo } from "@/features/core/auth/nextjs/lib/post-auth-redirect";
 import { getT } from "@/features/core/i18n/server";
 
 type VerifyEmailPageProps = {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; returnTo?: string }>;
 };
 
 export default async function VerifyEmailPage({
   searchParams,
 }: VerifyEmailPageProps) {
   const { t } = await getT();
-  const { token } = await searchParams;
+  const { token, returnTo } = await searchParams;
 
   return (
     <div className="space-y-4">
@@ -31,7 +33,7 @@ export default async function VerifyEmailPage({
           </Status>
         }
       >
-        <VerifyEmailBody token={token} />
+        <VerifyEmailBody token={token} returnTo={returnTo} />
       </Suspense>
       <LinkButton href="/">
         <HomeIcon />
@@ -41,11 +43,25 @@ export default async function VerifyEmailPage({
   );
 }
 
-async function VerifyEmailBody({ token }: { token?: string }) {
+async function VerifyEmailBody({
+  token,
+  returnTo,
+}: {
+  token?: string;
+  returnTo?: string;
+}) {
   const { t } = await getT();
 
   if (token) {
     const result = await verifyEmailTokenAction({ token });
+
+    // e.g. an invite link that routed a brand-new visitor through sign-up —
+    // send them back to finish accepting it instead of stranding them on a
+    // static "verified" message (STATE.md D49).
+    if (!result.isError && isSafeReturnTo(returnTo)) {
+      redirect(returnTo);
+    }
+
     return (
       <Status variant={result.isError ? "error" : "success"}>
         <StatusIndicator />

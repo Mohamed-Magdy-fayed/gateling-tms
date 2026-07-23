@@ -1,3 +1,4 @@
+import { ThemeProvider } from "next-themes";
 import type { PropsWithChildren } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,13 +11,15 @@ type ProvidersProps = PropsWithChildren<{
 
 export function Providers({ children, locale }: ProvidersProps) {
   return (
-    <TranslationProvider defaultLocale={locale} fallbackLocale="en">
-      <TRPCReactProvider>
-        <TooltipProvider>
-          {children}
-          <Toaster visibleToasts={3} />
-        </TooltipProvider>
-      </TRPCReactProvider>
-    </TranslationProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TranslationProvider defaultLocale={locale} fallbackLocale="en">
+        <TRPCReactProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster visibleToasts={3} />
+          </TooltipProvider>
+        </TRPCReactProvider>
+      </TranslationProvider>
+    </ThemeProvider>
   );
 }

@@ -46,6 +46,7 @@ export default {
     notFound: "العنصر المطلوب غير موجود.",
     unauthorized: "غير مصرح لك بتنفيذ هذا الإجراء.",
     validationFailed: "يرجى مراجعة الحقول المظللة والمحاولة مرة أخرى.",
+    noActiveOrganization: "ليس لديك صلاحية الوصول لهذه المؤسسة.",
   },
   forms: {
     validation: {
@@ -278,6 +279,92 @@ export default {
       },
       error: {
         missingRpId: "مفاتيح المرور غير متاحة في هذه البيئة.",
+      },
+    },
+  },
+  organizations: {
+    pageTitle: "إعدادات المؤسسة",
+    pageLead: "إدارة الملف الشخصي للمؤسسة والخطة والأعضاء.",
+    validation: {
+      invalidWebsite: "أدخل رابط موقع إلكتروني صالحًا.",
+    },
+    plan: {
+      free: "مجاني",
+      basic: "أساسي",
+      professional: "احترافي",
+      enterprise: "مؤسسي",
+    },
+    profile: {
+      editTitle: "تعديل المؤسسة",
+      editDescription: "تحديث بيانات الملف الشخصي لمؤسستك.",
+      nameLabel: "اسم المؤسسة",
+      businessNameLabel: "الاسم التجاري",
+      phoneLabel: "الهاتف",
+      websiteLabel: "الموقع الإلكتروني",
+      saveSuccess: "تم تحديث المؤسسة.",
+      saveFailed: "تعذر تحديث المؤسسة.",
+    },
+    switcher: {
+      label: "اختر مؤسسة",
+      switched: "تم تبديل المؤسسة.",
+      switchFailed: "تعذر تبديل المؤسسة.",
+    },
+    members: {
+      title: "الأعضاء",
+      searchHint: "بحث في الأعضاء…",
+      columnName: "الاسم",
+      columnEmail: "البريد الإلكتروني",
+      columnRole: "الدور",
+      columnJoinedAt: "تاريخ الانضمام",
+      role: {
+        admin: "مدير",
+        teacher: "معلم",
+        student: "طالب",
+      },
+      changeRole: "تغيير الدور",
+      inviteButton: "دعوة عضو",
+      inviteTitle: "دعوة عضو جديد",
+      inviteDescription: "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه المؤسسة.",
+      inviteEmailLabel: "البريد الإلكتروني",
+      inviteRoleLabel: "الدور",
+      inviteSent: "تم إرسال الدعوة.",
+      inviteFailed: "تعذر إرسال الدعوة.",
+      alreadyMember: "هذا الشخص عضو بالفعل في هذه المؤسسة.",
+      roleUpdated: "تم تحديث الدور.",
+      roleUpdateFailed: "تعذر تحديث الدور.",
+      removed: "تمت إزالة العضو.",
+      removeFailed: "تعذر إزالة هذا العضو.",
+      removeConfirmTitle: "إزالة العضو؟",
+      removeConfirmDescription:
+        "إزالة {name} من هذه المؤسسة. سيفقد وصوله فورًا.",
+      lastAdmin: "يجب أن يكون للمؤسسة مدير واحد على الأقل.",
+    },
+    invite: {
+      invalid: "رابط هذه الدعوة غير صالح أو منتهي الصلاحية.",
+      invalidTitle: "الدعوة غير متاحة",
+      emailMismatch: "تم إرسال هذه الدعوة إلى بريد إلكتروني مختلف.",
+    },
+    limits: {
+      studentLimitReached: dt(
+        "تسمح خطتك بحد أقصى {limit:number} طالب.",
+        {},
+      ),
+      courseLimitReached: dt(
+        "تسمح خطتك بحد أقصى {limit:number} دورة.",
+        {},
+      ),
+      storageLimitReached: dt(
+        "تسمح خطتك بحد أقصى {limitGb:number} جيجابايت من التخزين.",
+        {},
+      ),
+    },
+    emails: {
+      invite: {
+        subject: "تمت دعوتك للانضمام إلى {organizationName}",
+        text: "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS: {acceptUrl}",
+        intro: "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS.",
+        ctaLabel: "قبول الدعوة",
+        ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
       },
     },
   },

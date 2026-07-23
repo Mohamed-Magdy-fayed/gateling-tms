@@ -128,7 +128,6 @@ export async function seedBaselineProfile() {
           organizationId: organization.id,
           userId: adminUser.id,
           role: "admin",
-          isCurrent: true,
         })
         .returning();
       return row;

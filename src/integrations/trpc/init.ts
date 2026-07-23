@@ -1,21 +1,20 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import superjson from "superjson";
 import z, { ZodError } from "zod";
 
 import { db } from "@/drizzle";
+import { OrganizationMembershipsTable } from "@/drizzle/schema";
+import { getUserSession } from "@/features/core/auth/core";
 import { LOCALE_COOKIE_NAME } from "@/features/core/i18n/lib";
 import { getT } from "@/features/core/i18n/server";
 import { handleDatabaseError } from "./db-error";
-
-// Session shape lands in Phase 2 (see docs/rebuild/phases/phase-02.md); until
-// then every request is anonymous, which correctly makes protectedProcedure
-// always reject.
-type Session = null;
+import { resolveOrgAccess } from "./org-access";
 
 export const createTRPCContext = async () => {
   const cookieStore = await cookies();
-  const session: Session = null;
+  const session = await getUserSession(cookieStore);
   const { t } = await getT();
   const locale = cookieStore.get(LOCALE_COOKIE_NAME)?.value ?? "en";
 
@@ -46,14 +45,6 @@ const authMiddleware = t.middleware(({ ctx, next }) => {
   return next({ ctx: { session: ctx.session } });
 });
 
-const orgMembershipMiddleware = t.middleware(() => {
-  // Stub until Phase 2 wires organization membership onto the session.
-  throw new TRPCError({
-    code: "NOT_IMPLEMENTED",
-    message: "Organization scoping is not available until Phase 2.",
-  });
-});
-
 const databaseErrorMiddleware = t.middleware(async ({ next }) => {
   try {
     return await next();
@@ -70,4 +61,44 @@ export const publicProcedure = t.procedure.use(databaseErrorMiddleware);
 export const protectedProcedure = t.procedure
   .use(authMiddleware)
   .use(databaseErrorMiddleware);
-export const orgProcedure = protectedProcedure.use(orgMembershipMiddleware);
+// Injects ctx.organizationId + ctx.role from the caller's *active* org
+// membership. There is no `organizationId` input on any orgProcedure route —
+// the tenant is always resolved from the session, never from client-supplied
+// input — so a request can't be pointed at another org's data by forging a
+// parameter. Defined inline (rather than as a standalone `t.middleware()`)
+// so TypeScript narrows `ctx.session` to non-null using protectedProcedure's
+// own guard instead of re-widening it.
+export const orgProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const activeOrganizationId = ctx.session.activeOrganizationId;
+
+  const membership = activeOrganizationId
+    ? await ctx.db.query.OrganizationMembershipsTable.findFirst({
+        where: and(
+          eq(OrganizationMembershipsTable.userId, ctx.session.user.id),
+          eq(OrganizationMembershipsTable.organizationId, activeOrganizationId),
+        ),
+        columns: { role: true },
+      })
+    : null;
+
+  const access = resolveOrgAccess(activeOrganizationId, membership);
+  if (!access) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: ctx.t("errors.noActiveOrganization"),
+    });
+  }
+
+  return next({ ctx: access });
+});
+
+export const orgAdminProcedure = orgProcedure.use(({ ctx, next }) => {
+  if (ctx.role !== "admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: ctx.t("errors.unauthorized"),
+    });
+  }
+
+  return next();
+});

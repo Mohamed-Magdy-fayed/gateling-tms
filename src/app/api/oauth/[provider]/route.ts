@@ -19,6 +19,7 @@ import {
 } from "@/features/core/auth/core";
 import { getPostAuthRedirect } from "@/features/core/auth/nextjs/lib/post-auth-redirect";
 import type { PartialUser } from "@/features/core/auth/types";
+import { resolveDefaultActiveOrganizationId } from "@/features/core/organizations/server";
 
 const OAUTH_RETURN_TO_COOKIE = "oAuthReturnTo";
 
@@ -52,7 +53,13 @@ export async function GET(
     // OAuth-created sessions don't imply a password was ever set for this
     // account — sign-in/password-reset still read credentials from the DB
     // directly, so this flag is informational only.
-    await createUserSession({ user, hasPassword: false }, cookieJar);
+    const activeOrganizationId = await resolveDefaultActiveOrganizationId(
+      user.id,
+    );
+    await createUserSession(
+      { user, hasPassword: false, activeOrganizationId },
+      cookieJar,
+    );
     authenticatedUser = user;
   } catch (error) {
     // Only a fixed, non-leaking code goes to the client (see

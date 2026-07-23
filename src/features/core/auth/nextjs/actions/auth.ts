@@ -34,6 +34,7 @@ import type {
   TypedResponse,
 } from "@/features/core/auth/types";
 import { getT } from "@/features/core/i18n/server";
+import { resolveDefaultActiveOrganizationId } from "@/features/core/organizations/server";
 import { inngest } from "@/integrations/inngest/client";
 import { userRegisteredEvent } from "@/integrations/inngest/functions/on-user-registered";
 import {
@@ -92,7 +93,13 @@ export async function signInAction(
       return { isError: true, message: t("auth.error.credentials") };
     }
 
-    await createUserSession({ user, hasPassword: true }, await cookies());
+    const activeOrganizationId = await resolveDefaultActiveOrganizationId(
+      user.id,
+    );
+    await createUserSession(
+      { user, hasPassword: true, activeOrganizationId },
+      await cookies(),
+    );
     signedInUser = user;
   } catch (error) {
     return authError(error);

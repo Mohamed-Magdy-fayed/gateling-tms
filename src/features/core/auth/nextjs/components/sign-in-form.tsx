@@ -29,6 +29,7 @@ import {
 import FormAlert from "@/features/core/auth/nextjs/components/form-alert";
 import { useOauthProviderIcon } from "@/features/core/auth/nextjs/components/useOauthProviderIcon";
 import { authErrorMessageKey } from "@/features/core/auth/nextjs/lib/error-codes";
+import { buildCrossAuthLink } from "@/features/core/auth/nextjs/lib/post-auth-redirect";
 import { signInSchema } from "@/features/core/auth/schemas";
 import { useTranslation } from "@/features/core/i18n/client";
 
@@ -40,7 +41,7 @@ export function SignInForm() {
   const getOauthProviderIcon = useOauthProviderIcon();
 
   const form = useAppForm({
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: searchParams.get("email") ?? "", password: "" },
     validators: { onSubmit: signInSchema },
     onSubmit: ({ value }) => {
       startTransition(async () => {
@@ -268,7 +269,11 @@ export function SignInForm() {
 
       <FieldDescription className="text-center">
         {t("auth.signIn.noAccount")}{" "}
-        <LinkButton className="ps-0" href="/auth/sign-up" variant="link">
+        <LinkButton
+          className="ps-0"
+          href={buildCrossAuthLink("/auth/sign-up", searchParams)}
+          variant="link"
+        >
           {t("auth.signIn.toSignUp")}
         </LinkButton>
       </FieldDescription>

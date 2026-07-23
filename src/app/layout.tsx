@@ -41,6 +41,7 @@ export default async function RootLayout({
       lang={locale}
       dir={dir}
       className={`${fredoka.variable} ${nunito.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         <Providers locale={locale}>{children}</Providers>
