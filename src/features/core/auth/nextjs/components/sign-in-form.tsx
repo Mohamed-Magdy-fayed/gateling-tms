@@ -40,7 +40,7 @@ export function SignInForm() {
   const getOauthProviderIcon = useOauthProviderIcon();
 
   const form = useAppForm({
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: searchParams.get("email") ?? "", password: "" },
     validators: { onSubmit: signInSchema },
     onSubmit: ({ value }) => {
       startTransition(async () => {

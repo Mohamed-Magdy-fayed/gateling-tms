@@ -46,6 +46,7 @@ export default {
     notFound: "The requested item was not found.",
     unauthorized: "You are not authorized to perform this action.",
     validationFailed: "Please check the highlighted fields and try again.",
+    noActiveOrganization: "You don't have access to this organization.",
   },
   forms: {
     validation: {
@@ -278,6 +279,93 @@ export default {
       },
       error: {
         missingRpId: "Passkeys aren't available in this environment.",
+      },
+    },
+  },
+  organizations: {
+    pageTitle: "Organization settings",
+    pageLead: "Manage your organization's profile, plan, and members.",
+    validation: {
+      invalidWebsite: "Enter a valid website URL.",
+    },
+    plan: {
+      free: "Free",
+      basic: "Basic",
+      professional: "Professional",
+      enterprise: "Enterprise",
+    },
+    profile: {
+      editTitle: "Edit organization",
+      editDescription: "Update your organization's profile details.",
+      nameLabel: "Organization name",
+      businessNameLabel: "Business name",
+      phoneLabel: "Phone",
+      websiteLabel: "Website",
+      saveSuccess: "Organization updated.",
+      saveFailed: "Could not update the organization.",
+    },
+    switcher: {
+      label: "Select organization",
+      switched: "Switched organization.",
+      switchFailed: "Could not switch organization.",
+    },
+    members: {
+      title: "Members",
+      searchHint: "Search members…",
+      columnName: "Name",
+      columnEmail: "Email",
+      columnRole: "Role",
+      columnJoinedAt: "Joined",
+      role: {
+        admin: "Admin",
+        teacher: "Teacher",
+        student: "Student",
+      },
+      changeRole: "Change role",
+      inviteButton: "Invite member",
+      inviteTitle: "Invite a member",
+      inviteDescription: "Send an email invitation to join this organization.",
+      inviteEmailLabel: "Email",
+      inviteRoleLabel: "Role",
+      inviteSent: "Invitation sent.",
+      inviteFailed: "Could not send the invitation.",
+      alreadyMember: "This person is already a member of this organization.",
+      roleUpdated: "Role updated.",
+      roleUpdateFailed: "Could not update the role.",
+      removed: "Member removed.",
+      removeFailed: "Could not remove this member.",
+      removeConfirmTitle: "Remove member?",
+      removeConfirmDescription:
+        "Remove {name} from this organization. They will lose access immediately.",
+      lastAdmin: "An organization must have at least one admin.",
+    },
+    invite: {
+      invalid: "This invitation link is invalid or has expired.",
+      invalidTitle: "Invitation not available",
+      emailMismatch: "This invitation was sent to a different email address.",
+    },
+    limits: {
+      studentLimitReached: dt(
+        "Your plan allows up to {limit:number} students.",
+        {},
+      ),
+      courseLimitReached: dt(
+        "Your plan allows up to {limit:number} courses.",
+        {},
+      ),
+      storageLimitReached: dt(
+        "Your plan allows up to {limitGb:number} GB of storage.",
+        {},
+      ),
+    },
+    emails: {
+      invite: {
+        subject: "You've been invited to join {organizationName}",
+        text: "{inviterName} invited you to join {organizationName} on Gateling-TMS: {acceptUrl}",
+        intro: "{inviterName} invited you to join {organizationName} on Gateling-TMS.",
+        ctaLabel: "Accept invitation",
+        ignore:
+          "If you weren't expecting this invitation, you can ignore this email.",
       },
     },
   },

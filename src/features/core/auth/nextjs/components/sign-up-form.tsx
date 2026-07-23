@@ -39,7 +39,12 @@ export function SignUpForm() {
   const getOauthProviderIcon = useOauthProviderIcon();
 
   const form = useAppForm({
-    defaultValues: { name: "", phone: "", email: "", password: "" },
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: searchParams.get("email") ?? "",
+      password: "",
+    },
     validators: { onSubmit: signUpSchema },
     onSubmit: ({ value }) => {
       const returnTo = searchParams.get("returnTo") ?? undefined;

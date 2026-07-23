@@ -10,13 +10,22 @@ export function isSafeReturnTo(
 }
 
 /**
- * Org-unaware for now — organizations/orgProcedure (phase-02 step 5) and the
- * onboarding wizard (step 7) don't exist yet on this branch. Once they land,
- * an authed-but-orgless user should redirect to onboarding instead of `/`;
- * `src/proxy.ts` (step 6) is where that gating actually belongs.
+ * Org-awareness for the unverified/verified split lives here; whether an
+ * *authed-and-verified* user without an org gets bounced to onboarding is
+ * `src/proxy.ts`'s job instead (phase-02 step 6), not this function's.
  */
 export function getPostAuthRedirect(user: PartialUser, returnTo?: string) {
-  if (!user.emailVerifiedAt) return "/auth/verify-email";
+  if (!user.emailVerifiedAt) {
+    // `returnTo` would otherwise be silently dropped here — e.g. an invite
+    // link (`/invite/<token>`) that routed a brand-new visitor through
+    // sign-up. Carry it through as a query param so the verify-email page
+    // can send them back to finish what they started once verified,
+    // instead of stranding them logged in with nowhere to go (STATE.md D49).
+    if (isSafeReturnTo(returnTo)) {
+      return `/auth/verify-email?returnTo=${encodeURIComponent(returnTo)}`;
+    }
+    return "/auth/verify-email";
+  }
   if (isSafeReturnTo(returnTo)) return returnTo;
   return "/";
 }
