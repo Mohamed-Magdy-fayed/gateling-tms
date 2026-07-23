@@ -2,7 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export function SiteLogo({ className }: { className?: string }) {
+export function SiteLogo({
+  className,
+  priority = false,
+}: {
+  className?: string;
+  priority?: boolean;
+}) {
   return (
     <Link
       href="/"
@@ -17,7 +23,7 @@ export function SiteLogo({ className }: { className?: string }) {
         width={32}
         height={32}
         className="size-8"
-        priority
+        priority={priority}
       />
       Gateling
     </Link>
