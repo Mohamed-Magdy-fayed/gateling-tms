@@ -328,7 +328,8 @@ export default {
       changeRole: "تغيير الدور",
       inviteButton: "دعوة عضو",
       inviteTitle: "دعوة عضو جديد",
-      inviteDescription: "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه المؤسسة.",
+      inviteDescription:
+        "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه المؤسسة.",
       inviteEmailLabel: "البريد الإلكتروني",
       inviteRoleLabel: "الدور",
       inviteSent: "تم إرسال الدعوة.",
@@ -349,14 +350,8 @@ export default {
       emailMismatch: "تم إرسال هذه الدعوة إلى بريد إلكتروني مختلف.",
     },
     limits: {
-      studentLimitReached: dt(
-        "تسمح خطتك بحد أقصى {limit:number} طالب.",
-        {},
-      ),
-      courseLimitReached: dt(
-        "تسمح خطتك بحد أقصى {limit:number} دورة.",
-        {},
-      ),
+      studentLimitReached: dt("تسمح خطتك بحد أقصى {limit:number} طالب.", {}),
+      courseLimitReached: dt("تسمح خطتك بحد أقصى {limit:number} دورة.", {}),
       storageLimitReached: dt(
         "تسمح خطتك بحد أقصى {limitGb:number} جيجابايت من التخزين.",
         {},
@@ -366,7 +361,8 @@ export default {
       invite: {
         subject: "تمت دعوتك للانضمام إلى {organizationName}",
         text: "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS: {acceptUrl}",
-        intro: "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS.",
+        intro:
+          "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS.",
         ctaLabel: "قبول الدعوة",
         ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
       },
@@ -376,10 +372,21 @@ export default {
     nav: {
       generalGroup: "عام",
     },
-    placeholder: {
-      title: "مرحبًا بك في Gateling-TMS",
+    welcome: {
+      title: "مرحبًا بعودتك، {orgName}",
+      titleFallback: "مرحبًا بعودتك",
+      subtitle: "إليك نظرة سريعة على أكاديميتك.",
+    },
+    stats: {
+      students: "الطلاب",
+      courses: "الدورات",
+      plan: "الباقة",
+    },
+    upcoming: {
+      title: "المزيد قادم قريبًا",
       description:
-        "لوحة التحكم جاهزة. مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة.",
+        "مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة — ستتمكن من إدارة الدورات والحصص والجلسات المباشرة من هنا.",
+      settingsCta: "إدارة المؤسسة",
     },
   },
   getStarted: {

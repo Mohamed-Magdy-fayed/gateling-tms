@@ -366,7 +366,8 @@ export default {
       invite: {
         subject: "You've been invited to join {organizationName}",
         text: "{inviterName} invited you to join {organizationName} on Gateling-TMS: {acceptUrl}",
-        intro: "{inviterName} invited you to join {organizationName} on Gateling-TMS.",
+        intro:
+          "{inviterName} invited you to join {organizationName} on Gateling-TMS.",
         ctaLabel: "Accept invitation",
         ignore:
           "If you weren't expecting this invitation, you can ignore this email.",
@@ -377,10 +378,21 @@ export default {
     nav: {
       generalGroup: "General",
     },
-    placeholder: {
-      title: "Welcome to Gateling-TMS",
+    welcome: {
+      title: "Welcome back, {orgName}",
+      titleFallback: "Welcome back",
+      subtitle: "Here's a quick look at your academy.",
+    },
+    stats: {
+      students: "Students",
+      courses: "Courses",
+      plan: "Plan",
+    },
+    upcoming: {
+      title: "More is on the way",
       description:
-        "Your dashboard is ready. Content Library, Learning Flow, and Live Classes land in upcoming phases.",
+        "Content Library, Learning Flow, and Live Classes land in upcoming phases — you'll manage courses, classes, and live sessions right from here.",
+      settingsCta: "Manage organization",
     },
   },
   getStarted: {
