@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from "lucide-react";
+import { CircleCheckIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getT } from "@/features/core/i18n/server";
 
@@ -24,7 +24,7 @@ export async function PricingFaqSection() {
             <Card key={key}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CheckCircleIcon className="size-4 shrink-0 text-primary" />
+                  <CircleCheckIcon className="size-4 shrink-0 text-primary" />
                   {t(`pricing.faq.questions.${key}.question`)}
                 </CardTitle>
               </CardHeader>
