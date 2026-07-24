@@ -4,6 +4,7 @@ import { inngest } from "@/integrations/inngest/client";
 import { contactMessageSubmittedEvent } from "@/integrations/inngest/functions/on-contact-message-submitted";
 import {
   buildRatelimitKey,
+  contactFormIpRatelimit,
   contactFormRatelimit,
   getRequestIp,
   isRateLimited,
@@ -18,11 +19,16 @@ export async function submitContactMessage(
   const normalizedEmail = normalizeEmail(input.email);
 
   const ip = await getRequestIp();
+  // IP-only budget first — an IP+email-only key lets a spammer submit
+  // unlimited messages by rotating email addresses each time. The tighter
+  // IP+email budget then still catches a single sender resubmitting too
+  // often from the same address.
   if (
-    await isRateLimited(
+    (await isRateLimited(contactFormIpRatelimit, ip)) ||
+    (await isRateLimited(
       contactFormRatelimit,
       buildRatelimitKey(ip, normalizedEmail),
-    )
+    ))
   ) {
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",

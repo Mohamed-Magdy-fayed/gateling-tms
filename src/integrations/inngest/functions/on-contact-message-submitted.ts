@@ -29,18 +29,20 @@ export const onContactMessageSubmitted = inngest.createFunction(
   },
   async ({ event, step }) => {
     return step.run("send-contact-notification-email", async () => {
-      // No confirmed/monitored inbox exists until Mohamed provides one —
-      // falls back through the same SMTP identity used to send mail, so a
-      // pre-launch environment degrades to a no-op (via sendMail's own
-      // "SMTP not configured" contract) rather than throwing.
+      // Unlike other dormant-integration paths (e.g. sendMail's own
+      // "SMTP not configured" no-op), the contact mutation has *already*
+      // told the sender their message was submitted successfully by the
+      // time this runs — a silent skip here would lose the message with no
+      // trace anywhere and no way for the sender to know. Throw instead, so
+      // the job fails, stays retryable, and shows up as a real failure in
+      // Inngest rather than disappearing.
       const inboxEmail =
         env.CONTACT_INBOX_EMAIL ?? env.SMTP_FROM_EMAIL ?? env.SMTP_USER;
 
       if (!inboxEmail) {
-        console.warn(
-          "[contact] no CONTACT_INBOX_EMAIL/SMTP_FROM_EMAIL/SMTP_USER configured, skipping notification",
+        throw new Error(
+          "Contact inbox is not configured (CONTACT_INBOX_EMAIL/SMTP_FROM_EMAIL/SMTP_USER); refusing to silently discard a submitted message",
         );
-        return { skipped: true };
       }
 
       await sendContactNotificationEmail({

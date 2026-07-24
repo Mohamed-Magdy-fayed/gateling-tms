@@ -10,6 +10,10 @@ import { buildLocalizedMetadata } from "@/features/marketing/nextjs/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildLocalizedMetadata({
+    // "absolute" — the root layout's title template would otherwise append
+    // "| Gateling-TMS" a second time, since the brand name is already in
+    // this title.
+    titleMode: "absolute",
     en: {
       title:
         "Gateling-TMS — Your gateway to manage your online teaching business",

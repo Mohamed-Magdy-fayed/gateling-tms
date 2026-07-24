@@ -19,12 +19,14 @@ export const privacyContent: LocalizedLegalContent = {
           "Organization information: business name, and the courses, classes, and student records your organization creates.",
           "Content you upload: course materials and files stored through our file storage provider, subject to your plan's storage limit.",
           "Usage information: sign-in activity and basic technical logs used to keep the service secure and reliable.",
+          "Contact form submissions: if you use our contact form — including as a visitor without an account — we collect the name, email address, subject, and message you submit, solely to respond to you.",
         ],
       },
       {
         title: "How we use it",
         paragraphs: [
           "To provide the service: authenticate you, run your organization's classes, and send transactional emails such as email verification, password resets, and team invitations.",
+          "To respond to messages sent through our contact form: the Gateling team receives an email notification containing what you submitted, and uses it only to reply to you.",
           "To keep the service secure and improve it over time.",
         ],
       },
@@ -44,6 +46,7 @@ export const privacyContent: LocalizedLegalContent = {
         title: "Data retention",
         paragraphs: [
           "We keep your data for as long as your account or organization stays active. Contact us if you'd like your data deleted.",
+          "Contact form submissions are kept only as long as needed to respond to you, whether or not you have an account.",
         ],
       },
       {
@@ -90,12 +93,14 @@ export const privacyContent: LocalizedLegalContent = {
           "معلومات المؤسسة: اسم النشاط التجاري، والدورات والحصص وسجلات الطلاب التي تنشئها مؤسستك.",
           "المحتوى الذي ترفعه: المواد التعليمية والملفات المخزَّنة عبر مزوّد تخزين الملفات لدينا، ضمن حد التخزين المسموح به لخطتك.",
           "معلومات الاستخدام: نشاط تسجيل الدخول وسجلات تقنية أساسية تُستخدم للحفاظ على أمان الخدمة وموثوقيتها.",
+          "رسائل نموذج التواصل: إذا استخدمت نموذج التواصل لدينا — حتى كزائر بلا حساب — فإننا نجمع الاسم والبريد الإلكتروني والموضوع والرسالة التي ترسلها، فقط للرد عليك.",
         ],
       },
       {
         title: "كيف نستخدمها",
         paragraphs: [
           "لتقديم الخدمة: التحقق من هويتك، وتشغيل حصص مؤسستك، وإرسال رسائل بريدية تشغيلية مثل تأكيد البريد الإلكتروني وإعادة تعيين كلمة المرور ودعوات الفريق.",
+          "للرد على الرسائل المرسلة عبر نموذج التواصل: يتلقى فريق Gateling إشعارًا بالبريد الإلكتروني يحتوي على ما أرسلته، ويستخدمه فقط للرد عليك.",
           "للحفاظ على أمان الخدمة وتحسينها بمرور الوقت.",
         ],
       },
@@ -115,6 +120,7 @@ export const privacyContent: LocalizedLegalContent = {
         title: "الاحتفاظ بالبيانات",
         paragraphs: [
           "نحتفظ ببياناتك طالما ظل حسابك أو مؤسستك نشطَين. تواصل معنا إذا رغبت في حذف بياناتك.",
+          "تُحفظ رسائل نموذج التواصل فقط للمدة اللازمة للرد عليك، سواء كان لديك حساب أم لا.",
         ],
       },
       {
