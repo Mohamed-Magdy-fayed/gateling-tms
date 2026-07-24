@@ -52,6 +52,7 @@ export default {
     validation: {
       required: "This field is required.",
       max128: "Must be at most 128 characters.",
+      max2000: "Must be at most 2000 characters.",
     },
   },
   systemPages: {
@@ -432,7 +433,16 @@ export default {
       tagline:
         "Gateling-TMS is your gateway to manage your online teaching business — course management, live classes, and student tracking in one place.",
       linksHeading: "Quick links",
+      legalHeading: "Legal",
       copyright: "© {year} Gateling. All rights reserved.",
+      links: {
+        about: "About",
+        contact: "Contact",
+        privacy: "Privacy Policy",
+        terms: "Terms of Service",
+        cookies: "Cookies Policy",
+        refund: "Refund Policy",
+      },
     },
     hero: {
       title: "Your gateway to manage your online teaching business",
@@ -775,6 +785,82 @@ export default {
           answer:
             "We'll let you know before you hit a hard wall and point you at the next plan up — you'll never lose data or get cut off mid-action.",
         },
+      },
+    },
+  },
+  legal: {
+    lastUpdated: "Last updated: July 2026",
+  },
+  about: {
+    hero: {
+      title: "Built for how academies actually run",
+      description:
+        "Gateling-TMS is a straightforward training management system for online academies and teaching businesses — no sales calls, no setup projects, just sign up and start managing classes.",
+    },
+    beliefs: {
+      title: "What we believe",
+      description:
+        "These aren't marketing lines — they're the calls we make when building the product.",
+      items: {
+        instantOnboarding: {
+          title: "Instant onboarding",
+          description:
+            "Sign up and start managing classes in one sitting. No mandatory setup, no sales call.",
+        },
+        excelFirst: {
+          title: "Excel-first",
+          description:
+            "Every major list supports import and export, so switching from spreadsheets feels natural.",
+        },
+        freeForever: {
+          title: "Free means free",
+          description:
+            "The Free plan has no time limit and needs no credit card — it's generous enough to run a small academy.",
+        },
+        bilingual: {
+          title: "Bilingual by design",
+          description:
+            "English and Arabic are equals, with full right-to-left support built in from day one.",
+        },
+        truthful: {
+          title: "Truthful marketing",
+          description:
+            'We only claim what\'s actually built. Anything not ready yet is labeled "coming soon" — never implied.',
+        },
+      },
+    },
+    cta: {
+      title: "Ready to see it for yourself?",
+      description:
+        "Create your academy for free — no credit card, no time limit.",
+      cta: "Get Started Free",
+    },
+  },
+  contact: {
+    hero: {
+      title: "Get in touch",
+      description:
+        "Questions, feedback, or something not working? Send us a message and we'll get back to you.",
+    },
+    form: {
+      title: "Send a message",
+      nameLabel: "Your name",
+      emailLabel: "Email address",
+      subjectLabel: "Subject",
+      messageLabel: "Message",
+      submit: "Send message",
+      submitting: "Sending…",
+      success: "Message sent — we'll get back to you soon.",
+      error: {
+        rateLimited: "Too many messages sent. Please try again later.",
+        submitFailed: "Couldn't send your message. Please try again.",
+      },
+    },
+    emails: {
+      notification: {
+        subject: "New contact form message: {subject}",
+        greeting: "New message from the contact form",
+        intro: '{name} ({email}) sent a message: "{subject}"',
       },
     },
   },

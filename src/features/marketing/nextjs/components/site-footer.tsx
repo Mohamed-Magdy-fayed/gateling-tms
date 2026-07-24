@@ -12,6 +12,15 @@ export async function SiteFooter() {
     { href: "/auth/sign-in", label: t("landing.header.signIn") },
   ];
 
+  const legalLinks = [
+    { href: "/about", label: t("landing.footer.links.about") },
+    { href: "/contact", label: t("landing.footer.links.contact") },
+    { href: "/privacy", label: t("landing.footer.links.privacy") },
+    { href: "/terms", label: t("landing.footer.links.terms") },
+    { href: "/cookies", label: t("landing.footer.links.cookies") },
+    { href: "/refund", label: t("landing.footer.links.refund") },
+  ];
+
   return (
     <footer className="border-t border-neutral-800 bg-neutral-900 text-neutral-300">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-4 py-12 text-center sm:px-6 md:flex-row md:items-start md:justify-between md:text-start lg:px-8">
@@ -22,22 +31,42 @@ export async function SiteFooter() {
           </p>
         </div>
 
-        <div>
-          <div className="font-display font-bold text-sm text-white">
-            {t("landing.footer.linksHeading")}
+        <div className="flex flex-col items-center gap-10 sm:flex-row md:items-start">
+          <div>
+            <div className="font-display font-bold text-sm text-white">
+              {t("landing.footer.linksHeading")}
+            </div>
+            <ul className="mt-3 flex flex-col items-center gap-2 md:items-start">
+              {quickLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-neutral-400 text-sm transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-3 flex flex-col items-center gap-2 md:items-start">
-            {quickLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="text-neutral-400 text-sm transition-colors hover:text-white"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+
+          <div>
+            <div className="font-display font-bold text-sm text-white">
+              {t("landing.footer.legalHeading")}
+            </div>
+            <ul className="mt-3 flex flex-col items-center gap-2 md:items-start">
+              {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-neutral-400 text-sm transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 

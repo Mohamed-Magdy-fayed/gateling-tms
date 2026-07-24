@@ -46,6 +46,15 @@ export const passkeyAuthRatelimit = new Ratelimit({
   prefix: "ratelimit:passkey-auth",
 });
 
+// The public /contact form is unauthenticated, so it needs its own budget
+// separate from the auth flows above — same shape (per IP+email), tighter
+// than sign-up since a message doesn't need to be retried often.
+export const contactFormRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(5, "60 m"),
+  prefix: "ratelimit:contact-form",
+});
+
 /**
  * Trusts `x-forwarded-for`/`x-real-ip` as set by the platform's own edge
  * network (per `06-workflow.md` §5, this app deploys on Vercel) — Vercel's
