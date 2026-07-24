@@ -20,67 +20,63 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup, FieldSet } from "@/components/ui/field";
-import type { DemoItem } from "@/drizzle/schema";
+import type { Course } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
-  type DemoItemMutationInput,
-  demoItemMutationSchema,
-} from "@/features/system/demo/server/schemas";
+  type CourseMutationInput,
+  courseMutationSchema,
+} from "@/features/system/content-library/courses/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 
-type DemoItemFormDialogProps = {
-  item?: DemoItem | null;
+type CourseFormDialogProps = {
+  course?: Course | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 };
 
-export function DemoItemFormDialog({
-  item,
+export function CourseFormDialog({
+  course,
   onOpenChange,
   open,
-}: DemoItemFormDialogProps) {
+}: CourseFormDialogProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const isEdit = item != null;
+  const isEdit = course != null;
 
-  const createMut = useMutation(trpc.demo.create.mutationOptions());
-  const updateMut = useMutation(trpc.demo.update.mutationOptions());
+  const createMut = useMutation(trpc.courses.create.mutationOptions());
+  const updateMut = useMutation(trpc.courses.update.mutationOptions());
 
-  const defaultValues = useMemo<DemoItemMutationInput>(
+  const defaultValues = useMemo<CourseMutationInput>(
     () => ({
-      name: item?.name ?? "",
-      isActive: item?.isActive ?? true,
+      name: course?.name ?? "",
+      description: course?.description ?? "",
     }),
-    [item],
+    [course],
   );
 
   const form = useAppForm({
     defaultValues,
-    validators: { onSubmit: demoItemMutationSchema },
+    validators: { onSubmit: courseMutationSchema },
     onSubmit: async ({ value }) => {
       const action: Promise<unknown> =
-        isEdit && item
-          ? updateMut.mutateAsync({ id: item.id, ...value })
+        isEdit && course
+          ? updateMut.mutateAsync({ id: course.id, ...value })
           : createMut.mutateAsync(value);
 
       try {
         await toast
           .promise(action, {
             loading: t("common.loading"),
-            success: t(
-              isEdit
-                ? "systemPages.demoItemUpdated"
-                : "systemPages.demoItemCreated",
-            ),
+            success: t(isEdit ? "courses.updated" : "courses.created"),
             error: (err) =>
-              err instanceof Error
-                ? err.message
-                : t("systemPages.demoItemSaveFailed"),
+              err instanceof Error ? err.message : t("courses.saveFailed"),
           })
           .unwrap();
 
-        await queryClient.invalidateQueries({ queryKey: trpc.demo.pathKey() });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.courses.pathKey(),
+        });
         onOpenChange(false);
       } catch {
         // toast.promise already surfaced the failure.
@@ -88,12 +84,12 @@ export function DemoItemFormDialog({
     },
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form/defaultValues are deliberately excluded — this should only re-run when the dialog opens for a (possibly different) item, not on every defaultValues/form identity change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form/defaultValues are deliberately excluded — this should only re-run when the dialog opens for a (possibly different) course, not on every defaultValues/form identity change
   useEffect(() => {
     if (open) {
       form.reset(defaultValues);
     }
-  }, [open, item?.id]);
+  }, [open, course?.id]);
 
   const pending = createMut.isPending || updateMut.isPending;
   const SubmitIcon = pending ? Loader2Icon : isEdit ? SaveIcon : PlusIcon;
@@ -112,14 +108,10 @@ export function DemoItemFormDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {t(isEdit ? "systemPages.editDemoItem" : "systemPages.addDemoItem")}
+            {t(isEdit ? "courses.edit" : "courses.add")}
           </DialogTitle>
           <DialogDescription>
-            {t(
-              isEdit
-                ? "systemPages.editDemoItemDescription"
-                : "systemPages.addDemoItemDescription",
-            )}
+            {t(isEdit ? "courses.editDescription" : "courses.addDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,16 +124,16 @@ export function DemoItemFormDialog({
             <FieldGroup>
               <form.AppField name="name">
                 {(field) => (
-                  <field.StringField
-                    label={t("systemPages.demoItemName")}
-                    autoFocus
-                  />
+                  <field.StringField label={t("courses.name")} autoFocus />
                 )}
               </form.AppField>
 
-              <form.AppField name="isActive">
+              <form.AppField name="description">
                 {(field) => (
-                  <field.BooleanField label={t("systemPages.demoItemActive")} />
+                  <field.TextareaField
+                    label={t("courses.description")}
+                    rows={4}
+                  />
                 )}
               </form.AppField>
             </FieldGroup>

@@ -1,25 +1,24 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import type { DemoItem } from "@/drizzle/schema";
+import type { Course } from "@/drizzle/schema";
 import {
   createEntityActionsColumn,
   DataTableColumnHeader,
 } from "@/features/core/data-table";
 import type { useTranslation } from "@/features/core/i18n/client";
 import {
-  DemoItemRowActions,
-  type SetDemoItemRowAction,
-} from "./demo-item-row-actions";
+  CourseRowActions,
+  type SetCourseRowAction,
+} from "./course-row-actions";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
-export function buildDemoItemColumns(opts: {
+export function buildCourseColumns(opts: {
   locale: string;
-  setRowAction: SetDemoItemRowAction;
+  setRowAction: SetCourseRowAction;
   t: Translate;
-}): ColumnDef<DemoItem>[] {
+}): ColumnDef<Course>[] {
   const { locale, setRowAction, t } = opts;
   const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     dateStyle: "medium",
@@ -30,27 +29,20 @@ export function buildDemoItemColumns(opts: {
     {
       accessorKey: "name",
       header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("systemPages.demoItemName")}
-        />
+        <DataTableColumnHeader column={column} title={t("courses.name")} />
       ),
-      meta: { label: t("systemPages.demoItemName") },
+      meta: { label: t("courses.name") },
     },
     {
-      accessorKey: "isActive",
+      accessorKey: "description",
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title={t("systemPages.demoItemActive")}
+          title={t("courses.description")}
         />
       ),
-      meta: { label: t("systemPages.demoItemActive") },
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? t("common.yes") : t("common.no")}
-        </Badge>
-      ),
+      meta: { label: t("courses.description") },
+      cell: ({ row }) => row.original.description ?? "—",
     },
     {
       accessorKey: "createdAt",
@@ -63,7 +55,7 @@ export function buildDemoItemColumns(opts: {
     createEntityActionsColumn({
       t,
       cell: ({ row }) => (
-        <DemoItemRowActions row={row.original} setRowAction={setRowAction} />
+        <CourseRowActions row={row.original} setRowAction={setRowAction} />
       ),
     }),
   ];

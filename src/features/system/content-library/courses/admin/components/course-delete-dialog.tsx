@@ -14,45 +14,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { DemoItem } from "@/drizzle/schema";
+import type { Course } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
-type DemoItemDeleteDialogProps = {
-  item: DemoItem | null;
+type CourseDeleteDialogProps = {
+  course: Course | null;
   onDeleted?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 };
 
-export function DemoItemDeleteDialog({
-  item,
+export function CourseDeleteDialog({
+  course,
   onDeleted,
   onOpenChange,
   open,
-}: DemoItemDeleteDialogProps) {
+}: CourseDeleteDialogProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const deleteMut = useMutation(trpc.demo.delete.mutationOptions());
+  const deleteMut = useMutation(trpc.courses.delete.mutationOptions());
   const [pending, setPending] = useState(false);
 
   async function handleConfirm() {
-    if (!item) return;
+    if (!course) return;
 
     setPending(true);
     try {
       await toast
-        .promise(deleteMut.mutateAsync({ id: item.id }), {
+        .promise(deleteMut.mutateAsync({ id: course.id }), {
           loading: t("common.loading"),
-          success: t("systemPages.demoItemDeleted"),
+          success: t("courses.deleted"),
           error: (err) =>
-            err instanceof Error
-              ? err.message
-              : t("systemPages.demoItemDeleteFailed"),
+            err instanceof Error ? err.message : t("courses.deleteFailed"),
         })
         .unwrap();
-      await queryClient.invalidateQueries({ queryKey: trpc.demo.pathKey() });
+      await queryClient.invalidateQueries({
+        queryKey: trpc.courses.pathKey(),
+      });
       onDeleted?.();
       onOpenChange(false);
     } catch {
@@ -66,12 +66,10 @@ export function DemoItemDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t("systemPages.deleteDemoItemTitle")}
-          </AlertDialogTitle>
+          <AlertDialogTitle>{t("courses.deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {item
-              ? t("systemPages.deleteDemoItemDescription", { name: item.name })
+            {course
+              ? t("courses.deleteDescription", { name: course.name })
               : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>

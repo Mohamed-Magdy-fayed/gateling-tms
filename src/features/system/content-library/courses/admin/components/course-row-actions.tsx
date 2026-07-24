@@ -9,24 +9,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { DemoItem } from "@/drizzle/schema";
+import type { Course } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 
-export type DemoItemRowActionVariant = "edit" | "delete";
+export type CourseRowActionVariant = "edit" | "delete";
 
-export type SetDemoItemRowAction = (
-  next: { row: DemoItem; variant: DemoItemRowActionVariant } | null,
+export type SetCourseRowAction = (
+  next: { row: Course; variant: CourseRowActionVariant } | null,
 ) => void;
 
-type DemoItemRowActionsProps = {
-  row: DemoItem;
-  setRowAction: SetDemoItemRowAction;
+type CourseRowActionsProps = {
+  row: Course;
+  setRowAction: SetCourseRowAction;
 };
 
-export function DemoItemRowActions({
-  row,
-  setRowAction,
-}: DemoItemRowActionsProps) {
+export function CourseRowActions({ row, setRowAction }: CourseRowActionsProps) {
   const { t } = useTranslation();
 
   return (
