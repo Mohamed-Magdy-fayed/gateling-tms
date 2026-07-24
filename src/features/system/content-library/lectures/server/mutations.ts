@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
-import { LecturesTable } from "@/drizzle/schema";
-import { assertLevelInOrg } from "./queries";
+import { LecturesTable, LevelsTable } from "@/drizzle/schema";
 import type {
   LectureDeleteInput,
   LectureMoveInput,
@@ -14,26 +13,50 @@ export async function createLecture(
   ctx: OrgTRPCContext,
   input: LectureMutationInput,
 ) {
-  await assertLevelInOrg(ctx, input.levelId);
+  return ctx.db.transaction(async (trx) => {
+    // Locks the level row for the rest of the transaction so two concurrent
+    // creates against the same level can't both observe the same `order`
+    // count and insert duplicates — same fix as levels/server/mutations.ts's
+    // createLevel/moveLevel (STATE.md D59), applied here proactively since
+    // this mutation copies the identical unprotected count-then-insert
+    // pattern (STATE.md D61(4)).
+    const [level] = await trx
+      .select({ id: LevelsTable.id })
+      .from(LevelsTable)
+      .where(
+        and(
+          eq(LevelsTable.id, input.levelId),
+          eq(LevelsTable.organizationId, ctx.organizationId),
+        ),
+      )
+      .for("update");
 
-  const [{ value: existingCount }] = await ctx.db
-    .select({ value: count() })
-    .from(LecturesTable)
-    .where(eq(LecturesTable.levelId, input.levelId));
+    if (!level) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
 
-  const [lecture] = await ctx.db
-    .insert(LecturesTable)
-    .values({
-      organizationId: ctx.organizationId,
-      levelId: input.levelId,
-      name: input.name,
-      description: input.description || null,
-      content: input.content || null,
-      order: Number(existingCount),
-    })
-    .returning({ id: LecturesTable.id });
+    const [{ value: existingCount }] = await trx
+      .select({ value: count() })
+      .from(LecturesTable)
+      .where(eq(LecturesTable.levelId, input.levelId));
 
-  return { id: lecture.id };
+    const [lecture] = await trx
+      .insert(LecturesTable)
+      .values({
+        organizationId: ctx.organizationId,
+        levelId: input.levelId,
+        name: input.name,
+        description: input.description || null,
+        content: input.content || null,
+        order: Number(existingCount),
+      })
+      .returning({ id: LecturesTable.id });
+
+    return { id: lecture.id };
+  });
 }
 
 export async function updateLecture(
@@ -91,7 +114,8 @@ export async function deleteLecture(
 
 // Swaps `order` with the adjacent sibling in the same level rather than
 // renumbering the whole list — same reasoning as levels/server/mutations.ts's
-// moveLevel.
+// moveLevel. Locking the level row also serializes this against
+// createLecture's order allocation for the same level (STATE.md D59/D61(4)).
 export async function moveLecture(
   ctx: OrgTRPCContext,
   input: LectureMoveInput,
@@ -106,6 +130,24 @@ export async function moveLecture(
     });
 
     if (!current) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    const [level] = await trx
+      .select({ id: LevelsTable.id })
+      .from(LevelsTable)
+      .where(
+        and(
+          eq(LevelsTable.id, current.levelId),
+          eq(LevelsTable.organizationId, ctx.organizationId),
+        ),
+      )
+      .for("update");
+
+    if (!level) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),
