@@ -5,8 +5,9 @@ export const listLecturesInput = z.object({
   levelId: z.uuid(),
 });
 
-export const lectureMutationSchema = z.object({
-  levelId: z.uuid(),
+// Shared between create and update so the two schemas can't silently drift
+// (e.g. a future length-limit change applied to one but not the other).
+const lectureFields = {
   name: z
     .string()
     .trim()
@@ -24,27 +25,16 @@ export const lectureMutationSchema = z.object({
     .max(2000, translationKey("forms.validation.max2000"))
     .optional()
     .or(z.literal("")),
+};
+
+export const lectureMutationSchema = z.object({
+  levelId: z.uuid(),
+  ...lectureFields,
 });
 
 export const lectureUpdateSchema = z.object({
   id: z.uuid(),
-  name: z
-    .string()
-    .trim()
-    .min(1, translationKey("forms.validation.required"))
-    .max(256, translationKey("forms.validation.max256")),
-  description: z
-    .string()
-    .trim()
-    .max(2000, translationKey("forms.validation.max2000"))
-    .optional()
-    .or(z.literal("")),
-  content: z
-    .string()
-    .trim()
-    .max(2000, translationKey("forms.validation.max2000"))
-    .optional()
-    .or(z.literal("")),
+  ...lectureFields,
 });
 
 export const lectureDeleteSchema = z.object({
