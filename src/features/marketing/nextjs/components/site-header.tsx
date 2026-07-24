@@ -35,6 +35,21 @@ export function SiteHeader({ isAuthenticated }: SiteHeaderProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <SiteLogo priority />
 
+        <nav className="hidden items-center gap-6 md:flex">
+          <Link
+            href="/features"
+            className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+          >
+            {t("landing.header.features")}
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+          >
+            {t("landing.header.pricing")}
+          </Link>
+        </nav>
+
         <div className="flex items-center gap-2">
           <LanguageToggle />
 
