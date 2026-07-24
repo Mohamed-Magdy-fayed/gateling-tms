@@ -20,7 +20,7 @@ export async function createLevel(
     // count and insert duplicates — same pattern as
     // organizations/server/mutations.ts's lockAdminRowsForUpdate (STATE.md
     // D49) and courses/server/mutations.ts's createCourse. Also re-verifies
-    // the course is still active (STATE.md D59).
+    // the course is still active (STATE.md D66).
     const [course] = await trx
       .select({ id: CoursesTable.id })
       .from(CoursesTable)
@@ -62,7 +62,7 @@ export async function createLevel(
 // update/delete/move all resolve the level's courseId first and re-check it
 // through assertCourseInOrg — a level's parent course can be soft-deleted
 // after the level was created, and create/list already enforce that
-// boundary, so these must too (STATE.md D59).
+// boundary, so these must too (STATE.md D66).
 export async function updateLevel(
   ctx: OrgTRPCContext,
   input: LevelUpdateInput,
