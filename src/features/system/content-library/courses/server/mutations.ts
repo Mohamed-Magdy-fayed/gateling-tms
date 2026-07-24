@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { CoursesTable, OrganizationsTable } from "@/drizzle/schema";
 import { assertCanAddCourse } from "@/features/core/organizations/server";
+import { deleteOrgImage } from "@/features/core/uploads/server";
 import type {
   CourseDeleteInput,
   CourseMutationInput,
@@ -49,6 +50,7 @@ export async function createCourse(
         organizationId: ctx.organizationId,
         name: input.name,
         description: input.description || null,
+        thumbnailUrl: input.thumbnailUrl || null,
         createdBy: actorLabel(ctx),
       })
       .returning({ id: CoursesTable.id });
@@ -62,31 +64,48 @@ export async function createCourse(
   });
 }
 
+// If the thumbnail is being replaced or cleared, the old Firebase object is
+// deleted and its bytes refunded from organizations.storageBytes — otherwise
+// every re-upload would silently leak storage budget the org can never
+// reclaim without deleting the whole course.
 export async function updateCourse(
   ctx: OrgTRPCContext,
   input: CourseUpdateInput,
 ) {
-  const [updated] = await ctx.db
-    .update(CoursesTable)
-    .set({
-      name: input.name,
-      description: input.description || null,
-      updatedBy: actorLabel(ctx),
-    })
-    .where(
-      and(
+  const nextThumbnailUrl = input.thumbnailUrl || null;
+
+  const previousThumbnailUrl = await ctx.db.transaction(async (trx) => {
+    const existing = await trx.query.CoursesTable.findFirst({
+      where: and(
         eq(CoursesTable.id, input.id),
         eq(CoursesTable.organizationId, ctx.organizationId),
         isNull(CoursesTable.deletedAt),
       ),
-    )
-    .returning({ id: CoursesTable.id });
-
-  if (!updated) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: ctx.t("errors.notFound"),
+      columns: { thumbnailUrl: true },
     });
+
+    if (!existing) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    await trx
+      .update(CoursesTable)
+      .set({
+        name: input.name,
+        description: input.description || null,
+        thumbnailUrl: nextThumbnailUrl,
+        updatedBy: actorLabel(ctx),
+      })
+      .where(eq(CoursesTable.id, input.id));
+
+    return existing.thumbnailUrl;
+  });
+
+  if (previousThumbnailUrl && previousThumbnailUrl !== nextThumbnailUrl) {
+    await deleteOrgImage(ctx, { url: previousThumbnailUrl });
   }
 
   return { updated: true };

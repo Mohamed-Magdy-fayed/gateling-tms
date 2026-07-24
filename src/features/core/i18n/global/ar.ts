@@ -55,6 +55,11 @@ export default {
       max256: "يجب ألا يتجاوز 256 حرفًا.",
       max2000: "يجب ألا يتجاوز 2000 حرفًا.",
     },
+    imageUpload: {
+      success: "تم رفع الصورة.",
+      error: "تعذر رفع الصورة.",
+      uploading: "جاري الرفع…",
+    },
   },
   systemPages: {
     auditInfoTitle: "معلومات التدقيق",
@@ -357,6 +362,7 @@ export default {
     lead: "نظّم مناهجك في دورات، ثم أضف مستويات ومحاضرات داخل كل دورة.",
     name: "الاسم",
     description: "الوصف",
+    thumbnail: "الصورة المصغرة",
     add: "إضافة دورة",
     edit: "تعديل دورة",
     addDescription: "إنشاء دورة جديدة.",

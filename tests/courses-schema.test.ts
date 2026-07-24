@@ -40,4 +40,37 @@ describe("courseMutationSchema", () => {
       expect(result.data.name).toBe("Algebra");
     }
   });
+
+  test("accepts a valid thumbnailUrl", () => {
+    const result = courseMutationSchema.safeParse({
+      name: "Intro to Algebra",
+      thumbnailUrl:
+        "https://storage.googleapis.com/bucket/orgs/org-1/courses/thumb.jpg",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts an empty-string thumbnailUrl (cleared)", () => {
+    const result = courseMutationSchema.safeParse({
+      name: "Intro to Algebra",
+      thumbnailUrl: "",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts a null thumbnailUrl (never set)", () => {
+    const result = courseMutationSchema.safeParse({
+      name: "Intro to Algebra",
+      thumbnailUrl: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects a non-URL thumbnailUrl", () => {
+    const result = courseMutationSchema.safeParse({
+      name: "Intro to Algebra",
+      thumbnailUrl: "not-a-url",
+    });
+    expect(result.success).toBe(false);
+  });
 });
