@@ -1,6 +1,12 @@
 "use client";
 
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  LayersIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +47,12 @@ export function CourseRowActions({ row, setRowAction }: CourseRowActionsProps) {
         }
       />
       <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem
+          render={<Link href={`/content-library/courses/${row.id}`} />}
+        >
+          <LayersIcon className="size-3.5" />
+          {t("courses.manageLevels")}
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setRowAction({ row, variant: "edit" })}
         >

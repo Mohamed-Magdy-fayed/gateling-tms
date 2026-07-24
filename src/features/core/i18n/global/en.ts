@@ -376,6 +376,31 @@ export default {
     deleted: "Course deleted.",
     deleteFailed: "Could not delete course.",
     searchHint: "Search courses…",
+    manageLevels: "Manage levels",
+    notFoundTitle: "Course not found",
+    notFoundDescription:
+      "This course doesn't exist, was deleted, or isn't accessible to your organization.",
+  },
+  levels: {
+    title: "Levels",
+    name: "Name",
+    add: "Add level",
+    edit: "Edit level",
+    addDescription: "Create a new level in this course.",
+    editDescription: "Update this level's name.",
+    created: "Level created.",
+    updated: "Level updated.",
+    saveFailed: "Could not save level.",
+    deleteTitle: "Delete level?",
+    deleteDescription:
+      "Remove {name}. This can't be undone once lectures are added inside it.",
+    deleted: "Level deleted.",
+    deleteFailed: "Could not delete level.",
+    emptyTitle: "No levels yet",
+    emptyDescription:
+      "Add your first level to start organizing this course's lectures.",
+    moveUp: "Move up",
+    moveDown: "Move down",
   },
   dashboard: {
     nav: {
