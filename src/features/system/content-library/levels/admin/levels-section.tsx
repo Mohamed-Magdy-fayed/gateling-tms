@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronUpIcon,
   LayersIcon,
   MoreHorizontalIcon,
@@ -24,6 +25,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Level } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
+import { LecturesSection } from "@/features/system/content-library/lectures/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import { LevelDeleteDialog, LevelFormDialog } from "./components";
@@ -42,6 +44,7 @@ export function LevelsSection({ courseId }: { courseId: string }) {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [rowAction, setRowAction] = useState<RowAction>(null);
+  const [expandedLevelId, setExpandedLevelId] = useState<string | null>(null);
 
   async function handleMove(level: Level, direction: "up" | "down") {
     try {
@@ -80,71 +83,98 @@ export function LevelsSection({ courseId }: { courseId: string }) {
             isFetching ? "space-y-2 opacity-80 transition-opacity" : "space-y-2"
           }
         >
-          {levels?.map((level, index) => (
-            <Card
-              key={level.id}
-              className="flex-row items-center gap-3 px-4 py-3"
-            >
-              <div className="flex flex-col">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  disabled={index === 0 || moveMut.isPending}
-                  aria-label={t("levels.moveUp")}
-                  onClick={() => handleMove(level, "up")}
-                >
-                  <ChevronUpIcon className="size-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  disabled={index === levels.length - 1 || moveMut.isPending}
-                  aria-label={t("levels.moveDown")}
-                  onClick={() => handleMove(level, "down")}
-                >
-                  <ChevronDownIcon className="size-3" />
-                </Button>
-              </div>
+          {levels?.map((level, index) => {
+            const isExpanded = expandedLevelId === level.id;
 
-              <span className="flex-1 font-medium text-foreground text-sm">
-                {level.name}
-              </span>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
+            return (
+              <Card key={level.id} className="gap-0 py-3">
+                <CardContent className="flex items-center gap-3 px-4">
+                  <div className="flex flex-col">
                     <Button
+                      type="button"
                       variant="ghost"
-                      size="icon-sm"
-                      className="size-8"
-                      aria-label={t("common.actions")}
+                      size="icon-xs"
+                      disabled={index === 0 || moveMut.isPending}
+                      aria-label={t("levels.moveUp")}
+                      onClick={() => handleMove(level, "up")}
                     >
-                      <MoreHorizontalIcon className="size-3.5" />
+                      <ChevronUpIcon className="size-3" />
                     </Button>
-                  }
-                />
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem
-                    onClick={() => setRowAction({ level, variant: "edit" })}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      disabled={
+                        index === levels.length - 1 || moveMut.isPending
+                      }
+                      aria-label={t("levels.moveDown")}
+                      onClick={() => handleMove(level, "down")}
+                    >
+                      <ChevronDownIcon className="size-3" />
+                    </Button>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center gap-2 text-start"
+                    onClick={() =>
+                      setExpandedLevelId(isExpanded ? null : level.id)
+                    }
+                    aria-expanded={isExpanded}
                   >
-                    <PencilIcon className="size-3.5" />
-                    {t("actions.edit")}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setRowAction({ level, variant: "delete" })}
-                  >
-                    <Trash2Icon className="size-3.5 text-destructive" />
-                    <span className="text-destructive">
-                      {t("actions.delete")}
+                    {isExpanded ? (
+                      <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                    ) : (
+                      <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+                    )}
+                    <span className="font-medium text-foreground text-sm">
+                      {level.name}
                     </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </Card>
-          ))}
+                  </button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="size-8"
+                          aria-label={t("common.actions")}
+                        >
+                          <MoreHorizontalIcon className="size-3.5" />
+                        </Button>
+                      }
+                    />
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem
+                        onClick={() => setRowAction({ level, variant: "edit" })}
+                      >
+                        <PencilIcon className="size-3.5" />
+                        {t("actions.edit")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setRowAction({ level, variant: "delete" })
+                        }
+                      >
+                        <Trash2Icon className="size-3.5 text-destructive" />
+                        <span className="text-destructive">
+                          {t("actions.delete")}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardContent>
+
+                {isExpanded ? (
+                  <CardContent className="px-4 pt-3">
+                    <LecturesSection levelId={level.id} />
+                  </CardContent>
+                ) : null}
+              </Card>
+            );
+          })}
         </div>
       )}
 
