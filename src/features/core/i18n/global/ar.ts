@@ -371,6 +371,9 @@ export default {
     deleteFailed: "تعذر حذف الدورة.",
     searchHint: "بحث في الدورات…",
     manageLevels: "إدارة المستويات",
+    notFoundTitle: "الدورة غير موجودة",
+    notFoundDescription:
+      "هذه الدورة غير موجودة أو تم حذفها أو لا يمكن الوصول إليها من مؤسستك.",
   },
   levels: {
     title: "المستويات",

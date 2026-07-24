@@ -377,6 +377,9 @@ export default {
     deleteFailed: "Could not delete course.",
     searchHint: "Search courses…",
     manageLevels: "Manage levels",
+    notFoundTitle: "Course not found",
+    notFoundDescription:
+      "This course doesn't exist, was deleted, or isn't accessible to your organization.",
   },
   levels: {
     title: "Levels",

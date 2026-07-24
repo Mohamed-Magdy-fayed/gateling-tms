@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, SearchXIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "@/features/core/i18n/client";
 import { LevelsSection } from "@/features/system/content-library/levels/admin";
@@ -12,9 +13,11 @@ import { useTRPC } from "@/integrations/trpc/client";
 export function CourseDetailPage({ courseId }: { courseId: string }) {
   const { t } = useTranslation();
   const trpc = useTRPC();
-  const { data: course, isLoading } = useQuery(
-    trpc.courses.get.queryOptions({ id: courseId }),
-  );
+  const {
+    data: course,
+    isLoading,
+    isError,
+  } = useQuery(trpc.courses.get.queryOptions({ id: courseId }));
 
   if (isLoading) {
     return (
@@ -24,7 +27,28 @@ export function CourseDetailPage({ courseId }: { courseId: string }) {
     );
   }
 
-  if (!course) return null;
+  // An invalid, deleted, or cross-org course id makes `courses.get` throw
+  // NOT_FOUND — render that state instead of silently leaving a blank page.
+  if (isError || !course) {
+    return (
+      <EmptyState
+        icon={<SearchXIcon />}
+        title={t("courses.notFoundTitle")}
+        description={t("courses.notFoundDescription")}
+        action={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            render={<Link href="/content-library/courses" />}
+          >
+            <ArrowLeftIcon className="size-3.5" />
+            {t("courses.title")}
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
