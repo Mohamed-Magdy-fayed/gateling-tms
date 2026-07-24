@@ -1,5 +1,13 @@
 import { relations } from "drizzle-orm";
-import { index, integer, pgTable, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  foreignKey,
+  index,
+  integer,
+  pgTable,
+  unique,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { OrganizationsTable } from "@/drizzle/schemas/auth";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { FormsTable } from "./forms-table";
@@ -12,9 +20,7 @@ export const FormSectionsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
-    formId: uuid()
-      .notNull()
-      .references(() => FormsTable.id, { onDelete: "cascade" }),
+    formId: uuid().notNull(),
     title: varchar({ length: 256 }).notNull(),
     order: integer().notNull().default(0),
     createdAt,
@@ -23,6 +29,15 @@ export const FormSectionsTable = pgTable(
   (table) => [
     index("form_sections_organization_id_idx").on(table.organizationId),
     index("form_sections_form_id_idx").on(table.formId),
+    unique("form_sections_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+    foreignKey({
+      name: "form_sections_organization_form_fk",
+      columns: [table.organizationId, table.formId],
+      foreignColumns: [FormsTable.organizationId, FormsTable.id],
+    }).onDelete("cascade"),
   ],
 );
 

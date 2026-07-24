@@ -1,9 +1,11 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   pgEnum,
   pgTable,
   text,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -38,11 +40,12 @@ export const FormsTable = pgTable(
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
     // Attachable to a course, level, or lecture — all nullable, a form can
     // also stand alone (e.g. a placement test taken before any enrollment).
-    courseId: uuid().references(() => CoursesTable.id, { onDelete: "cascade" }),
-    levelId: uuid().references(() => LevelsTable.id, { onDelete: "cascade" }),
-    lectureId: uuid().references(() => LecturesTable.id, {
-      onDelete: "cascade",
-    }),
+    // Composite FKs below still apply whenever one of these is set (a NULL
+    // column short-circuits a composite FK check in Postgres, so "stand
+    // alone" keeps working).
+    courseId: uuid(),
+    levelId: uuid(),
+    lectureId: uuid(),
     type: formTypeEnum().notNull(),
     status: formStatusEnum().notNull().default("draft"),
     title: varchar({ length: 256 }).notNull(),
@@ -50,7 +53,28 @@ export const FormsTable = pgTable(
     createdAt,
     updatedAt,
   },
-  (table) => [index("forms_organization_id_idx").on(table.organizationId)],
+  (table) => [
+    index("forms_organization_id_idx").on(table.organizationId),
+    unique("forms_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+    foreignKey({
+      name: "forms_organization_course_fk",
+      columns: [table.organizationId, table.courseId],
+      foreignColumns: [CoursesTable.organizationId, CoursesTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "forms_organization_level_fk",
+      columns: [table.organizationId, table.levelId],
+      foreignColumns: [LevelsTable.organizationId, LevelsTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "forms_organization_lecture_fk",
+      columns: [table.organizationId, table.lectureId],
+      foreignColumns: [LecturesTable.organizationId, LecturesTable.id],
+    }).onDelete("cascade"),
+  ],
 );
 
 export const formsRelations = relations(FormsTable, ({ one, many }) => ({

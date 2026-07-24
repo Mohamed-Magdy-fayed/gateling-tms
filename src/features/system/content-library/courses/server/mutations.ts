@@ -20,10 +20,19 @@ export async function createCourse(
   input: CourseMutationInput,
 ) {
   return ctx.db.transaction(async (trx) => {
-    const organization = await trx.query.OrganizationsTable.findFirst({
-      where: eq(OrganizationsTable.id, ctx.organizationId),
-      columns: { plan: true, courseCount: true },
-    });
+    // Locks the org row for the rest of this transaction so two concurrent
+    // creates can't both read the same courseCount, both pass
+    // assertCanAddCourse, and both insert — same pattern as
+    // organizations/server/mutations.ts's lockAdminRowsForUpdate (STATE.md
+    // D49/D63).
+    const [organization] = await trx
+      .select({
+        plan: OrganizationsTable.plan,
+        courseCount: OrganizationsTable.courseCount,
+      })
+      .from(OrganizationsTable)
+      .where(eq(OrganizationsTable.id, ctx.organizationId))
+      .for("update");
 
     if (!organization) {
       throw new TRPCError({

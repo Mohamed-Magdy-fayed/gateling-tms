@@ -1,10 +1,12 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   integer,
   pgEnum,
   pgTable,
   text,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 import { OrganizationsTable } from "@/drizzle/schemas/auth";
@@ -27,9 +29,7 @@ export const QuestionsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
-    sectionId: uuid()
-      .notNull()
-      .references(() => FormSectionsTable.id, { onDelete: "cascade" }),
+    sectionId: uuid().notNull(),
     text: text().notNull(),
     type: questionTypeEnum().notNull().default("single_choice"),
     points: integer().notNull().default(1),
@@ -40,6 +40,15 @@ export const QuestionsTable = pgTable(
   (table) => [
     index("questions_organization_id_idx").on(table.organizationId),
     index("questions_section_id_idx").on(table.sectionId),
+    unique("questions_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+    foreignKey({
+      name: "questions_organization_section_fk",
+      columns: [table.organizationId, table.sectionId],
+      foreignColumns: [FormSectionsTable.organizationId, FormSectionsTable.id],
+    }).onDelete("cascade"),
   ],
 );
 

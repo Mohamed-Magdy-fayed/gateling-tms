@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -24,9 +25,10 @@ export const FormResponsesTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
-    formId: uuid()
-      .notNull()
-      .references(() => FormsTable.id, { onDelete: "cascade" }),
+    formId: uuid().notNull(),
+    // Users are global (not org-scoped, see D4/AD-1's own tenancy model), so
+    // this stays a plain single-column FK — a composite FK only makes sense
+    // between two org-scoped tables.
     respondentUserId: uuid()
       .notNull()
       .references(() => UsersTable.id, { onDelete: "cascade" }),
@@ -41,6 +43,11 @@ export const FormResponsesTable = pgTable(
     index("form_responses_organization_id_idx").on(table.organizationId),
     index("form_responses_form_id_idx").on(table.formId),
     index("form_responses_respondent_user_id_idx").on(table.respondentUserId),
+    foreignKey({
+      name: "form_responses_organization_form_fk",
+      columns: [table.organizationId, table.formId],
+      foreignColumns: [FormsTable.organizationId, FormsTable.id],
+    }).onDelete("cascade"),
   ],
 );
 

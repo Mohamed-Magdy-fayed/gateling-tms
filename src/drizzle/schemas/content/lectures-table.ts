@@ -1,10 +1,12 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
   pgTable,
   text,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -25,9 +27,7 @@ export const LecturesTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
-    levelId: uuid()
-      .notNull()
-      .references(() => LevelsTable.id, { onDelete: "cascade" }),
+    levelId: uuid().notNull(),
     name: varchar({ length: 256 }).notNull(),
     description: text(),
     // Structured plain text / markdown-lite — never next-mdx-remote (banned,
@@ -41,6 +41,17 @@ export const LecturesTable = pgTable(
   (table) => [
     index("lectures_organization_id_idx").on(table.organizationId),
     index("lectures_level_id_idx").on(table.levelId),
+    // Composite FK against levels' (organizationId, id) — see levels-table.ts
+    // for why this replaces a bare levelId FK (STATE.md D63).
+    unique("lectures_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+    foreignKey({
+      name: "lectures_organization_level_fk",
+      columns: [table.organizationId, table.levelId],
+      foreignColumns: [LevelsTable.organizationId, LevelsTable.id],
+    }).onDelete("cascade"),
   ],
 );
 
