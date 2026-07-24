@@ -422,6 +422,8 @@ export default {
   },
   landing: {
     header: {
+      features: "Features",
+      pricing: "Pricing",
       signIn: "Sign in",
       getStarted: "Get Started Free",
       dashboard: "Dashboard",
@@ -578,6 +580,202 @@ export default {
       title: "Ready to run your academy online?",
       subtitle: "Join for free — no credit card, no time limit.",
       cta: "Get Started Free",
+    },
+  },
+  features: {
+    hero: {
+      title: "Everything your academy needs",
+      description:
+        "See what's free today — and what's coming soon as Gateling-TMS grows.",
+      primaryCta: "Get Started Free",
+      secondaryCta: "See pricing",
+    },
+    free: {
+      title: "Free features",
+      description: "Everything below is live today, free, with no time limit.",
+      badge: "Free",
+    },
+    premium: {
+      title: "Premium features",
+      description:
+        "More modules are on the way to help you scale beyond the essentials.",
+      badge: "Coming soon",
+    },
+    modules: {
+      contentLibrary: {
+        title: "Content Library",
+        description:
+          "Centralized digital resource management for all your educational content and lectures.",
+        bullets: {
+          digitalResources: "Digital Resource Storage",
+          mediaManagement: "Media File Management",
+          contentOrganization: "Content Organization",
+          searchFiltering: "Advanced Search & Filtering",
+        },
+      },
+      learningFlow: {
+        title: "Learning Flow",
+        description:
+          "Structured learning pathways that guide students through their educational journey step by step.",
+        bullets: {
+          courseStructure: "Course Structure Design",
+          progressTracking: "Progress Tracking",
+          assessments: "Built-in Assessments",
+          certificates: "Certificate Generation",
+        },
+      },
+      liveClasses: {
+        title: "Live Classes",
+        description:
+          "Host interactive live classes with HD video streaming and real-time collaboration — powered by Zoom.",
+        bullets: {
+          hdVideoStreaming: "HD Video Streaming",
+          interactiveWhiteboard: "Interactive Whiteboard",
+          recordingCapabilities: "Class Recording",
+          screenSharing: "Screen Sharing",
+        },
+      },
+      hr: {
+        title: "HR Management",
+        description:
+          "Comprehensive human resources management for staff administration and performance tracking.",
+        bullets: {
+          staffManagement: "Staff Management",
+          payrollIntegration: "Payroll Integration",
+          performanceTracking: "Performance Tracking",
+          attendanceMonitoring: "Attendance Monitoring",
+        },
+      },
+      courseStore: {
+        title: "Course Store",
+        description:
+          "Built-in marketplace to sell your courses online with integrated payments and analytics.",
+        bullets: {
+          onlineMarketplace: "Online Course Marketplace",
+          paymentProcessing: "Payment Processing",
+          coursePackaging: "Course Packaging & Pricing",
+          salesAnalytics: "Sales Analytics",
+        },
+      },
+      crm: {
+        title: "CRM System",
+        description:
+          "Track leads, manage student relationships, and boost enrollment.",
+        bullets: {
+          leadManagement: "Lead Management",
+          studentProfiles: "Detailed Student Profiles",
+          communicationHistory: "Communication History",
+          enrollmentTracking: "Enrollment Tracking",
+        },
+      },
+      smartForms: {
+        title: "Smart Forms",
+        description:
+          "Intelligent form builder with automated workflows for admissions, surveys, and data collection.",
+        bullets: {
+          customForms: "Custom Form Builder",
+          dataCollection: "Automated Data Collection",
+          automatedWorkflows: "Workflow Automation",
+          integrationCapabilities: "System Integration",
+        },
+      },
+      community: {
+        title: "Community Platform",
+        description:
+          "Social learning platform that connects students, teachers, and parents.",
+        bullets: {
+          discussionForums: "Discussion Forums",
+          studentGroups: "Student Groups",
+          socialLearning: "Social Learning Features",
+          peerInteraction: "Peer-to-Peer Interaction",
+        },
+      },
+      support: {
+        title: "Support System",
+        description:
+          "Comprehensive support with ticketing, live chat, and a knowledge base.",
+        bullets: {
+          ticketingSystem: "Ticketing System",
+          liveChat: "Live Chat Support",
+          knowledgeBase: "Knowledge Base",
+          prioritySupport: "Priority Support",
+        },
+      },
+    },
+    cta: {
+      title: "Ready to get started?",
+      description: "Sign up free today — no credit card, no time limit.",
+      cta: "Get Started Free",
+    },
+  },
+  pricing: {
+    hero: {
+      badge: "Flexible pricing",
+      title: "Choose the plan for your academy",
+      description:
+        "Start free — no credit card, no time limit. Paid plans are on the way for when you outgrow the essentials.",
+    },
+    plans: {
+      free: {
+        name: "Free",
+        description: "Perfect for getting started",
+      },
+      basic: {
+        name: "Basic",
+        description: "Great for small academies",
+      },
+      professional: {
+        name: "Professional",
+        description: "For growing academies",
+      },
+      enterprise: {
+        name: "Enterprise",
+        description: "For large institutions",
+      },
+    },
+    featureLabels: {
+      contentLibrary: "Content Library",
+      learningFlow: "Learning Flow",
+      liveClasses: "Live Classes",
+      hr: "HR Management",
+      courseStore: "Course Store",
+      crm: "CRM System",
+      smartForms: "Smart Forms",
+      community: "Community Platform",
+      support: "Support System",
+    },
+    mostPopular: "Most popular",
+    free: "Free",
+    currency: "EGP",
+    perMonth: "/month",
+    signupCta: "Get Started Free",
+    comingSoon: "Coming soon",
+    limits: {
+      students: "Active students",
+      courses: "Courses",
+      storage: "Storage",
+      unlimited: "Unlimited",
+    },
+    faq: {
+      title: "Frequently asked questions",
+      description: "Answers to common questions about our plans.",
+      questions: {
+        q1: {
+          question: "Can I switch plans later?",
+          answer:
+            "Basic, Professional, and Enterprise are coming soon. You'll be able to upgrade from the Free plan once they launch.",
+        },
+        q2: {
+          question: "Is there a time limit on the Free plan?",
+          answer:
+            "No. The Free plan has no time limit and needs no credit card — it isn't just a trial.",
+        },
+        q3: {
+          question: "What happens if I reach my plan's limits?",
+          answer:
+            "We'll let you know before you hit a hard wall and point you at the next plan up — you'll never lose data or get cut off mid-action.",
+        },
+      },
     },
   },
 } as const satisfies LanguageMessages;

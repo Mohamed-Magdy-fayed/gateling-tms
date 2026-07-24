@@ -6,6 +6,8 @@ export async function SiteFooter() {
   const { t } = await getT();
 
   const quickLinks = [
+    { href: "/features", label: t("landing.header.features") },
+    { href: "/pricing", label: t("landing.header.pricing") },
     { href: "/get-started", label: t("landing.header.getStarted") },
     { href: "/auth/sign-in", label: t("landing.header.signIn") },
   ];

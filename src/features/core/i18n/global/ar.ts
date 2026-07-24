@@ -416,6 +416,8 @@ export default {
   },
   landing: {
     header: {
+      features: "الميزات",
+      pricing: "الأسعار",
       signIn: "تسجيل الدخول",
       getStarted: "ابدأ مجانًا",
       dashboard: "لوحة التحكم",
@@ -569,6 +571,200 @@ export default {
       title: "هل أنت مستعد لإدارة أكاديميتك عبر الإنترنت؟",
       subtitle: "انضم مجانًا — بدون بطاقة ائتمان وبدون حد زمني.",
       cta: "ابدأ مجانًا",
+    },
+  },
+  features: {
+    hero: {
+      title: "كل ما تحتاجه أكاديميتك",
+      description:
+        "اطّلع على ما هو متاح مجانًا اليوم — وما سيأتي قريبًا مع نمو Gateling-TMS.",
+      primaryCta: "ابدأ مجانًا",
+      secondaryCta: "اطّلع على الأسعار",
+    },
+    free: {
+      title: "الميزات المجانية",
+      description: "كل ما يلي متاح الآن، مجانًا، وبدون حد زمني.",
+      badge: "مجاني",
+    },
+    premium: {
+      title: "الميزات المتقدمة",
+      description:
+        "المزيد من الوحدات قادم قريبًا لمساعدتك على التوسع بعد الأساسيات.",
+      badge: "قريبًا",
+    },
+    modules: {
+      contentLibrary: {
+        title: "مكتبة المحتوى",
+        description:
+          "نظام مركزي لإدارة الموارد الرقمية لجميع محتوياتك ومحاضراتك التعليمية.",
+        bullets: {
+          digitalResources: "تخزين الموارد الرقمية",
+          mediaManagement: "إدارة ملفات الوسائط",
+          contentOrganization: "تنظيم المحتوى",
+          searchFiltering: "بحث وتصفية متقدمان",
+        },
+      },
+      learningFlow: {
+        title: "مسار التعلّم",
+        description:
+          "مسارات تعلّم منظمة توجّه الطلاب خلال رحلتهم التعليمية خطوة بخطوة.",
+        bullets: {
+          courseStructure: "تصميم هيكل الدورة",
+          progressTracking: "تتبع التقدم",
+          assessments: "تقييمات مدمجة",
+          certificates: "إصدار الشهادات",
+        },
+      },
+      liveClasses: {
+        title: "الفصول المباشرة",
+        description:
+          "بث فصول مباشرة تفاعلية بجودة عالية مع أدوات تعاون فوري — بواسطة Zoom.",
+        bullets: {
+          hdVideoStreaming: "بث فيديو عالي الجودة",
+          interactiveWhiteboard: "سبورة تفاعلية",
+          recordingCapabilities: "تسجيل الفصول",
+          screenSharing: "مشاركة الشاشة",
+        },
+      },
+      hr: {
+        title: "إدارة الموارد البشرية",
+        description:
+          "نظام شامل لإدارة الموارد البشرية لشؤون الموظفين وتتبع الأداء.",
+        bullets: {
+          staffManagement: "إدارة الموظفين",
+          payrollIntegration: "تكامل الرواتب",
+          performanceTracking: "تتبع الأداء",
+          attendanceMonitoring: "متابعة الحضور",
+        },
+      },
+      courseStore: {
+        title: "متجر الدورات",
+        description:
+          "سوق مدمج لبيع دوراتك عبر الإنترنت مع مدفوعات وتحليلات متكاملة.",
+        bullets: {
+          onlineMarketplace: "سوق دورات إلكتروني",
+          paymentProcessing: "معالجة المدفوعات",
+          coursePackaging: "تجهيز الدورات وتسعيرها",
+          salesAnalytics: "تحليلات المبيعات",
+        },
+      },
+      crm: {
+        title: "نظام إدارة العلاقات",
+        description:
+          "تتبع العملاء المحتملين، وإدارة علاقات الطلاب، وزيادة معدل التسجيل.",
+        bullets: {
+          leadManagement: "إدارة العملاء المحتملين",
+          studentProfiles: "ملفات تفصيلية للطلاب",
+          communicationHistory: "سجل التواصل",
+          enrollmentTracking: "تتبع التسجيل",
+        },
+      },
+      smartForms: {
+        title: "النماذج الذكية",
+        description:
+          "منشئ نماذج ذكي مع سير عمل آلي للقبول والاستطلاعات وجمع البيانات.",
+        bullets: {
+          customForms: "منشئ نماذج مخصص",
+          dataCollection: "جمع بيانات آلي",
+          automatedWorkflows: "أتمتة سير العمل",
+          integrationCapabilities: "تكامل الأنظمة",
+        },
+      },
+      community: {
+        title: "منصة المجتمع",
+        description: "منصة تعلّم اجتماعي تربط الطلاب والمعلمين وأولياء الأمور.",
+        bullets: {
+          discussionForums: "منتديات نقاش",
+          studentGroups: "مجموعات طلابية",
+          socialLearning: "ميزات تعلّم اجتماعي",
+          peerInteraction: "تفاعل بين الأقران",
+        },
+      },
+      support: {
+        title: "نظام الدعم",
+        description: "دعم شامل يشمل التذاكر والدردشة المباشرة وقاعدة معرفية.",
+        bullets: {
+          ticketingSystem: "نظام تذاكر",
+          liveChat: "دردشة مباشرة",
+          knowledgeBase: "قاعدة معرفية",
+          prioritySupport: "دعم ذو أولوية",
+        },
+      },
+    },
+    cta: {
+      title: "هل أنت مستعد للبدء؟",
+      description: "سجّل مجانًا اليوم — بدون بطاقة ائتمان وبدون حد زمني.",
+      cta: "ابدأ مجانًا",
+    },
+  },
+  pricing: {
+    hero: {
+      badge: "أسعار مرنة",
+      title: "اختر الخطة المناسبة لأكاديميتك",
+      description:
+        "ابدأ مجانًا — بدون بطاقة ائتمان وبدون حد زمني. الخطط المدفوعة قادمة قريبًا لما بعد تجاوز الأساسيات.",
+    },
+    plans: {
+      free: {
+        name: "مجاني",
+        description: "مثالية للبداية",
+      },
+      basic: {
+        name: "أساسي",
+        description: "رائعة للأكاديميات الصغيرة",
+      },
+      professional: {
+        name: "احترافي",
+        description: "للأكاديميات النامية",
+      },
+      enterprise: {
+        name: "المؤسسات",
+        description: "للمؤسسات الكبيرة",
+      },
+    },
+    featureLabels: {
+      contentLibrary: "مكتبة المحتوى",
+      learningFlow: "مسار التعلّم",
+      liveClasses: "الفصول المباشرة",
+      hr: "إدارة الموارد البشرية",
+      courseStore: "متجر الدورات",
+      crm: "نظام إدارة العلاقات",
+      smartForms: "النماذج الذكية",
+      community: "منصة المجتمع",
+      support: "نظام الدعم",
+    },
+    mostPopular: "الأكثر شيوعًا",
+    free: "مجاني",
+    currency: "ج.م",
+    perMonth: "/شهريًا",
+    signupCta: "ابدأ مجانًا",
+    comingSoon: "قريبًا",
+    limits: {
+      students: "الطلاب النشطون",
+      courses: "الدورات",
+      storage: "التخزين",
+      unlimited: "غير محدود",
+    },
+    faq: {
+      title: "الأسئلة الشائعة",
+      description: "إجابات عن الأسئلة الشائعة حول خططنا.",
+      questions: {
+        q1: {
+          question: "هل يمكنني تغيير خطتي لاحقًا؟",
+          answer:
+            "الخطط الأساسية والاحترافية وخطة المؤسسات قادمة قريبًا. ستتمكن من الترقية من الخطة المجانية بمجرد إطلاقها.",
+        },
+        q2: {
+          question: "هل يوجد حد زمني للخطة المجانية؟",
+          answer:
+            "لا. الخطة المجانية بلا حد زمني ولا تتطلب بطاقة ائتمان — فهي ليست مجرد نسخة تجريبية.",
+        },
+        q3: {
+          question: "ماذا يحدث إذا وصلت إلى حدود خطتي؟",
+          answer:
+            "سنُعلمك قبل أن تصل إلى حد صارم، ونوجّهك إلى الخطة الأعلى — لن تفقد بياناتك أبدًا ولن يتوقف عملك في المنتصف.",
+        },
+      },
     },
   },
 } as const satisfies LanguageMessages;
