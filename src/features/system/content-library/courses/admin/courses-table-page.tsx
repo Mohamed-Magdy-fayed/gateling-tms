@@ -9,7 +9,7 @@ import type {
 import { PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { DemoItem } from "@/drizzle/schema";
+import type { Course } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
@@ -26,15 +26,15 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
-  buildDemoItemColumns,
-  DemoItemDeleteDialog,
-  DemoItemFormDialog,
-  type DemoItemRowActionVariant,
+  buildCourseColumns,
+  CourseDeleteDialog,
+  CourseFormDialog,
+  type CourseRowActionVariant,
 } from "./components";
 
-type RowAction = { row: DemoItem; variant: DemoItemRowActionVariant } | null;
+type RowAction = { row: Course; variant: CourseRowActionVariant } | null;
 
-export function DemoItemsTablePage() {
+export function CoursesTablePage() {
   const trpc = useTRPC();
   const { t, locale } = useTranslation();
 
@@ -67,10 +67,12 @@ export function DemoItemsTablePage() {
     [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
   );
 
-  const { data, isFetching } = useQuery(trpc.demo.list.queryOptions(listInput));
+  const { data, isFetching } = useQuery(
+    trpc.courses.list.queryOptions(listInput),
+  );
 
-  // The server clamps an out-of-range requested page (e.g. after the last row
-  // on it was deleted) — sync local state to whatever it actually served.
+  // The server clamps an out-of-range requested page (e.g. after the last
+  // row on it was deleted) — sync local state to whatever it actually served.
   useEffect(() => {
     if (data && data.page !== pagination.pageIndex + 1) {
       setPagination((prev) => ({ ...prev, pageIndex: data.page - 1 }));
@@ -110,7 +112,7 @@ export function DemoItemsTablePage() {
   );
 
   const columns = useMemo(
-    () => buildDemoItemColumns({ locale, setRowAction, t }),
+    () => buildCourseColumns({ locale, setRowAction, t }),
     [locale, t],
   );
 
@@ -136,10 +138,7 @@ export function DemoItemsTablePage() {
         isFetching ? "space-y-4 opacity-80 transition-opacity" : "space-y-4"
       }
     >
-      <EntityPageHeader
-        title={t("systemPages.demoItemsTitle")}
-        lead={t("systemPages.demoItemsLead")}
-      />
+      <EntityPageHeader title={t("courses.title")} lead={t("courses.lead")} />
 
       <DataTable
         table={table}
@@ -148,12 +147,12 @@ export function DemoItemsTablePage() {
             table={table}
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
-            searchPlaceholder={t("dataTable.searchDemoItemsHint")}
+            searchPlaceholder={t("courses.searchHint")}
           >
             <DataTableExportButton
               table={table}
               getExportRow={(row) => row}
-              exportFileName="demo-items.csv"
+              exportFileName="courses.csv"
             />
             <Button
               type="button"
@@ -170,20 +169,20 @@ export function DemoItemsTablePage() {
         footer={<DataTablePagination table={table} />}
       />
 
-      <DemoItemFormDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <DemoItemFormDialog
+      <CourseFormDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CourseFormDialog
         open={rowAction?.variant === "edit"}
         onOpenChange={(open) => {
           if (!open) closeRowAction();
         }}
-        item={rowAction?.variant === "edit" ? rowAction.row : null}
+        course={rowAction?.variant === "edit" ? rowAction.row : null}
       />
-      <DemoItemDeleteDialog
+      <CourseDeleteDialog
         open={rowAction?.variant === "delete"}
         onOpenChange={(open) => {
           if (!open) closeRowAction();
         }}
-        item={rowAction?.variant === "delete" ? rowAction.row : null}
+        course={rowAction?.variant === "delete" ? rowAction.row : null}
         onDeleted={closeRowAction}
       />
     </div>

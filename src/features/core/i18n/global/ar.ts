@@ -52,34 +52,17 @@ export default {
     validation: {
       required: "هذا الحقل مطلوب.",
       max128: "يجب ألا يتجاوز 128 حرفًا.",
+      max256: "يجب ألا يتجاوز 256 حرفًا.",
       max2000: "يجب ألا يتجاوز 2000 حرف.",
     },
   },
   systemPages: {
     auditInfoTitle: "معلومات التدقيق",
     auditInfoDescription: "بيانات التتبع لهذا السجل.",
-    demoItemsTitle: "عناصر تجريبية",
-    demoItemsLead:
-      "اختبار قبول المرحلة الأولى لعمل الجدول والنماذج و tRPC معًا.",
-    demoItemName: "الاسم",
-    demoItemActive: "نشط",
-    addDemoItem: "إضافة عنصر تجريبي",
-    editDemoItem: "تعديل عنصر تجريبي",
-    addDemoItemDescription: "إنشاء عنصر تجريبي جديد.",
-    editDemoItemDescription: "تحديث تفاصيل هذا العنصر التجريبي.",
-    demoItemCreated: "تم إنشاء العنصر التجريبي.",
-    demoItemUpdated: "تم تحديث العنصر التجريبي.",
-    demoItemSaveFailed: "تعذر حفظ العنصر التجريبي.",
-    deleteDemoItemTitle: "حذف العنصر التجريبي؟",
-    deleteDemoItemDescription:
-      "إزالة {name} نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
-    demoItemDeleted: "تم حذف العنصر التجريبي.",
-    demoItemDeleteFailed: "تعذر حذف العنصر التجريبي.",
   },
   dataTable: {
     clear: "مسح",
     clearFilter: "مسح فلتر {title}",
-    searchDemoItemsHint: "بحث في العناصر التجريبية…",
     export: {
       export: "تصدير",
     },
@@ -368,6 +351,25 @@ export default {
         ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
       },
     },
+  },
+  courses: {
+    title: "الدورات",
+    lead: "نظّم مناهجك في دورات، ثم أضف مستويات ومحاضرات داخل كل دورة.",
+    name: "الاسم",
+    description: "الوصف",
+    add: "إضافة دورة",
+    edit: "تعديل دورة",
+    addDescription: "إنشاء دورة جديدة.",
+    editDescription: "تحديث تفاصيل هذه الدورة.",
+    created: "تم إنشاء الدورة.",
+    updated: "تم تحديث الدورة.",
+    saveFailed: "تعذر حفظ الدورة.",
+    deleteTitle: "حذف الدورة؟",
+    deleteDescription:
+      "إزالة {name}. لا يمكن التراجع عن هذا بعد إضافة مستويات ومحاضرات داخلها.",
+    deleted: "تم حذف الدورة.",
+    deleteFailed: "تعذر حذف الدورة.",
+    searchHint: "بحث في الدورات…",
   },
   dashboard: {
     nav: {

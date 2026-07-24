@@ -52,34 +52,17 @@ export default {
     validation: {
       required: "This field is required.",
       max128: "Must be at most 128 characters.",
+      max256: "Must be at most 256 characters.",
       max2000: "Must be at most 2000 characters.",
     },
   },
   systemPages: {
     auditInfoTitle: "Audit info",
     auditInfoDescription: "Tracking metadata for this record.",
-    demoItemsTitle: "Demo items",
-    demoItemsLead:
-      "Phase 1 acceptance test for the data table, forms, and tRPC working together.",
-    demoItemName: "Name",
-    demoItemActive: "Active",
-    addDemoItem: "Add demo item",
-    editDemoItem: "Edit demo item",
-    addDemoItemDescription: "Create a new demo item.",
-    editDemoItemDescription: "Update this demo item's details.",
-    demoItemCreated: "Demo item created.",
-    demoItemUpdated: "Demo item updated.",
-    demoItemSaveFailed: "Could not save demo item.",
-    deleteDemoItemTitle: "Delete demo item?",
-    deleteDemoItemDescription:
-      "Permanently remove {name}. This action cannot be undone.",
-    demoItemDeleted: "Demo item deleted.",
-    demoItemDeleteFailed: "Could not delete demo item.",
   },
   dataTable: {
     clear: "Clear",
     clearFilter: "Clear {title} filter",
-    searchDemoItemsHint: "Search demo items…",
     export: {
       export: "Export",
     },
@@ -374,6 +357,25 @@ export default {
           "If you weren't expecting this invitation, you can ignore this email.",
       },
     },
+  },
+  courses: {
+    title: "Courses",
+    lead: "Organize your curriculum into courses, then add levels and lectures inside each one.",
+    name: "Name",
+    description: "Description",
+    add: "Add course",
+    edit: "Edit course",
+    addDescription: "Create a new course.",
+    editDescription: "Update this course's details.",
+    created: "Course created.",
+    updated: "Course updated.",
+    saveFailed: "Could not save course.",
+    deleteTitle: "Delete course?",
+    deleteDescription:
+      "Remove {name}. This can't be undone once levels and lectures are added inside it.",
+    deleted: "Course deleted.",
+    deleteFailed: "Could not delete course.",
+    searchHint: "Search courses…",
   },
   dashboard: {
     nav: {

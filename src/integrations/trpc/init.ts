@@ -102,3 +102,18 @@ export const orgAdminProcedure = orgProcedure.use(({ ctx, next }) => {
 
   return next();
 });
+
+// Content authoring (courses/levels/lectures/forms) is admin-or-teacher —
+// students can be enrolled in content but never author it. First use of a
+// role gate beyond simple admin-vs-not (see STATE.md D42's note to revisit
+// once a phase actually needs one).
+export const orgContentManagerProcedure = orgProcedure.use(({ ctx, next }) => {
+  if (ctx.role === "student") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: ctx.t("errors.unauthorized"),
+    });
+  }
+
+  return next();
+});

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboardIcon, SettingsIcon } from "lucide-react";
+import { LayoutDashboardIcon, LibraryIcon, SettingsIcon } from "lucide-react";
 
 // Narrowed to the specific zero-argument keys nav items use (rather than the
 // full `TranslationKey<typeof mainTranslations>` union) — `t()`'s signature
@@ -8,7 +8,7 @@ import { LayoutDashboardIcon, SettingsIcon } from "lucide-react";
 // `organizations.limits.*`) do.
 export type SystemNavItem = {
   href: string;
-  translationKey: "nav.dashboard" | "nav.settings";
+  translationKey: "nav.dashboard" | "nav.settings" | "nav.contentLibrary";
   Icon: LucideIcon;
 };
 
@@ -19,14 +19,27 @@ export type SystemNavItem = {
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
  *
- * Content Library / Learning Flow / Live Classes are intentionally absent —
- * phase-02.md step 8 calls for "no dead links", and those routes don't exist
- * until Phases 4-6. Add them here when their pages land.
+ * Learning Flow / Live Classes are intentionally still absent — phase-02.md
+ * step 8 calls for "no dead links", and those routes don't exist until
+ * Phases 5-6. Add them here when their pages land.
  */
 export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
-  { href: "/dashboard", translationKey: "nav.dashboard", Icon: LayoutDashboardIcon },
+  {
+    href: "/dashboard",
+    translationKey: "nav.dashboard",
+    Icon: LayoutDashboardIcon,
+  },
+  {
+    href: "/content-library/courses",
+    translationKey: "nav.contentLibrary",
+    Icon: LibraryIcon,
+  },
 ];
 
 export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
-  { href: "/organizations", translationKey: "nav.settings", Icon: SettingsIcon },
+  {
+    href: "/organizations",
+    translationKey: "nav.settings",
+    Icon: SettingsIcon,
+  },
 ];
