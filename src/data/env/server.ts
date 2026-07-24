@@ -41,6 +41,11 @@ export const env = createEnv({
     SMTP_FROM_EMAIL: z.email().optional(),
     SMTP_FROM_NAME: z.string().min(1).optional(),
 
+    // Where /contact form submissions are emailed. Falls back to
+    // SMTP_FROM_EMAIL/SMTP_USER if unset — see
+    // integrations/inngest/functions/on-contact-message-submitted.ts.
+    CONTACT_INBOX_EMAIL: z.email().optional(),
+
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
