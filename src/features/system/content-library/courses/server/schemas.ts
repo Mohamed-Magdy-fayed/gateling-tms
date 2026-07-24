@@ -20,6 +20,7 @@ export const courseMutationSchema = z.object({
     .max(2000, translationKey("forms.validation.max2000"))
     .optional()
     .or(z.literal("")),
+  thumbnailUrl: z.url().optional().or(z.literal("")).nullable(),
 });
 
 export const courseUpdateSchema = courseMutationSchema.extend({

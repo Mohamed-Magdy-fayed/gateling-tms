@@ -13,8 +13,7 @@ import { FormComboboxOneField } from "./combobox-one-field";
 // import { FormDateField } from "./date-field";
 // import { FormDateTimeField } from "./date-time-field";
 import { FormEmailField } from "./email-field";
-// ImageField needs the Firebase storage helper — copied together in segment ④ (docs/rebuild/phases/phase-01.md).
-// import { FormImageField } from "./image-field";
+import { FormImageField } from "./image-field";
 // MobileField needs react-phone-number-input, not yet an approved dependency — revisit when a phase needs it.
 // import { FormMobileField } from "./mobile-field";
 import { FormNumberField } from "./number-field";
@@ -40,7 +39,7 @@ const { useAppForm: useAppFormBase } = createFormHook({
     // DateTimeField: FormDateTimeField,
     BooleanField: FormBooleanField,
     TextareaField: FormTextareaField,
-    // ImageField: FormImageField,
+    ImageField: FormImageField,
     // SearchLookupField: FormSearchLookupField,
   },
   formComponents: {},

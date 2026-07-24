@@ -51,6 +51,7 @@ export function CourseFormDialog({
     () => ({
       name: course?.name ?? "",
       description: course?.description ?? "",
+      thumbnailUrl: course?.thumbnailUrl ?? "",
     }),
     [course],
   );
@@ -133,6 +134,15 @@ export function CourseFormDialog({
                   <field.TextareaField
                     label={t("courses.description")}
                     rows={4}
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name="thumbnailUrl">
+                {(field) => (
+                  <field.ImageField
+                    label={t("courses.thumbnail")}
+                    folder="courses"
                   />
                 )}
               </form.AppField>

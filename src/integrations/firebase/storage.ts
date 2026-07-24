@@ -40,7 +40,10 @@ const EXTENSION_BY_MIME: Record<string, string> = {
 
 /**
  * Upload a base64-encoded image to Firebase Storage.
- * Returns the public download URL.
+ * Returns the public download URL and the exact decoded byte count (the
+ * server already has to decode + validate the buffer, so returning its real
+ * length here is free — callers charging `organizations.storageBytes`
+ * should use this, not re-estimate from the base64 string length).
  *
  * @param base64 - base64 string (no data URI prefix)
  * @param mimeType - MIME type of the image
@@ -50,7 +53,7 @@ export async function uploadImage(
   base64: string,
   mimeType: string,
   folder = "uploads",
-): Promise<string> {
+): Promise<{ url: string; bytes: number }> {
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -90,7 +93,7 @@ export async function uploadImage(
     public: true,
   });
 
-  return file.publicUrl();
+  return { url: file.publicUrl(), bytes: buffer.length };
 }
 
 /**
@@ -98,22 +101,35 @@ export async function uploadImage(
  * callers can fire-and-forget — but only a confirmed "already gone" (404) is
  * treated as success; permission, config, and network failures are logged
  * server-side instead of being silently swallowed.
+ *
+ * Returns the freed byte count (0 if the URL didn't belong to this bucket,
+ * the object was already gone, or its size couldn't be read) so callers can
+ * refund `organizations.storageBytes` with the object's *actual* size
+ * rather than an estimate that could drift from what was really charged at
+ * upload time.
  */
-export async function deleteImage(publicUrl: string): Promise<void> {
+export async function deleteImage(publicUrl: string): Promise<number> {
   const bucket = getStorageBucket();
   const bucketName = bucket.name;
   const prefix = `https://storage.googleapis.com/${bucketName}/`;
 
-  if (!publicUrl.startsWith(prefix)) return;
+  if (!publicUrl.startsWith(prefix)) return 0;
 
   const filePath = decodeURIComponent(publicUrl.slice(prefix.length));
+  const file = bucket.file(filePath);
 
   try {
-    await bucket.file(filePath).delete();
+    const [metadata] = await file.getMetadata();
+    const size = Number(metadata.size ?? 0);
+
+    await file.delete();
+
+    return Number.isFinite(size) ? size : 0;
   } catch (err) {
     const code = (err as { code?: number } | undefined)?.code;
-    if (code === 404) return; // already deleted — not an error
+    if (code === 404) return 0; // already deleted — not an error
 
     console.error("Failed to delete Firebase Storage object:", filePath, err);
+    return 0;
   }
 }

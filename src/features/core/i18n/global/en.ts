@@ -55,6 +55,11 @@ export default {
       max256: "Must be at most 256 characters.",
       max2000: "Must be at most 2000 characters.",
     },
+    imageUpload: {
+      success: "Image uploaded.",
+      error: "Could not upload image.",
+      uploading: "Uploading…",
+    },
   },
   systemPages: {
     auditInfoTitle: "Audit info",
@@ -363,6 +368,7 @@ export default {
     lead: "Organize your curriculum into courses, then add levels and lectures inside each one.",
     name: "Name",
     description: "Description",
+    thumbnail: "Thumbnail",
     add: "Add course",
     edit: "Edit course",
     addDescription: "Create a new course.",
