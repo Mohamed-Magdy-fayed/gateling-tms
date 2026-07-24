@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull } from "drizzle-orm";
 import { CoursesTable } from "@/drizzle/schema";
 import type { ListCoursesInput } from "./schemas";
@@ -60,4 +61,23 @@ export async function listCourses(
     .offset(offset);
 
   return { rows, page, pageCount, total: Number(total) };
+}
+
+export async function getCourse(ctx: OrgTRPCContext, id: string) {
+  const course = await ctx.db.query.CoursesTable.findFirst({
+    where: and(
+      eq(CoursesTable.id, id),
+      eq(CoursesTable.organizationId, ctx.organizationId),
+      isNull(CoursesTable.deletedAt),
+    ),
+  });
+
+  if (!course) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
+  return course;
 }

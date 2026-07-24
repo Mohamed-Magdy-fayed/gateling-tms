@@ -4,7 +4,7 @@ import {
   orgProcedure,
 } from "@/integrations/trpc/init";
 import { createCourse, deleteCourse, updateCourse } from "./mutations";
-import { listCourses } from "./queries";
+import { getCourse, listCourses } from "./queries";
 import {
   courseDeleteSchema,
   courseMutationSchema,
@@ -13,10 +13,14 @@ import {
 } from "./schemas";
 
 export const coursesRouter = createTRPCRouter({
-  // Any org member (including students) can browse the course list.
+  // Any org member (including students) can browse the course list/detail.
   list: orgProcedure
     .input(listCoursesInput)
     .query(async ({ ctx, input }) => listCourses(ctx, input)),
+  // Reuses courseDeleteSchema — same {id} shape, no need for a near-duplicate.
+  get: orgProcedure
+    .input(courseDeleteSchema)
+    .query(async ({ ctx, input }) => getCourse(ctx, input.id)),
   create: orgContentManagerProcedure
     .input(courseMutationSchema)
     .mutation(async ({ ctx, input }) => createCourse(ctx, input)),

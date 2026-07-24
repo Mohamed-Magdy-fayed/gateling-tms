@@ -370,6 +370,27 @@ export default {
     deleted: "تم حذف الدورة.",
     deleteFailed: "تعذر حذف الدورة.",
     searchHint: "بحث في الدورات…",
+    manageLevels: "إدارة المستويات",
+  },
+  levels: {
+    title: "المستويات",
+    name: "الاسم",
+    add: "إضافة مستوى",
+    edit: "تعديل مستوى",
+    addDescription: "إنشاء مستوى جديد في هذه الدورة.",
+    editDescription: "تحديث اسم هذا المستوى.",
+    created: "تم إنشاء المستوى.",
+    updated: "تم تحديث المستوى.",
+    saveFailed: "تعذر حفظ المستوى.",
+    deleteTitle: "حذف المستوى؟",
+    deleteDescription:
+      "إزالة {name}. لا يمكن التراجع عن هذا بعد إضافة محاضرات داخله.",
+    deleted: "تم حذف المستوى.",
+    deleteFailed: "تعذر حذف المستوى.",
+    emptyTitle: "لا توجد مستويات بعد",
+    emptyDescription: "أضف أول مستوى لبدء تنظيم محاضرات هذه الدورة.",
+    moveUp: "تحريك لأعلى",
+    moveDown: "تحريك لأسفل",
   },
   dashboard: {
     nav: {
