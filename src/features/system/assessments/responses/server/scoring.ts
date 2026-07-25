@@ -33,7 +33,12 @@ export function scoreFormResponse(
       question.answers.filter((a) => a.isCorrect).map((a) => a.id),
     );
     const selectedIds = new Set(submitted?.selectedAnswerIds ?? []);
+    // `correctIds.size > 0` guards against a misconfigured/unanswered
+    // question with no correct answer marked at all — without it, an empty
+    // selected set trivially matches an empty correct set and awards full
+    // points for nothing.
     const matches =
+      correctIds.size > 0 &&
       correctIds.size === selectedIds.size &&
       [...correctIds].every((id) => selectedIds.has(id));
     if (matches) total += question.points;

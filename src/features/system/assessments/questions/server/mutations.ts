@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { FormSectionsTable, QuestionsTable } from "@/drizzle/schema";
 import type {
   QuestionDeleteInput,
@@ -16,7 +16,7 @@ export async function createQuestion(
   return ctx.db.transaction(async (trx) => {
     // Locks the section row for the rest of the transaction so two
     // concurrent creates against the same section can't both observe the
-    // same `order` count and insert duplicates — same pattern as
+    // same `order` allocation and insert duplicates — same pattern as
     // sections/server/mutations.ts's createSection.
     const [section] = await trx
       .select({ id: FormSectionsTable.id })
@@ -36,8 +36,13 @@ export async function createQuestion(
       });
     }
 
-    const [{ value: existingCount }] = await trx
-      .select({ value: count() })
+    // `max(order) + 1` rather than `count()` — deleting a question never
+    // renumbers its surviving siblings, so a plain count of remaining rows
+    // can collide with an order value a surviving row already holds.
+    const [{ value: maxOrder }] = await trx
+      .select({
+        value: sql<number>`coalesce(max(${QuestionsTable.order}), -1)`,
+      })
       .from(QuestionsTable)
       .where(eq(QuestionsTable.sectionId, input.sectionId));
 
@@ -49,7 +54,7 @@ export async function createQuestion(
         text: input.text,
         type: input.type,
         points: input.points,
-        order: Number(existingCount),
+        order: Number(maxOrder) + 1,
       })
       .returning({ id: QuestionsTable.id });
 
@@ -117,15 +122,18 @@ export async function moveQuestion(
   input: QuestionMoveInput,
 ) {
   return ctx.db.transaction(async (trx) => {
-    const current = await trx.query.QuestionsTable.findFirst({
+    // Only resolves which section to lock — its `order` isn't trusted yet,
+    // since a concurrent move on this exact question could still land
+    // between this read and the lock below.
+    const pre = await trx.query.QuestionsTable.findFirst({
       where: and(
         eq(QuestionsTable.id, input.id),
         eq(QuestionsTable.organizationId, ctx.organizationId),
       ),
-      columns: { id: true, sectionId: true, order: true },
+      columns: { sectionId: true },
     });
 
-    if (!current) {
+    if (!pre) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),
@@ -137,13 +145,31 @@ export async function moveQuestion(
       .from(FormSectionsTable)
       .where(
         and(
-          eq(FormSectionsTable.id, current.sectionId),
+          eq(FormSectionsTable.id, pre.sectionId),
           eq(FormSectionsTable.organizationId, ctx.organizationId),
         ),
       )
       .for("update");
 
     if (!section) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    // Re-read now that the section row is locked, so `current.order` is
+    // authoritative — a concurrent move could have changed it between the
+    // pre-lock read above and this point.
+    const current = await trx.query.QuestionsTable.findFirst({
+      where: and(
+        eq(QuestionsTable.id, input.id),
+        eq(QuestionsTable.organizationId, ctx.organizationId),
+      ),
+      columns: { id: true, sectionId: true, order: true },
+    });
+
+    if (!current) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),

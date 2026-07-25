@@ -20,8 +20,10 @@ export const formsRouter = createTRPCRouter({
   get: orgProcedure
     .input(formDeleteSchema)
     .query(async ({ ctx, input }) => getForm(ctx, input.id)),
-  // Reuses formDeleteSchema — same {id} shape.
-  getTree: orgProcedure
+  // Reuses formDeleteSchema — same {id} shape. Admin/teacher-only: the tree
+  // includes each answer's `isCorrect` flag, so a plain org member (e.g. a
+  // student) must not be able to call this directly.
+  getTree: orgContentManagerProcedure
     .input(formDeleteSchema)
     .query(async ({ ctx, input }) => getFormTree(ctx, input.id)),
   create: orgContentManagerProcedure

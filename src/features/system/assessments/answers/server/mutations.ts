@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { AnswersTable, QuestionsTable } from "@/drizzle/schema";
 import type {
   AnswerDeleteInput,
@@ -16,7 +16,7 @@ export async function createAnswer(
   return ctx.db.transaction(async (trx) => {
     // Locks the question row for the rest of the transaction so two
     // concurrent creates against the same question can't both observe the
-    // same `order` count and insert duplicates — same pattern as
+    // same `order` allocation and insert duplicates — same pattern as
     // questions/server/mutations.ts's createQuestion.
     const [question] = await trx
       .select({ id: QuestionsTable.id })
@@ -36,8 +36,15 @@ export async function createAnswer(
       });
     }
 
-    const [{ value: existingCount }] = await trx
-      .select({ value: count() })
+    // `max(order) + 1` rather than `count()` — deleting an answer never
+    // renumbers its surviving siblings, so a plain count of remaining rows
+    // can collide with an order value a surviving row already holds. Same
+    // fix as sections/questions' createX (CodeRabbit PR #24), applied here
+    // proactively since this mutation copies the identical pattern.
+    const [{ value: maxOrder }] = await trx
+      .select({
+        value: sql<number>`coalesce(max(${AnswersTable.order}), -1)`,
+      })
       .from(AnswersTable)
       .where(eq(AnswersTable.questionId, input.questionId));
 
@@ -48,7 +55,7 @@ export async function createAnswer(
         questionId: input.questionId,
         text: input.text,
         isCorrect: input.isCorrect,
-        order: Number(existingCount),
+        order: Number(maxOrder) + 1,
       })
       .returning({ id: AnswersTable.id });
 
@@ -111,15 +118,18 @@ export async function deleteAnswer(
 // createAnswer's order allocation for the same question.
 export async function moveAnswer(ctx: OrgTRPCContext, input: AnswerMoveInput) {
   return ctx.db.transaction(async (trx) => {
-    const current = await trx.query.AnswersTable.findFirst({
+    // Only resolves which question to lock — its `order` isn't trusted yet,
+    // since a concurrent move on this exact answer could still land between
+    // this read and the lock below.
+    const pre = await trx.query.AnswersTable.findFirst({
       where: and(
         eq(AnswersTable.id, input.id),
         eq(AnswersTable.organizationId, ctx.organizationId),
       ),
-      columns: { id: true, questionId: true, order: true },
+      columns: { questionId: true },
     });
 
-    if (!current) {
+    if (!pre) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),
@@ -131,13 +141,31 @@ export async function moveAnswer(ctx: OrgTRPCContext, input: AnswerMoveInput) {
       .from(QuestionsTable)
       .where(
         and(
-          eq(QuestionsTable.id, current.questionId),
+          eq(QuestionsTable.id, pre.questionId),
           eq(QuestionsTable.organizationId, ctx.organizationId),
         ),
       )
       .for("update");
 
     if (!question) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    // Re-read now that the question row is locked, so `current.order` is
+    // authoritative — a concurrent move could have changed it between the
+    // pre-lock read above and this point.
+    const current = await trx.query.AnswersTable.findFirst({
+      where: and(
+        eq(AnswersTable.id, input.id),
+        eq(AnswersTable.organizationId, ctx.organizationId),
+      ),
+      columns: { id: true, questionId: true, order: true },
+    });
+
+    if (!current) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),

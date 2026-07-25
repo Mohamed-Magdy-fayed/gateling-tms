@@ -43,19 +43,27 @@ const formFields = {
 // client that bypasses the UI (or a stale form) can't submit a lecture
 // attached to no level, etc.
 function refineAttachmentChain<T extends z.ZodTypeAny>(schema: T) {
-  return schema.refine(
-    (val) => {
-      const { courseId, levelId, lectureId } = val as {
-        courseId: string | null;
-        levelId: string | null;
-        lectureId: string | null;
-      };
-      if (levelId && !courseId) return false;
-      if (lectureId && !levelId) return false;
-      return true;
-    },
-    { message: translationKey("forms.validation.required"), path: ["levelId"] },
-  );
+  return schema.superRefine((val, ctx) => {
+    const { courseId, levelId, lectureId } = val as {
+      courseId: string | null;
+      levelId: string | null;
+      lectureId: string | null;
+    };
+    if (levelId && !courseId) {
+      ctx.addIssue({
+        code: "custom",
+        message: translationKey("forms.validation.required"),
+        path: ["levelId"],
+      });
+    }
+    if (lectureId && !levelId) {
+      ctx.addIssue({
+        code: "custom",
+        message: translationKey("forms.validation.required"),
+        path: ["lectureId"],
+      });
+    }
+  });
 }
 
 export const formMutationSchema = refineAttachmentChain(z.object(formFields));

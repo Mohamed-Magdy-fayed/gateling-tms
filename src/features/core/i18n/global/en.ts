@@ -54,6 +54,7 @@ export default {
       required: "This field is required.",
       max128: "Must be at most 128 characters.",
       max256: "Must be at most 256 characters.",
+      max500: "Must be at most 500 characters.",
       max2000: "Must be at most 2000 characters.",
     },
     imageUpload: {

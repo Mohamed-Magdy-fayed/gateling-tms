@@ -111,6 +111,28 @@ describe("scoreFormResponse", () => {
     expect(score).toBe(0);
   });
 
+  test("scores a question with no correct answers as incorrect, not a vacuous match", () => {
+    const questions: ScorableQuestion[] = [
+      {
+        id: "q1",
+        type: "single_choice",
+        points: 3,
+        answers: [
+          { id: "a1", isCorrect: false },
+          { id: "a2", isCorrect: false },
+        ],
+      },
+    ];
+
+    const unanswered = scoreFormResponse(questions, []);
+    const answered = scoreFormResponse(questions, [
+      { questionId: "q1", selectedAnswerIds: ["a1"] },
+    ]);
+
+    expect(unanswered).toBe(0);
+    expect(answered).toBe(0);
+  });
+
   test("returns null (needs manual grading) the moment any question is short_answer", () => {
     const questions: ScorableQuestion[] = [
       {

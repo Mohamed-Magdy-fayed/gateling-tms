@@ -11,7 +11,7 @@ const answerFields = {
     .string()
     .trim()
     .min(1, translationKey("forms.validation.required"))
-    .max(500, translationKey("forms.validation.max2000")),
+    .max(500, translationKey("forms.validation.max500")),
   isCorrect: z.boolean(),
 };
 
