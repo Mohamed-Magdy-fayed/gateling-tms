@@ -39,7 +39,7 @@ import { formStatusValues, formTypeValues } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
   type FormMutationInput,
-  formMutationSchema,
+  formFieldsSchema,
 } from "@/features/system/assessments/forms/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -93,7 +93,7 @@ export function FormFormDialog({
   const form = useAppForm({
     defaultValues,
     validators: {
-      onSubmit: formMutationSchema.omit({
+      onSubmit: formFieldsSchema.omit({
         courseId: true,
         levelId: true,
         lectureId: true,

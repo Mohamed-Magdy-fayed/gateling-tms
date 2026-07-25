@@ -66,7 +66,13 @@ function refineAttachmentChain<T extends z.ZodTypeAny>(schema: T) {
   });
 }
 
-export const formMutationSchema = refineAttachmentChain(z.object(formFields));
+// Unrefined base — kept separate so callers that only need a subset of
+// fields (e.g. the create/edit dialog, which manages courseId/levelId/
+// lectureId outside the form) can still call `.omit()`; `ZodObject.omit()`
+// isn't available once `refineAttachmentChain`'s `.superRefine()` wraps it.
+export const formFieldsSchema = z.object(formFields);
+
+export const formMutationSchema = refineAttachmentChain(formFieldsSchema);
 
 export const formUpdateSchema = refineAttachmentChain(
   z.object({ id: z.uuid(), ...formFields }),
