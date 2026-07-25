@@ -1,0 +1,7 @@
+export * from "./certificates-table";
+export * from "./enrollment-levels-table";
+export * from "./enrollments-table";
+export * from "./group-students-table";
+export * from "./groups-table";
+export * from "./placement-tests-table";
+export * from "./trainees-table";
