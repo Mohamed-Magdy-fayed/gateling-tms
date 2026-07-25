@@ -30,6 +30,14 @@ export const placementTestStatusEnum = pgEnum(
 // Links a placement-type form to a trainee and records the resulting level
 // once reviewed. `formId`/`assignedLevelId` are nullable — a placement test
 // can be scheduled before the form or resulting level is decided.
+//
+// Both are deliberately plain single-column FKs, not the usual composite
+// (organizationId, X) pattern (STATE.md D63) — see certificates-table.ts's
+// comment / STATE.md D79 for why: a composite FK's ON DELETE SET NULL nulls
+// every column it names, including the NOT NULL organizationId, which
+// throws instead of nulling just the pointer. The mutation that creates a
+// placement test must still verify formId/assignedLevelId belong to
+// ctx.organizationId before inserting.
 export const PlacementTestsTable = pgTable(
   "placement_tests",
   {
@@ -38,8 +46,10 @@ export const PlacementTestsTable = pgTable(
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
     traineeId: uuid().notNull(),
-    formId: uuid(),
-    assignedLevelId: uuid(),
+    formId: uuid().references(() => FormsTable.id, { onDelete: "set null" }),
+    assignedLevelId: uuid().references(() => LevelsTable.id, {
+      onDelete: "set null",
+    }),
     status: placementTestStatusEnum().notNull().default("pending"),
     feedback: text(),
     scheduledAt: timestamp({ withTimezone: true }),
@@ -60,16 +70,6 @@ export const PlacementTestsTable = pgTable(
       columns: [table.organizationId, table.traineeId],
       foreignColumns: [TraineesTable.organizationId, TraineesTable.id],
     }).onDelete("cascade"),
-    foreignKey({
-      name: "placement_tests_organization_form_fk",
-      columns: [table.organizationId, table.formId],
-      foreignColumns: [FormsTable.organizationId, FormsTable.id],
-    }).onDelete("set null"),
-    foreignKey({
-      name: "placement_tests_organization_level_fk",
-      columns: [table.organizationId, table.assignedLevelId],
-      foreignColumns: [LevelsTable.organizationId, LevelsTable.id],
-    }).onDelete("set null"),
   ],
 );
 

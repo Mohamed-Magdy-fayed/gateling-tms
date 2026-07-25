@@ -18,6 +18,15 @@ import { TraineesTable } from "./trainees-table";
 // so a certificate keeps reading correctly even if its course/group is later
 // renamed or removed — onDelete is "set null" on both for the same reason:
 // losing the course/group shouldn't take the certificate record with it.
+//
+// courseId/groupId are deliberately plain single-column FKs, not the usual
+// composite (organizationId, X) pattern (STATE.md D63) — Postgres nulls
+// every column named in a composite FK's ON DELETE SET NULL action, and
+// organizationId is NOT NULL, so a composite version here would throw
+// instead of nulling just the pointer (reproduced and confirmed, see
+// STATE.md D79). The mutation that creates a certificate must still verify
+// courseId/groupId belong to ctx.organizationId before inserting — same
+// app-level check every other org-scoped write already does.
 export const CertificatesTable = pgTable(
   "certificates",
   {
@@ -26,8 +35,12 @@ export const CertificatesTable = pgTable(
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
     traineeId: uuid().notNull(),
-    courseId: uuid(),
-    groupId: uuid(),
+    courseId: uuid().references(() => CoursesTable.id, {
+      onDelete: "set null",
+    }),
+    groupId: uuid().references(() => GroupsTable.id, {
+      onDelete: "set null",
+    }),
     title: varchar({ length: 256 }).notNull(),
     issuedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     fileUrl: varchar({ length: 2048 }),
@@ -45,16 +58,6 @@ export const CertificatesTable = pgTable(
       columns: [table.organizationId, table.traineeId],
       foreignColumns: [TraineesTable.organizationId, TraineesTable.id],
     }).onDelete("cascade"),
-    foreignKey({
-      name: "certificates_organization_course_fk",
-      columns: [table.organizationId, table.courseId],
-      foreignColumns: [CoursesTable.organizationId, CoursesTable.id],
-    }).onDelete("set null"),
-    foreignKey({
-      name: "certificates_organization_group_fk",
-      columns: [table.organizationId, table.groupId],
-      foreignColumns: [GroupsTable.organizationId, GroupsTable.id],
-    }).onDelete("set null"),
   ],
 );
 

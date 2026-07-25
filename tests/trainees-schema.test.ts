@@ -50,11 +50,15 @@ describe("traineeMutationSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  test("rejects a phone over 32 characters", () => {
+  test("rejects a phone over 32 characters with the matching message key", () => {
     const result = traineeMutationSchema.safeParse({
       name: "Sara Ahmed",
       phone: "1".repeat(33),
     });
     expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path[0] === "phone");
+      expect(issue?.message).toBe("forms.validation.max32");
+    }
   });
 });

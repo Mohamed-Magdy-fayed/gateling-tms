@@ -17,7 +17,7 @@ export const traineeMutationSchema = z.object({
   phone: z
     .string()
     .trim()
-    .max(32, translationKey("forms.validation.max128"))
+    .max(32, translationKey("forms.validation.max32"))
     .optional()
     .or(z.literal("")),
   email: z

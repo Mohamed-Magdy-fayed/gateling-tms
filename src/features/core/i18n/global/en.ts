@@ -52,6 +52,7 @@ export default {
   forms: {
     validation: {
       required: "This field is required.",
+      max32: "Must be at most 32 characters.",
       max128: "Must be at most 128 characters.",
       max256: "Must be at most 256 characters.",
       max500: "Must be at most 500 characters.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type {
   ColumnPinningState,
   RowSelectionState,
@@ -67,9 +67,10 @@ export function TraineesTablePage() {
     [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
   );
 
-  const { data, isFetching } = useQuery(
-    trpc.trainees.list.queryOptions(listInput),
-  );
+  const { data, isFetching } = useQuery({
+    ...trpc.trainees.list.queryOptions(listInput),
+    placeholderData: keepPreviousData,
+  });
 
   // The server clamps an out-of-range requested page (e.g. after the last
   // row on it was deleted) — sync local state to whatever it actually served.
