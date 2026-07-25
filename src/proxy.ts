@@ -19,6 +19,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/dashboard",
   "/content-library",
   "/assessments",
+  "/learning-flow",
 ];
 
 const AUTH_ROUTE_PREFIX = "/auth";
