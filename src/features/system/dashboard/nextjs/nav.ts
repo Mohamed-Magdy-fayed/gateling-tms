@@ -1,5 +1,10 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboardIcon, LibraryIcon, SettingsIcon } from "lucide-react";
+import {
+  ClipboardListIcon,
+  LayoutDashboardIcon,
+  LibraryIcon,
+  SettingsIcon,
+} from "lucide-react";
 
 // Narrowed to the specific zero-argument keys nav items use (rather than the
 // full `TranslationKey<typeof mainTranslations>` union) — `t()`'s signature
@@ -8,7 +13,11 @@ import { LayoutDashboardIcon, LibraryIcon, SettingsIcon } from "lucide-react";
 // `organizations.limits.*`) do.
 export type SystemNavItem = {
   href: string;
-  translationKey: "nav.dashboard" | "nav.settings" | "nav.contentLibrary";
+  translationKey:
+    | "nav.dashboard"
+    | "nav.settings"
+    | "nav.contentLibrary"
+    | "nav.assessments";
   Icon: LucideIcon;
 };
 
@@ -33,6 +42,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/content-library/courses",
     translationKey: "nav.contentLibrary",
     Icon: LibraryIcon,
+  },
+  {
+    href: "/assessments",
+    translationKey: "nav.assessments",
+    Icon: ClipboardListIcon,
   },
 ];
 

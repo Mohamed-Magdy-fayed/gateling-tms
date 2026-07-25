@@ -18,6 +18,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/organizations",
   "/dashboard",
   "/content-library",
+  "/assessments",
 ];
 
 const AUTH_ROUTE_PREFIX = "/auth";
