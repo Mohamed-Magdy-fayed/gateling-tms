@@ -11,6 +11,7 @@ export default {
     contentLibrary: "Content Library",
     learningFlow: "Learning Flow",
     groups: "Groups",
+    enrollments: "Enrollments",
     liveClasses: "Live Classes",
     settings: "Settings",
     assessments: "Assessments",

@@ -11,6 +11,7 @@ export default {
     contentLibrary: "مكتبة المحتوى",
     learningFlow: "مسار التعلم",
     groups: "المجموعات",
+    enrollments: "التسجيلات",
     liveClasses: "الحصص المباشرة",
     settings: "الإعدادات",
     assessments: "التقييمات",
