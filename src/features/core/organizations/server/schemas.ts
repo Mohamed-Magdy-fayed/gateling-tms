@@ -10,6 +10,21 @@ const optionalTrimmed = (max: number) =>
     .optional()
     .or(z.literal(""));
 
+/**
+ * True for any IANA zone this runtime knows. `supportedValuesOf` is the
+ * authoritative list, but it isn't universally available, so fall back to
+ * asking `DateTimeFormat` to actually use the zone — it throws a RangeError
+ * on an unknown one.
+ */
+export function isSupportedTimeZone(value: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const organizationProfileSchema = z.object({
   name: z
     .string()
@@ -22,6 +37,17 @@ export const organizationProfileSchema = z.object({
     .url(translationKey("organizations.validation.invalidWebsite"))
     .optional()
     .or(z.literal("")),
+  // Optional so the onboarding paths, which submit a name only, keep working
+  // and simply inherit the column default. Validated against the runtime's own
+  // IANA database rather than a hardcoded list, so it can't drift as zones are
+  // added or renamed.
+  timeZone: z
+    .string()
+    .refine(
+      isSupportedTimeZone,
+      translationKey("organizations.validation.invalidTimeZone"),
+    )
+    .optional(),
 });
 
 export const listMembersInput = z.object({
@@ -53,7 +79,9 @@ export const switchActiveOrganizationSchema = z.object({
   organizationId: z.uuid(),
 });
 
-export type OrganizationProfileInput = z.infer<typeof organizationProfileSchema>;
+export type OrganizationProfileInput = z.infer<
+  typeof organizationProfileSchema
+>;
 export type ListMembersInput = z.infer<typeof listMembersInput>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;

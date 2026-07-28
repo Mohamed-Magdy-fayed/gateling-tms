@@ -28,10 +28,20 @@ import {
 } from "@/features/core/organizations/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 
+/**
+ * Every IANA zone the runtime knows, which is what the server validates
+ * against — a hardcoded shortlist would drift and would exclude academies the
+ * product hasn't anticipated. Computed once at module scope; the list is
+ * static for the life of the process.
+ */
+const timeZoneOptions = (
+  Intl.supportedValuesOf?.("timeZone") ?? ["UTC", "Africa/Cairo"]
+).map((zone) => ({ value: zone, label: zone.replace(/_/g, " ") }));
+
 type OrganizationProfileFormDialogProps = {
   organization: Pick<
     Organization,
-    "name" | "businessName" | "phone" | "website"
+    "name" | "businessName" | "phone" | "website" | "timeZone"
   >;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -54,6 +64,7 @@ export function OrganizationProfileFormDialog({
       businessName: organization.businessName ?? "",
       phone: organization.phone ?? "",
       website: organization.website ?? "",
+      timeZone: organization.timeZone,
     }),
     [organization],
   );
@@ -143,6 +154,16 @@ export function OrganizationProfileFormDialog({
                 {(field) => (
                   <field.StringField
                     label={t("organizations.profile.websiteLabel")}
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name="timeZone">
+                {(field) => (
+                  <field.ComboboxOneField
+                    label={t("organizations.profile.timeZoneLabel")}
+                    description={t("organizations.profile.timeZoneHint")}
+                    options={timeZoneOptions}
                   />
                 )}
               </form.AppField>

@@ -133,6 +133,9 @@ export async function updateOrganization(
       businessName: nullableTrim(input.businessName),
       phone: nullableTrim(input.phone),
       website: nullableTrim(input.website),
+      // Left undefined when the caller didn't send one, which makes Drizzle
+      // omit the column rather than overwrite the org's zone with a blank.
+      timeZone: input.timeZone || undefined,
     })
     .where(eq(OrganizationsTable.id, ctx.organizationId));
 
