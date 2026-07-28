@@ -32,6 +32,11 @@ export async function assertFormInOrg(ctx: OrgTRPCContext, formId: string) {
 function buildWhereClause(ctx: OrgTRPCContext, input: ListFormsInput) {
   return and(
     eq(FormsTable.organizationId, ctx.organizationId),
+    // Both optional, so the assessments table (which sends neither) is
+    // unaffected — they exist for pickers that need one kind of form, like
+    // "published placement tests only".
+    input.type ? eq(FormsTable.type, input.type) : undefined,
+    input.status ? eq(FormsTable.status, input.status) : undefined,
     input.globalFilter?.trim()
       ? ilike(FormsTable.title, `%${input.globalFilter.trim()}%`)
       : undefined,

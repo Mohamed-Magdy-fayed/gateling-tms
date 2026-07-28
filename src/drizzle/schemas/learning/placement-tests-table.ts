@@ -9,7 +9,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { FormsTable } from "@/drizzle/schemas/assessment";
+import { FormResponsesTable, FormsTable } from "@/drizzle/schemas/assessment";
 import { OrganizationsTable } from "@/drizzle/schemas/auth";
 import { LevelsTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
@@ -48,6 +48,13 @@ export const PlacementTestsTable = pgTable(
     traineeId: uuid().notNull(),
     formId: uuid().references(() => FormsTable.id, { onDelete: "set null" }),
     assignedLevelId: uuid().references(() => LevelsTable.id, {
+      onDelete: "set null",
+    }),
+    // The scored form_responses row produced when the trainee's answers were
+    // recorded. Nullable and single-column for the same reason as the two
+    // above: a test exists before it's taken, and the score lives on the
+    // response rather than being denormalized here.
+    responseId: uuid().references(() => FormResponsesTable.id, {
       onDelete: "set null",
     }),
     status: placementTestStatusEnum().notNull().default("pending"),
@@ -91,6 +98,10 @@ export const placementTestsRelations = relations(
     assignedLevel: one(LevelsTable, {
       fields: [PlacementTestsTable.assignedLevelId],
       references: [LevelsTable.id],
+    }),
+    response: one(FormResponsesTable, {
+      fields: [PlacementTestsTable.responseId],
+      references: [FormResponsesTable.id],
     }),
   }),
 );

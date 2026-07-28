@@ -7,6 +7,8 @@ export const listFormsInput = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
+  type: z.enum(formTypeValues).optional(),
+  status: z.enum(formStatusValues).optional(),
 });
 
 // A nullable-uuid-or-empty-string triplet — the create dialog's selects use
