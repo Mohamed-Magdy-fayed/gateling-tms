@@ -1,7 +1,6 @@
 import {
   createTRPCRouter,
   orgContentManagerProcedure,
-  orgProcedure,
 } from "@/integrations/trpc/init";
 import { createTrainee, deleteTrainee, updateTrainee } from "./mutations";
 import { getTrainee, listTrainees } from "./queries";
@@ -12,12 +11,22 @@ import {
   traineeUpdateSchema,
 } from "./schemas";
 
+/**
+ * Admin/teacher-only throughout, reads included: a trainee row carries the
+ * student's email and phone, so `list` hands the whole organization's contact
+ * details to whoever calls it. That is the same leak `responses.list` had
+ * (STATE.md D75(1)) and `groups.students` had (D83(1)) — this router just
+ * predates both fixes.
+ *
+ * A future student-facing view needs a query scoped to the caller's own
+ * trainee record rather than a widening of these.
+ */
 export const traineesRouter = createTRPCRouter({
-  list: orgProcedure
+  list: orgContentManagerProcedure
     .input(listTraineesInput)
     .query(async ({ ctx, input }) => listTrainees(ctx, input)),
   // Reuses traineeDeleteSchema — same {id} shape, no need for a near-duplicate.
-  get: orgProcedure
+  get: orgContentManagerProcedure
     .input(traineeDeleteSchema)
     .query(async ({ ctx, input }) => getTrainee(ctx, input.id)),
   create: orgContentManagerProcedure
