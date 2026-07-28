@@ -1,6 +1,12 @@
 "use client";
 
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  EyeIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -44,6 +50,12 @@ export function TraineeRowActions({
         }
       />
       <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem
+          render={<Link href={`/learning-flow/trainees/${row.id}`} />}
+        >
+          <EyeIcon className="size-3.5" />
+          {t("enrollments.title")}
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setRowAction({ row, variant: "edit" })}
         >

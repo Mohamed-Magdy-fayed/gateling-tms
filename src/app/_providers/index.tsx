@@ -11,7 +11,7 @@ type ProvidersProps = PropsWithChildren<{
 
 export function Providers({ children, locale }: ProvidersProps) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <TranslationProvider defaultLocale={locale} fallbackLocale="en">
         <TRPCReactProvider>
           <TooltipProvider>

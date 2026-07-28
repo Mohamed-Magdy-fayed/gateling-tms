@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 import type { Trainee } from "@/drizzle/schema";
 import {
   createEntityActionsColumn,
@@ -32,6 +33,14 @@ export function buildTraineeColumns(opts: {
         <DataTableColumnHeader column={column} title={t("trainees.name")} />
       ),
       meta: { label: t("trainees.name") },
+      cell: ({ row }) => (
+        <Link
+          href={`/learning-flow/trainees/${row.original.id}`}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          {row.original.name}
+        </Link>
+      ),
     },
     {
       accessorKey: "phone",
