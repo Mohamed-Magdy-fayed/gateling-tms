@@ -669,6 +669,23 @@ export default {
     notRecorded: "سجّل إجابات المتدرب قبل تحديد المستوى.",
     unanswered: "أجب عن سؤال واحد على الأقل.",
   },
+  progress: {
+    title: "التقدم",
+    traineeLead: "موقف هذا المتدرب في دوراته ومجموعاته.",
+    groupLead: "ما أنجزته هذه المجموعة، وحال كل متدرب فيها.",
+    levels: "المستويات المكتملة",
+    levelsDetail: dt("{completed:number} من {total:number}", {}),
+    sessions: "الحصص المنعقدة",
+    sessionsDetail: dt("{completed:number} من {total:number}", {}),
+    nextSession: "الحصة القادمة {when}",
+    notEnrolled: "غير مسجل",
+    attendanceNote:
+      "أرقام الحصص مأخوذة من جدول المجموعة. تتبّع الحضور يأتي مع الحصص المباشرة.",
+    emptyTitle: "لا يوجد ما يُقاس بعد",
+    traineeEmptyDescription:
+      "سجّل هذا المتدرب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",
+    groupEmptyDescription: "أضف متدربين إلى هذه المجموعة لمتابعة تقدمهم.",
+  },
   certificates: {
     title: "الشهادات",
     lead: "أصدر شهادات المتدربين واحتفظ بسجل لما أتمّوه.",
@@ -847,13 +864,24 @@ export default {
     stats: {
       students: "الطلاب",
       courses: "الدورات",
+      groups: "المجموعات",
       plan: "الباقة",
+      ofLimit: dt("من {limit:number} مسموح بها", {}),
     },
-    upcoming: {
-      title: "المزيد قادم قريبًا",
-      description:
-        "مكتبة المحتوى ومسار التعلم والحصص المباشرة ستتوفر في المراحل القادمة — ستتمكن من إدارة الدورات والحصص والجلسات المباشرة من هنا.",
-      settingsCta: "إدارة المؤسسة",
+    today: {
+      title: "حصص اليوم",
+      description: "كل الحصص المجدولة اليوم بتوقيت أكاديميتك.",
+      duration: dt("{minutes:number} دقيقة", {}),
+      emptyTitle: "لا توجد حصص اليوم",
+      emptyDescription: "تظهر الحصص التي تجدولها هنا في يوم انعقادها.",
+      groupsCta: "الذهاب إلى المجموعات",
+    },
+    recent: {
+      enrollments: "أحدث التسجيلات",
+      certificates: "أحدث الشهادات الصادرة",
+      emptyTitle: "لا يوجد شيء بعد",
+      enrollmentsEmpty: "سجّل متدربًا في دورة ليظهر هنا.",
+      certificatesEmpty: "تظهر الشهادات التي تصدرها هنا.",
     },
   },
   getStarted: {

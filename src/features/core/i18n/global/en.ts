@@ -689,6 +689,26 @@ export default {
     notRecorded: "Record the trainee's answers before assigning a level.",
     unanswered: "Answer at least one question.",
   },
+  progress: {
+    title: "Progress",
+    traineeLead: "Where this trainee stands across their courses and classes.",
+    groupLead: "How far this class has got, and each trainee within it.",
+    levels: "Levels completed",
+    levelsDetail: dt("{completed:number} of {total:number}", {}),
+    sessions: "Sessions held",
+    sessionsDetail: dt("{completed:number} of {total:number}", {}),
+    nextSession: "Next session {when}",
+    notEnrolled: "Not enrolled",
+    // Named for what it is: these are scheduled classes, not a record of who
+    // attended. Real attendance arrives with Phase 6.
+    attendanceNote:
+      "Session figures come from the class schedule. Attendance tracking arrives with Live Classes.",
+    emptyTitle: "Nothing to measure yet",
+    traineeEmptyDescription:
+      "Enroll this trainee in a course or add them to a class, and their progress shows up here.",
+    groupEmptyDescription:
+      "Add trainees to this class to track how they're getting on.",
+  },
   certificates: {
     title: "Certificates",
     lead: "Issue and keep a record of what each trainee has completed.",
@@ -873,13 +893,25 @@ export default {
     stats: {
       students: "Students",
       courses: "Courses",
+      groups: "Classes",
       plan: "Plan",
+      ofLimit: dt("of {limit:number} allowed", {}),
     },
-    upcoming: {
-      title: "More is on the way",
-      description:
-        "Content Library, Learning Flow, and Live Classes land in upcoming phases — you'll manage courses, classes, and live sessions right from here.",
-      settingsCta: "Manage organization",
+    today: {
+      title: "Today's sessions",
+      description: "Every class scheduled for today, on your academy's clock.",
+      duration: dt("{minutes:number} min", {}),
+      emptyTitle: "Nothing scheduled today",
+      emptyDescription:
+        "Classes you schedule show up here on the day they run.",
+      groupsCta: "Go to classes",
+    },
+    recent: {
+      enrollments: "Recent enrollments",
+      certificates: "Recently issued certificates",
+      emptyTitle: "Nothing yet",
+      enrollmentsEmpty: "Enroll a trainee in a course to see it here.",
+      certificatesEmpty: "Certificates you issue show up here.",
     },
   },
   getStarted: {

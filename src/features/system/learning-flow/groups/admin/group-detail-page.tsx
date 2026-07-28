@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "@/features/core/i18n/client";
+import { GroupProgressSection } from "@/features/system/learning-flow/progress/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import {
   GroupFormDialog,
@@ -108,6 +109,8 @@ export function GroupDetailPage({ groupId }: { groupId: string }) {
           timeZone={organization?.timeZone ?? "UTC"}
         />
       </div>
+
+      <GroupProgressSection groupId={group.id} />
 
       <GroupFormDialog
         open={editOpen}

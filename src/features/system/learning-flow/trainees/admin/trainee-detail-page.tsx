@@ -11,6 +11,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { TraineeCertificatesSection } from "@/features/system/learning-flow/certificates/admin";
 import { TraineeEnrollmentsSection } from "@/features/system/learning-flow/enrollments/admin";
 import { TraineePlacementTestsSection } from "@/features/system/learning-flow/placement-tests/admin";
+import { TraineeProgressCard } from "@/features/system/learning-flow/progress/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import { TraineeFormDialog, TraineeGroupsSection } from "./components";
 
@@ -94,6 +95,8 @@ export function TraineeDetailPage({ traineeId }: { traineeId: string }) {
           <p className="mt-1 text-muted-foreground text-sm">{contactLine}</p>
         ) : null}
       </div>
+
+      <TraineeProgressCard traineeId={trainee.id} />
 
       <TraineeEnrollmentsSection traineeId={trainee.id} />
 
