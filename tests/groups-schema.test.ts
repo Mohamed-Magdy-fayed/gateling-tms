@@ -8,6 +8,7 @@ import {
   groupMutationSchema,
   groupScheduleSlotSchema,
 } from "@/features/system/learning-flow/groups/server/schemas";
+import { issueKeyAt } from "./test-utils";
 
 const validSlot = { day: 1, startTime: "18:00", endTime: "20:00" };
 
@@ -20,23 +21,6 @@ const validGroup = {
   sessionCount: 12,
   schedule: [validSlot],
 };
-
-/** The translation key a failed parse reported for `path`, if any. */
-function issueKeyAt(
-  result: { success: boolean; error?: { issues: readonly unknown[] } },
-  path: string,
-): string | undefined {
-  if (result.success || !result.error) return undefined;
-  const issue = result.error.issues.find(
-    (
-      candidate,
-    ): candidate is { path: (string | number)[]; message: string } => {
-      const typed = candidate as { path?: (string | number)[] };
-      return typed.path?.at(-1) === path;
-    },
-  );
-  return issue?.message;
-}
 
 describe("groupScheduleSlotSchema", () => {
   test("accepts a well-formed weekly slot", () => {

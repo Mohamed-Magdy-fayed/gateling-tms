@@ -5,6 +5,7 @@ import {
   LayoutDashboardIcon,
   LibraryIcon,
   SettingsIcon,
+  UserCheckIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -21,7 +22,8 @@ export type SystemNavItem = {
     | "nav.contentLibrary"
     | "nav.assessments"
     | "nav.learningFlow"
-    | "nav.groups";
+    | "nav.groups"
+    | "nav.enrollments";
   Icon: LucideIcon;
 };
 
@@ -56,6 +58,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/learning-flow/groups",
     translationKey: "nav.groups",
     Icon: UsersIcon,
+  },
+  {
+    href: "/learning-flow/enrollments",
+    translationKey: "nav.enrollments",
+    Icon: UserCheckIcon,
   },
   {
     href: "/assessments",
