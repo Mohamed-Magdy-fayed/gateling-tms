@@ -33,6 +33,11 @@ export const OrganizationsTable = pgTable(
     phone: varchar({ length: 32 }),
     website: varchar({ length: 2048 }),
     plan: organizationPlanEnum().notNull().default("free"),
+    // IANA zone the org's class schedules are written in. A group's weekly
+    // slots are wall-clock ("Mon 18:00"); this is what turns them into
+    // concrete UTC instants. Org-wide rather than per-group — an academy
+    // runs on one clock (STATE.md D80).
+    timeZone: varchar({ length: 64 }).notNull().default("Africa/Cairo"),
     studentCount: integer().notNull().default(0),
     courseCount: integer().notNull().default(0),
     storageBytes: bigint({ mode: "number" }).notNull().default(0),

@@ -1,7 +1,9 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  date,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -44,6 +46,15 @@ export const GroupsTable = pgTable(
     courseId: uuid(),
     teacherId: uuid().references(() => UsersTable.id, { onDelete: "set null" }),
     schedule: jsonb().$type<GroupScheduleSlot[]>().notNull().default([]),
+    // The schedule above is an open-ended weekly pattern; these two bound it
+    // into a finite set of sessions. A count rather than an end date, because
+    // academies sell "a 24-session course", not "classes until March"
+    // (STATE.md D80). The CURRENT_DATE default keeps the generated
+    // ADD COLUMN ... NOT NULL safe on an already-populated table.
+    startDate: date()
+      .notNull()
+      .default(sql`CURRENT_DATE`),
+    sessionCount: integer().notNull().default(12),
     status: groupStatusEnum().notNull().default("active"),
     createdAt,
     updatedAt,
