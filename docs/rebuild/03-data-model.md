@@ -58,7 +58,7 @@ Sessions are Redis, not Postgres — no sessions table.
 | Table | SOURCE file | Changes |
 |---|---|---|
 | `zoom_clients` | `zoom-clients-table.ts` | already had `organizationId` — keep; per-org Zoom OAuth credentials |
-| `zoom_sessions` | `zoom-sessions-table.ts` | **+ organizationId**; FK group; generated from schedule by Inngest |
+| `sessions` | `zoom-sessions-table.ts` | **+ organizationId**; FK group; generated from schedule by Inngest. **Renamed from SOURCE's `zoom_sessions` (STATE.md D80)** — a class session exists whether or not the org ever connects Zoom, so Zoom is one optional delivery channel Phase 6 layers on top (meeting number/password/`zoomClientId` land in Phase 6's own migration) |
 | `session_students` | `session-student-table.ts` | **+ organizationId**; attendance records |
 
 ### Dropped from SOURCE
@@ -74,7 +74,7 @@ organizations 1─* groups *─* users(students)   [group_students; groups.cours
 organizations 1─* forms 1─* form_sections 1─* questions 1─* answers
 forms 1─* form_responses *─1 users
 users(student) 1─* enrollments *─1 courses ; enrollments 1─* enrollment_levels
-organizations 1─* zoom_clients ; groups 1─* zoom_sessions 1─* session_students
+organizations 1─* zoom_clients ; groups 1─* sessions 1─* session_students
 placement_tests: form ↔ student ↔ assigned level
 certificates: student ↔ course/group
 ```

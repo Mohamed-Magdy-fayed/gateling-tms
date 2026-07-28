@@ -44,7 +44,7 @@ Versions mirror DONOR-B (`G:\apps\gateling.com\package.json`) and DONOR-C where 
 | `inngest` | ^4.2.4 | 1 |
 | `firebase-admin` | ^14 | 1 |
 | shadcn/ui deps: `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `radix-ui` (or per-primitive `@radix-ui/*`), `@base-ui/react` (required by the `base-mira` style used in DONOR-B's `components.json`), `cmdk`, `sonner`, `vaul`, `next-themes`, `tw-animate-css` (dev) | latest | 1 |
-| `date-fns` (+ `@date-fns/tz`) | ^4.1 | 1 |
+| `@date-fns/tz` | ^1.5 | 5 (installed for group schedule → UTC session math, D80). `date-fns` itself deliberately **not** installed: `@date-fns/tz` declares no dependency or peer on it, and formatting goes through `Intl` — same reasoning as D33's call to skip `nuqs` |
 | `nuqs` | ^2.8 | 1 (data-table URL state) |
 | `dotenv` | latest | 1 (standalone Drizzle seed CLI env loading, D22) |
 | `tsx` (dev) | latest | 1 (standalone Drizzle seed CLI TS execution, D22) |
