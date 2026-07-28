@@ -7,7 +7,7 @@ import {
   PlusIcon,
   SendIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,17 +45,35 @@ export function TraineePlacementTestsSection({
   const [assignOpen, setAssignOpen] = useState(false);
   const [runnerTarget, setRunnerTarget] = useState<RunnerTarget>(null);
   const [reviewTargetId, setReviewTargetId] = useState<string | null>(null);
+  // Tracked per row rather than off the mutation's own isPending, which is
+  // shared and would grey out every other row's cancel button too — same
+  // pattern as the group roster's remove button.
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const { data: placementTests, isLoading } = useQuery(
     trpc.placementTests.list.queryOptions({ traineeId }),
   );
+  // Dates are rendered on the academy's clock, which lives on the org — the
+  // same reason the group sessions panel reads it.
+  const { data: organization } = useQuery(
+    trpc.organizations.getActive.queryOptions(),
+  );
   const cancelMut = useMutation(trpc.placementTests.cancel.mutationOptions());
 
-  const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-    dateStyle: "medium",
-  });
+  // Without an explicit time zone the server formats in the host's zone and
+  // the browser in the viewer's, which hydrates mismatched and shows the wrong
+  // day either side of midnight.
+  const dateFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
+        dateStyle: "medium",
+        timeZone: organization?.timeZone ?? "UTC",
+      }),
+    [locale, organization?.timeZone],
+  );
 
   async function handleCancel(id: string) {
+    setCancellingId(id);
     try {
       await toast
         .promise(cancelMut.mutateAsync({ id }), {
@@ -72,6 +90,8 @@ export function TraineePlacementTestsSection({
       });
     } catch {
       // toast.promise already surfaced the failure.
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -182,7 +202,7 @@ export function TraineePlacementTestsSection({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={cancelMut.isPending}
+                      disabled={cancellingId === placementTest.id}
                       onClick={() => void handleCancel(placementTest.id)}
                     >
                       {t("placementTests.cancelTest")}

@@ -5,6 +5,7 @@ import {
   enrollmentStatusSchema,
   listEnrollmentsInput,
 } from "@/features/system/learning-flow/enrollments/server/schemas";
+import { issueKeyAt } from "./test-utils";
 
 const traineeId = "3f1c0a3e-2b7d-4a55-9c1e-0d2f4b6a8c10";
 const courseId = "7a2d5f18-9c34-4b6e-8f21-5d0c3a7b9e42";
@@ -15,23 +16,6 @@ const validEnrollment = {
   courseId,
   status: "waiting" as const,
 };
-
-/** The translation key a failed parse reported for `path`, if any. */
-function issueKeyAt(
-  result: { success: boolean; error?: { issues: readonly unknown[] } },
-  path: string,
-): string | undefined {
-  if (result.success || !result.error) return undefined;
-  const issue = result.error.issues.find(
-    (
-      candidate,
-    ): candidate is { path: (string | number)[]; message: string } => {
-      const typed = candidate as { path?: (string | number)[] };
-      return typed.path?.at(-1) === path;
-    },
-  );
-  return issue?.message;
-}
 
 describe("enrollmentMutationSchema", () => {
   test("accepts a well-formed enrollment", () => {

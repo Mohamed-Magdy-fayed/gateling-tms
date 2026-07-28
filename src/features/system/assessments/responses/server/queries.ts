@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
+import type { DatabaseOrTransaction } from "@/drizzle";
 import {
   FormResponsesTable,
   FormSectionsTable,
@@ -30,8 +31,17 @@ export async function assertFormInOrg(ctx: OrgTRPCContext, formId: string) {
 }
 
 /** Flattened question+answer tree for a form, shaped for `scoreFormResponse`. */
+/**
+ * Widened from the full `OrgTRPCContext` so a caller that is already inside a
+ * transaction can pass its `trx` — the learning-flow placement-test flow scores
+ * an attempt while holding the test's row lock.
+ */
+type ScorableQuestionsContext = Pick<OrgTRPCContext, "organizationId"> & {
+  db: DatabaseOrTransaction;
+};
+
 export async function getScorableQuestions(
-  ctx: OrgTRPCContext,
+  ctx: ScorableQuestionsContext,
   formId: string,
 ): Promise<ScorableQuestion[]> {
   const sections = await ctx.db.query.FormSectionsTable.findMany({

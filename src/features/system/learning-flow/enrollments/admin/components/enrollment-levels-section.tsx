@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayersIcon } from "lucide-react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -47,10 +48,21 @@ export function EnrollmentLevelsSection({
   const setStatusMut = useMutation(
     trpc.enrollments.setLevelStatus.mutationOptions(),
   );
+  const { data: organization } = useQuery(
+    trpc.organizations.getActive.queryOptions(),
+  );
 
-  const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-    dateStyle: "medium",
-  });
+  // Pinned to the academy's clock so the server and the browser can't format
+  // the same completion date into different days (a hydration mismatch, and
+  // wrong either side of midnight).
+  const dateFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
+        dateStyle: "medium",
+        timeZone: organization?.timeZone ?? "UTC",
+      }),
+    [locale, organization?.timeZone],
+  );
 
   async function handleChange(levelId: string, status: EnrollmentLevelStatus) {
     try {

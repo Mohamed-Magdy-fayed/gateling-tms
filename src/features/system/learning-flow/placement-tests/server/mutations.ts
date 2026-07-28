@@ -183,7 +183,13 @@ export async function recordPlacementAttempt(
       ctx.t("enrollments.invalidTransition"),
     );
 
-    const questions = await getScorableQuestions(ctx, current.formId);
+    // Read through `trx`, not `ctx.db`: the latter would check out a second
+    // connection and read outside this transaction's snapshot while it holds
+    // the placement test's row lock.
+    const questions = await getScorableQuestions(
+      { ...ctx, db: trx },
+      current.formId,
+    );
     const score = scoreFormResponse(questions, input.answers);
 
     const [response] = await trx
