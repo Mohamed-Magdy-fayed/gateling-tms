@@ -1,6 +1,7 @@
 import {
   createTRPCRouter,
   orgContentManagerProcedure,
+  orgProcedure,
 } from "@/integrations/trpc/init";
 import { createTrainee, deleteTrainee, updateTrainee } from "./mutations";
 import { getTrainee, listTraineeGroups, listTrainees } from "./queries";
@@ -20,6 +21,9 @@ import {
  *
  * A future student-facing view needs a query scoped to the caller's own
  * trainee record rather than a widening of these.
+ *
+ * `groups` is the exception and stays open: it returns group names and
+ * statuses for one trainee, no contact details.
  */
 export const traineesRouter = createTRPCRouter({
   list: orgContentManagerProcedure
