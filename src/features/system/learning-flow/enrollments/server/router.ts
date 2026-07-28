@@ -1,7 +1,6 @@
 import {
   createTRPCRouter,
   orgContentManagerProcedure,
-  orgProcedure,
 } from "@/integrations/trpc/init";
 import {
   createEnrollment,
@@ -22,20 +21,27 @@ import {
   listEnrollmentsInput,
 } from "./schemas";
 
+/**
+ * Admin/teacher-only throughout, reads included: the list pairs every
+ * trainee's name with what they're studying and how far they've got, which is
+ * a roster a `student` membership must not be able to read — the same call
+ * D75(1) made for `responses.list` and D83(1) for `groups.students`.
+ *
+ * A future student-facing "my courses" view needs its own query scoped to the
+ * caller's own trainee record, not a widening of these.
+ */
 export const enrollmentsRouter = createTRPCRouter({
-  list: orgProcedure
+  list: orgContentManagerProcedure
     .input(listEnrollmentsInput)
     .query(async ({ ctx, input }) => listEnrollments(ctx, input)),
   // Reuses enrollmentDeleteSchema — same {id} shape, no need for a
   // near-duplicate (same call the trainees router makes).
-  get: orgProcedure
+  get: orgContentManagerProcedure
     .input(enrollmentDeleteSchema)
     .query(async ({ ctx, input }) => getEnrollment(ctx, input.id)),
-  levels: orgProcedure
+  levels: orgContentManagerProcedure
     .input(enrollmentDeleteSchema)
     .query(async ({ ctx, input }) => listEnrollmentLevels(ctx, input.id)),
-  // Managing who is enrolled and how far they've got is staff work — a student
-  // membership must not reach it (STATE.md D75(1)/D83(1)).
   create: orgContentManagerProcedure
     .input(enrollmentMutationSchema)
     .mutation(async ({ ctx, input }) => createEnrollment(ctx, input)),
