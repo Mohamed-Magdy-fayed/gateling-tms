@@ -12,20 +12,20 @@ import { cn } from "@/lib/utils";
 
 const items: Array<{
   key:
-    | "instantOnboarding"
-    | "excelFirst"
-    | "freeForever"
-    | "bilingual"
-    | "truthful";
+  | "instantOnboarding"
+  | "excelFirst"
+  | "freeForever"
+  | "bilingual"
+  | "truthful";
   icon: LucideIcon;
   tone: "orange" | "blue" | "green" | "violet" | "neutral";
 }> = [
-  { key: "instantOnboarding", icon: RocketIcon, tone: "orange" },
-  { key: "excelFirst", icon: FileSpreadsheetIcon, tone: "blue" },
-  { key: "freeForever", icon: ShieldCheckIcon, tone: "green" },
-  { key: "bilingual", icon: LanguagesIcon, tone: "violet" },
-  { key: "truthful", icon: BadgeCheckIcon, tone: "neutral" },
-];
+    { key: "instantOnboarding", icon: RocketIcon, tone: "orange" },
+    { key: "excelFirst", icon: FileSpreadsheetIcon, tone: "blue" },
+    { key: "freeForever", icon: ShieldCheckIcon, tone: "green" },
+    { key: "bilingual", icon: LanguagesIcon, tone: "violet" },
+    { key: "truthful", icon: BadgeCheckIcon, tone: "neutral" },
+  ];
 
 const toneClasses = {
   orange: "bg-orange-50 text-orange-600 dark:bg-orange-950/40",
@@ -39,7 +39,7 @@ export async function AboutBeliefsSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-display font-bold text-3xl text-foreground">
           {t("about.beliefs.title")}

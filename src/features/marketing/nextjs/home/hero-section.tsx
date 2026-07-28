@@ -34,7 +34,7 @@ export async function HeroSection() {
         <div className="absolute bottom-0 start-0 size-96 -translate-x-1/3 translate-y-1/3 rounded-full bg-sky-200/40 blur-3xl dark:bg-sky-500/10" />
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-28">
+      <div className="mx-auto grid gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-28">
         <div className="text-center lg:text-start">
           <Tag color="orange">{t("landing.hero.highlights.free")}</Tag>
           <h1 className="mt-5 text-balance font-display text-4xl font-bold text-foreground sm:text-5xl lg:text-6xl">
