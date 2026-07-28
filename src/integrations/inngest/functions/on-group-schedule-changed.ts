@@ -96,13 +96,19 @@ export const onGroupScheduleChanged = inngest.createFunction(
           .returning({ id: SessionsTable.id });
 
         if (occurrences.length === 0) {
-          return { removed: removed.length, created: 0 };
+          return { removed: removed.length, written: 0 };
         }
 
-        // onConflictDoNothing against unique(groupId, scheduledAt) keeps the
-        // untouched part of a schedule on its original rows, so ids stay
-        // stable across an edit instead of churning on every save.
-        const created = await trx
+        // Upsert against unique(groupId, scheduledAt) rather than
+        // insert-or-ignore. A row whose start instant didn't move is never
+        // deleted above and would never be re-inserted, so ignoring conflicts
+        // would leave its other columns frozen at the old schedule: shortening
+        // a slot from 18:00-20:00 to 18:00-19:00, or reassigning the group's
+        // teacher, changes neither the day nor the start time, and the stale
+        // duration/teacher would survive every future regeneration.
+        // Conflict-updating keeps ids stable across an edit *and* keeps the
+        // surviving rows accurate.
+        const written = await trx
           .insert(SessionsTable)
           .values(
             occurrences.map((occurrence) => ({
@@ -113,12 +119,21 @@ export const onGroupScheduleChanged = inngest.createFunction(
               teacherId: group.teacherId,
             })),
           )
-          .onConflictDoNothing({
+          .onConflictDoUpdate({
             target: [SessionsTable.groupId, SessionsTable.scheduledAt],
+            set: {
+              durationMinutes: sql`excluded."durationMinutes"`,
+              teacherId: sql`excluded."teacherId"`,
+              updatedAt: new Date(),
+            },
+            // Status is deliberately not overwritten, and a session that has
+            // already started or been cancelled is left entirely alone —
+            // regeneration reshapes the plan, it doesn't rewrite what happened.
+            setWhere: eq(SessionsTable.status, "scheduled"),
           })
           .returning({ id: SessionsTable.id });
 
-        return { removed: removed.length, created: created.length };
+        return { removed: removed.length, written: written.length };
       });
 
       return result;

@@ -33,7 +33,12 @@ export const groupsRouter = createTRPCRouter({
   get: orgProcedure
     .input(groupDeleteSchema)
     .query(async ({ ctx, input }) => getGroup(ctx, input.id)),
-  students: orgProcedure
+  // Admin/teacher only, unlike its `list`/`get`/`sessions` siblings: the
+  // roster carries every trainee's email and phone, so a member with the
+  // `student` role reading it would be handed the whole class's contact
+  // details. Same reasoning that put `responses.list` behind this gate
+  // (STATE.md D75).
+  students: orgContentManagerProcedure
     .input(groupDeleteSchema)
     .query(async ({ ctx, input }) => listGroupStudents(ctx, input.id)),
   sessions: orgProcedure
