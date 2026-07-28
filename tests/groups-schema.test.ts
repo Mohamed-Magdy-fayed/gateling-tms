@@ -176,6 +176,14 @@ describe("groupMutationSchema", () => {
     ["day-first", "03-08-2026"],
     ["a timestamp", "2026-08-03T00:00:00Z"],
     ["unpadded", "2026-8-3"],
+    // Shape-only validation would let these through, and schedule.ts expands
+    // an unparseable start date to zero occurrences — so an edit that slipped
+    // one past the boundary would silently delete every future scheduled
+    // session instead of failing loudly.
+    ["a day that doesn't exist in that month", "2024-02-30"],
+    ["an out-of-range month", "2026-13-01"],
+    ["an out-of-range day", "2026-04-31"],
+    ["Feb 29 in a non-leap century", "2100-02-29"],
   ])(
     "rejects a startDate that is %s with the date key",
     (_label, startDate) => {
@@ -188,6 +196,16 @@ describe("groupMutationSchema", () => {
       expect(issueKeyAt(result, "startDate")).toBe("groups.validation.date");
     },
   );
+
+  test.each([
+    ["a leap day in a leap year", "2024-02-29"],
+    ["a leap day in a leap century", "2000-02-29"],
+    ["the last day of a 31-day month", "2026-12-31"],
+  ])("accepts %s", (_label, startDate) => {
+    expect(
+      groupMutationSchema.safeParse({ ...validGroup, startDate }).success,
+    ).toBe(true);
+  });
 
   test("rejects a sessionCount below one with the min key", () => {
     const result = groupMutationSchema.safeParse({

@@ -34,38 +34,6 @@ export const onGroupScheduleChanged = inngest.createFunction(
     return step.run("regenerate-group-sessions", async () => {
       const { organizationId, groupId } = event.data;
 
-      const [group] = await db
-        .select({
-          id: GroupsTable.id,
-          schedule: GroupsTable.schedule,
-          startDate: GroupsTable.startDate,
-          sessionCount: GroupsTable.sessionCount,
-          teacherId: GroupsTable.teacherId,
-          timeZone: OrganizationsTable.timeZone,
-        })
-        .from(GroupsTable)
-        .innerJoin(
-          OrganizationsTable,
-          eq(OrganizationsTable.id, GroupsTable.organizationId),
-        )
-        .where(
-          and(
-            eq(GroupsTable.id, groupId),
-            eq(GroupsTable.organizationId, organizationId),
-          ),
-        );
-
-      // The group was deleted between the mutation and this run. Nothing to
-      // regenerate, and retrying will never change that.
-      if (!group) return { skipped: true as const };
-
-      const occurrences = generateSessionOccurrences({
-        schedule: group.schedule,
-        startDate: group.startDate,
-        sessionCount: group.sessionCount,
-        timeZone: group.timeZone,
-      });
-
       const result = await db.transaction(async (trx) => {
         // Two rapid schedule edits would otherwise interleave their
         // delete-then-insert sequences and leave a mix of both schedules.
@@ -75,7 +43,48 @@ export const onGroupScheduleChanged = inngest.createFunction(
           sql`SELECT pg_advisory_xact_lock(hashtextextended(${groupId}, 0))`,
         );
 
+        // Read *after* the lock, never before. Reading first would let two
+        // events load different revisions of the group and then take the lock
+        // in the opposite order, so the run holding the older snapshot commits
+        // last and quietly reinstates the schedule the user just replaced —
+        // the same read-then-lock inversion D75(3) fixed in moveSection.
+        const [group] = await trx
+          .select({
+            id: GroupsTable.id,
+            schedule: GroupsTable.schedule,
+            startDate: GroupsTable.startDate,
+            sessionCount: GroupsTable.sessionCount,
+            teacherId: GroupsTable.teacherId,
+            timeZone: OrganizationsTable.timeZone,
+          })
+          .from(GroupsTable)
+          .innerJoin(
+            OrganizationsTable,
+            eq(OrganizationsTable.id, GroupsTable.organizationId),
+          )
+          .where(
+            and(
+              eq(GroupsTable.id, groupId),
+              eq(GroupsTable.organizationId, organizationId),
+            ),
+          );
+
+        // The group was deleted between the mutation and this run. Nothing to
+        // regenerate, and retrying will never change that.
+        if (!group) return { skipped: true as const };
+
+        const occurrences = generateSessionOccurrences({
+          schedule: group.schedule,
+          startDate: group.startDate,
+          sessionCount: group.sessionCount,
+          timeZone: group.timeZone,
+        });
+
         const keptTimes = occurrences.map((o) => o.scheduledAt);
+        // One "now" for the whole transaction, so the delete below and the
+        // upsert's guard further down can't disagree about whether a session
+        // sitting right on the boundary is still in the future.
+        const regeneratedAt = new Date();
 
         // Only future, still-`scheduled` rows are disposable. Anything past,
         // ongoing, completed, or explicitly cancelled is history — a schedule
@@ -84,7 +93,7 @@ export const onGroupScheduleChanged = inngest.createFunction(
           eq(SessionsTable.groupId, groupId),
           eq(SessionsTable.organizationId, organizationId),
           eq(SessionsTable.status, "scheduled"),
-          gt(SessionsTable.scheduledAt, new Date()),
+          gt(SessionsTable.scheduledAt, regeneratedAt),
           keptTimes.length > 0
             ? notInArray(SessionsTable.scheduledAt, keptTimes)
             : undefined,
@@ -124,12 +133,18 @@ export const onGroupScheduleChanged = inngest.createFunction(
             set: {
               durationMinutes: sql`excluded."durationMinutes"`,
               teacherId: sql`excluded."teacherId"`,
-              updatedAt: new Date(),
+              updatedAt: regeneratedAt,
             },
-            // Status is deliberately not overwritten, and a session that has
-            // already started or been cancelled is left entirely alone —
-            // regeneration reshapes the plan, it doesn't rewrite what happened.
-            setWhere: eq(SessionsTable.status, "scheduled"),
+            // Status is deliberately not overwritten, and the row is only
+            // touched while it is still both future and `scheduled` — the same
+            // bar the delete above applies. A session that already happened
+            // keeps the duration and teacher it actually ran with, even if
+            // nobody ever moved it off `scheduled`. Regeneration reshapes the
+            // plan; it doesn't rewrite what happened.
+            setWhere: and(
+              eq(SessionsTable.status, "scheduled"),
+              gt(SessionsTable.scheduledAt, regeneratedAt),
+            ),
           })
           .returning({ id: SessionsTable.id });
 

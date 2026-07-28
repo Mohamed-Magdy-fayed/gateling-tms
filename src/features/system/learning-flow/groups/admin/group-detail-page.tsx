@@ -104,6 +104,7 @@ export function GroupDetailPage({ groupId }: { groupId: string }) {
         <GroupStudentsSection groupId={group.id} />
         <GroupSessionsSection
           groupId={group.id}
+          hasSchedule={group.schedule.length > 0}
           timeZone={organization?.timeZone ?? "UTC"}
         />
       </div>

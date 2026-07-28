@@ -53,9 +53,12 @@ export const groupMutationSchema = z.object({
   courseId: optionalReference,
   teacherId: optionalReference,
   status: z.enum(groupStatusValues),
-  startDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, translationKey("groups.validation.date")),
+  // z.iso.date rather than a /^\d{4}-\d{2}-\d{2}$/ regex: the regex accepts
+  // impossible calendar dates like 2026-02-30, which schedule.ts rejects and
+  // expands to zero occurrences — so an edit that slipped one through would
+  // silently wipe every future scheduled session. z.iso.date checks real
+  // calendar validity, including non-leap centuries (2100-02-29 is rejected).
+  startDate: z.iso.date(translationKey("groups.validation.date")),
   sessionCount: z
     .number()
     .int()
