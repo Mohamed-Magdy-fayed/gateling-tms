@@ -51,9 +51,7 @@ export const GroupsTable = pgTable(
     // academies sell "a 24-session course", not "classes until March"
     // (STATE.md D80). The CURRENT_DATE default keeps the generated
     // ADD COLUMN ... NOT NULL safe on an already-populated table.
-    startDate: date()
-      .notNull()
-      .default(sql`CURRENT_DATE`),
+    startDate: date().notNull().default(sql`CURRENT_DATE`),
     sessionCount: integer().notNull().default(12),
     status: groupStatusEnum().notNull().default("active"),
     createdAt,
