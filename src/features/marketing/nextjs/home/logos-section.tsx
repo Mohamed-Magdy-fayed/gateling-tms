@@ -16,7 +16,7 @@ export async function LogosSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-10 sm:px-6 lg:px-8">
       <p className="text-center font-bold text-muted-foreground text-xs uppercase tracking-wider">
         {t("landing.logos.eyebrow")}
       </p>

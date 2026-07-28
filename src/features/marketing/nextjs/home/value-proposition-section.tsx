@@ -14,11 +14,11 @@ const items: Array<{
   icon: LucideIcon;
   tone: "orange" | "blue" | "green" | "violet";
 }> = [
-  { key: "instantOnboarding", icon: RocketIcon, tone: "orange" },
-  { key: "excelFirst", icon: FileSpreadsheetIcon, tone: "blue" },
-  { key: "freeForever", icon: ShieldCheckIcon, tone: "green" },
-  { key: "bilingual", icon: LanguagesIcon, tone: "violet" },
-];
+    { key: "instantOnboarding", icon: RocketIcon, tone: "orange" },
+    { key: "excelFirst", icon: FileSpreadsheetIcon, tone: "blue" },
+    { key: "freeForever", icon: ShieldCheckIcon, tone: "green" },
+    { key: "bilingual", icon: LanguagesIcon, tone: "violet" },
+  ];
 
 const toneClasses = {
   orange: "bg-orange-50 text-orange-600 dark:bg-orange-950/40",
@@ -31,7 +31,7 @@ export async function ValuePropositionSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
         <p className="font-bold text-primary text-xs uppercase tracking-wider">
           {t("landing.valueProposition.header.eyebrow")}

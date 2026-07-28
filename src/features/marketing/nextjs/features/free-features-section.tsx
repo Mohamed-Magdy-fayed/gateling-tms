@@ -46,7 +46,7 @@ export async function FreeFeaturesSection() {
   ];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-display font-bold text-3xl text-foreground">
           {t("features.free.title")}

@@ -44,7 +44,7 @@ export async function PricingPlansSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 pb-16 sm:px-6 lg:px-8">
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {organizationPlanValues.map((plan) => {
           const Icon = PLAN_ICONS[plan];
@@ -59,7 +59,7 @@ export async function PricingPlansSection() {
               className={cn(
                 "h-full",
                 isPopular &&
-                  "shadow-[var(--shadow-brand)] ring-1 ring-primary/40",
+                "shadow-[var(--shadow-brand)] ring-1 ring-primary/40",
               )}
             >
               <CardHeader>

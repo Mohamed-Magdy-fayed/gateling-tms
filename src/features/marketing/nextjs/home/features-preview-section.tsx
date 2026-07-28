@@ -18,34 +18,34 @@ import { cn } from "@/lib/utils";
 
 const modules: Array<{
   key:
-    | "contentLibrary"
-    | "learningFlow"
-    | "liveClasses"
-    | "hr"
-    | "courseStore"
-    | "crm"
-    | "smartForms"
-    | "community"
-    | "support";
+  | "contentLibrary"
+  | "learningFlow"
+  | "liveClasses"
+  | "hr"
+  | "courseStore"
+  | "crm"
+  | "smartForms"
+  | "community"
+  | "support";
   icon: LucideIcon;
   isFree: boolean;
 }> = [
-  { key: "contentLibrary", icon: LibraryIcon, isFree: true },
-  { key: "learningFlow", icon: WorkflowIcon, isFree: true },
-  { key: "liveClasses", icon: VideoIcon, isFree: true },
-  { key: "hr", icon: UsersIcon, isFree: false },
-  { key: "courseStore", icon: ShoppingCartIcon, isFree: false },
-  { key: "crm", icon: BookOpenIcon, isFree: false },
-  { key: "smartForms", icon: ShieldIcon, isFree: false },
-  { key: "community", icon: MessageCircleIcon, isFree: false },
-  { key: "support", icon: HeadsetIcon, isFree: false },
-];
+    { key: "contentLibrary", icon: LibraryIcon, isFree: true },
+    { key: "learningFlow", icon: WorkflowIcon, isFree: true },
+    { key: "liveClasses", icon: VideoIcon, isFree: true },
+    { key: "hr", icon: UsersIcon, isFree: false },
+    { key: "courseStore", icon: ShoppingCartIcon, isFree: false },
+    { key: "crm", icon: BookOpenIcon, isFree: false },
+    { key: "smartForms", icon: ShieldIcon, isFree: false },
+    { key: "community", icon: MessageCircleIcon, isFree: false },
+    { key: "support", icon: HeadsetIcon, isFree: false },
+  ];
 
 export async function FeaturesPreviewSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
         <p className="font-bold text-primary text-xs uppercase tracking-wider">
           {t("landing.featuresPreview.eyebrow")}

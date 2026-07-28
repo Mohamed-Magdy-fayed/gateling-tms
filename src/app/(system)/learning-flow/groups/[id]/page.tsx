@@ -8,7 +8,7 @@ export default async function GroupDetailRoute({
   const { id } = await params;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto px-4 py-8">
       <GroupDetailPage groupId={id} />
     </div>
   );
