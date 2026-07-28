@@ -52,6 +52,7 @@ export default {
   forms: {
     validation: {
       required: "This field is required.",
+      max32: "Must be at most 32 characters.",
       max128: "Must be at most 128 characters.",
       max256: "Must be at most 256 characters.",
       max500: "Must be at most 500 characters.",
@@ -430,6 +431,26 @@ export default {
     emptyDescription: "Add your first lecture to this level.",
     moveUp: "Move up",
     moveDown: "Move down",
+  },
+  trainees: {
+    title: "Trainees",
+    lead: "Your student roster — add trainees directly, no invitation or account required.",
+    name: "Name",
+    phone: "Phone",
+    email: "Email",
+    add: "Add trainee",
+    edit: "Edit trainee",
+    addDescription: "Add a new trainee to this organization.",
+    editDescription: "Update this trainee's details.",
+    created: "Trainee added.",
+    updated: "Trainee updated.",
+    saveFailed: "Could not save trainee.",
+    deleteTitle: "Delete trainee?",
+    deleteDescription:
+      "Remove {name}. This can't be undone once they have enrollments or certificates.",
+    deleted: "Trainee deleted.",
+    deleteFailed: "Could not delete trainee.",
+    searchHint: "Search trainees…",
   },
   assessments: {
     title: "Assessments",

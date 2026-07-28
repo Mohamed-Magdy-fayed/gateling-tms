@@ -9,6 +9,7 @@ import { sectionsRouter } from "@/features/system/assessments/sections/server";
 import { coursesRouter } from "@/features/system/content-library/courses/server";
 import { lecturesRouter } from "@/features/system/content-library/lectures/server";
 import { levelsRouter } from "@/features/system/content-library/levels/server";
+import { traineesRouter } from "@/features/system/learning-flow/trainees/server";
 import { createTRPCRouter } from "../init";
 import { healthRouter } from "./health";
 
@@ -25,6 +26,7 @@ export const appRouter = createTRPCRouter({
   questions: questionsRouter,
   answers: answersRouter,
   responses: responsesRouter,
+  trainees: traineesRouter,
 });
 
 export type AppRouter = typeof appRouter;

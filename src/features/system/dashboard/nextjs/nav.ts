@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ClipboardListIcon,
+  GraduationCapIcon,
   LayoutDashboardIcon,
   LibraryIcon,
   SettingsIcon,
@@ -17,7 +18,8 @@ export type SystemNavItem = {
     | "nav.dashboard"
     | "nav.settings"
     | "nav.contentLibrary"
-    | "nav.assessments";
+    | "nav.assessments"
+    | "nav.learningFlow";
   Icon: LucideIcon;
 };
 
@@ -28,9 +30,9 @@ export type SystemNavItem = {
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
  *
- * Learning Flow / Live Classes are intentionally still absent — phase-02.md
- * step 8 calls for "no dead links", and those routes don't exist until
- * Phases 5-6. Add them here when their pages land.
+ * Live Classes is intentionally still absent — phase-02.md step 8 calls for
+ * "no dead links", and its routes don't exist until Phase 6. Add it here
+ * when its pages land.
  */
 export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
   {
@@ -42,6 +44,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/content-library/courses",
     translationKey: "nav.contentLibrary",
     Icon: LibraryIcon,
+  },
+  {
+    href: "/learning-flow/trainees",
+    translationKey: "nav.learningFlow",
+    Icon: GraduationCapIcon,
   },
   {
     href: "/assessments",
