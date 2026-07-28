@@ -9,6 +9,7 @@ import { sectionsRouter } from "@/features/system/assessments/sections/server";
 import { coursesRouter } from "@/features/system/content-library/courses/server";
 import { lecturesRouter } from "@/features/system/content-library/lectures/server";
 import { levelsRouter } from "@/features/system/content-library/levels/server";
+import { certificatesRouter } from "@/features/system/learning-flow/certificates/server";
 import { enrollmentsRouter } from "@/features/system/learning-flow/enrollments/server";
 import { groupsRouter } from "@/features/system/learning-flow/groups/server";
 import { placementTestsRouter } from "@/features/system/learning-flow/placement-tests/server";
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
   groups: groupsRouter,
   enrollments: enrollmentsRouter,
   placementTests: placementTestsRouter,
+  certificates: certificatesRouter,
 });
 
 export type AppRouter = typeof appRouter;
