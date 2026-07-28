@@ -674,6 +674,8 @@ export default {
     formNotFound: "That form doesn't exist in this organization.",
     formNotPlacement: "That form isn't a placement test.",
     formNotPublished: "Publish that form before assigning it.",
+    noFormAssigned:
+      "This placement test has no form — the one it used was deleted.",
     levelNotFound: "That level doesn't exist in this organization.",
     alreadyRecorded: "Answers have already been recorded for this test.",
     notRecorded: "Record the trainee's answers before assigning a level.",
