@@ -15,3 +15,4 @@ export {
   buildEnrollmentColumns,
   type EnrollmentListRow,
 } from "./enrollments-table-columns";
+export { TraineeEnrollmentsSection } from "./trainee-enrollments-section";

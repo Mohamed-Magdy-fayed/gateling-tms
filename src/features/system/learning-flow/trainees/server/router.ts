@@ -4,7 +4,7 @@ import {
   orgProcedure,
 } from "@/integrations/trpc/init";
 import { createTrainee, deleteTrainee, updateTrainee } from "./mutations";
-import { getTrainee, listTrainees } from "./queries";
+import { getTrainee, listTraineeGroups, listTrainees } from "./queries";
 import {
   listTraineesInput,
   traineeDeleteSchema,
@@ -20,6 +20,9 @@ export const traineesRouter = createTRPCRouter({
   get: orgProcedure
     .input(traineeDeleteSchema)
     .query(async ({ ctx, input }) => getTrainee(ctx, input.id)),
+  groups: orgProcedure
+    .input(traineeDeleteSchema)
+    .query(async ({ ctx, input }) => listTraineeGroups(ctx, input.id)),
   create: orgContentManagerProcedure
     .input(traineeMutationSchema)
     .mutation(async ({ ctx, input }) => createTrainee(ctx, input)),

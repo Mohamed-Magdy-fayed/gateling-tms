@@ -449,6 +449,11 @@ export default {
     deleted: "تم حذف المتدرب.",
     deleteFailed: "تعذر حذف المتدرب.",
     searchHint: "بحث في المتدربين…",
+    notFoundTitle: "المتدرب غير موجود",
+    notFoundDescription: "قد يكون هذا المتدرب محذوفًا أو تابعًا لمؤسسة أخرى.",
+    groupsLead: "الفصول التي يحضرها هذا المتدرب.",
+    groupsEmptyTitle: "ليس ضمن أي مجموعة بعد",
+    groupsEmptyDescription: "أضف هذا المتدرب إلى مجموعة من سجل المجموعة نفسها.",
   },
   groups: {
     title: "المجموعات",

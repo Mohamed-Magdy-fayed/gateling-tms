@@ -1,6 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
-import { TraineesTable } from "@/drizzle/schema";
+import {
+  CoursesTable,
+  GroupStudentsTable,
+  GroupsTable,
+  TraineesTable,
+} from "@/drizzle/schema";
 import type { ListTraineesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -67,6 +72,31 @@ export async function listTrainees(
     .offset(offset);
 
   return { rows, page, pageCount, total: Number(total) };
+}
+
+/** The groups this trainee is on the roster of, for their profile page. */
+export async function listTraineeGroups(
+  ctx: OrgTRPCContext,
+  traineeId: string,
+) {
+  return ctx.db
+    .select({
+      groupId: GroupsTable.id,
+      name: GroupsTable.name,
+      status: GroupsTable.status,
+      courseName: CoursesTable.name,
+      addedAt: GroupStudentsTable.createdAt,
+    })
+    .from(GroupStudentsTable)
+    .innerJoin(GroupsTable, eq(GroupsTable.id, GroupStudentsTable.groupId))
+    .leftJoin(CoursesTable, eq(CoursesTable.id, GroupsTable.courseId))
+    .where(
+      and(
+        eq(GroupStudentsTable.traineeId, traineeId),
+        eq(GroupStudentsTable.organizationId, ctx.organizationId),
+      ),
+    )
+    .orderBy(asc(GroupsTable.name), asc(GroupsTable.id));
 }
 
 export async function getTrainee(ctx: OrgTRPCContext, id: string) {

@@ -457,6 +457,13 @@ export default {
     deleted: "Trainee deleted.",
     deleteFailed: "Could not delete trainee.",
     searchHint: "Search trainees…",
+    notFoundTitle: "Trainee not found",
+    notFoundDescription:
+      "This trainee may have been deleted, or belongs to another organization.",
+    groupsLead: "The classes this trainee attends.",
+    groupsEmptyTitle: "Not in any group yet",
+    groupsEmptyDescription:
+      "Add this trainee to a group from the group's own roster.",
   },
   groups: {
     title: "Groups",
