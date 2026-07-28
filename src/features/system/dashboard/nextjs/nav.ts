@@ -5,6 +5,7 @@ import {
   LayoutDashboardIcon,
   LibraryIcon,
   SettingsIcon,
+  UsersIcon,
 } from "lucide-react";
 
 // Narrowed to the specific zero-argument keys nav items use (rather than the
@@ -19,7 +20,8 @@ export type SystemNavItem = {
     | "nav.settings"
     | "nav.contentLibrary"
     | "nav.assessments"
-    | "nav.learningFlow";
+    | "nav.learningFlow"
+    | "nav.groups";
   Icon: LucideIcon;
 };
 
@@ -49,6 +51,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/learning-flow/trainees",
     translationKey: "nav.learningFlow",
     Icon: GraduationCapIcon,
+  },
+  {
+    href: "/learning-flow/groups",
+    translationKey: "nav.groups",
+    Icon: UsersIcon,
   },
   {
     href: "/assessments",

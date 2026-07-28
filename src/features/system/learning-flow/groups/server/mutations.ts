@@ -105,8 +105,8 @@ export async function createGroup(
     .values({
       organizationId: ctx.organizationId,
       name: input.name,
-      courseId: input.courseId ?? null,
-      teacherId: input.teacherId ?? null,
+      courseId: input.courseId || null,
+      teacherId: input.teacherId || null,
       status: input.status,
       startDate: input.startDate,
       sessionCount: input.sessionCount,
@@ -129,8 +129,8 @@ export async function updateGroup(
     .update(GroupsTable)
     .set({
       name: input.name,
-      courseId: input.courseId ?? null,
-      teacherId: input.teacherId ?? null,
+      courseId: input.courseId || null,
+      teacherId: input.teacherId || null,
       status: input.status,
       startDate: input.startDate,
       sessionCount: input.sessionCount,

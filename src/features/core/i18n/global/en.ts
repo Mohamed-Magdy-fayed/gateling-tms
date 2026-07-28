@@ -10,6 +10,7 @@ export default {
     dashboard: "Dashboard",
     contentLibrary: "Content Library",
     learningFlow: "Learning Flow",
+    groups: "Groups",
     liveClasses: "Live Classes",
     settings: "Settings",
     assessments: "Assessments",
@@ -283,6 +284,7 @@ export default {
     pageLead: "Manage your organization's profile, plan, and members.",
     validation: {
       invalidWebsite: "Enter a valid website URL.",
+      invalidTimeZone: "Choose a valid time zone.",
     },
     plan: {
       free: "Free",
@@ -297,6 +299,9 @@ export default {
       businessNameLabel: "Business name",
       phoneLabel: "Phone",
       websiteLabel: "Website",
+      timeZoneLabel: "Time zone",
+      timeZoneHint:
+        "Class schedules and session times are shown on this clock.",
       saveSuccess: "Organization updated.",
       saveFailed: "Could not update the organization.",
     },
@@ -511,12 +516,12 @@ export default {
     },
     students: {
       title: "Students",
-      lead: "{count} on the roster",
+      lead: "{count:number} on the roster",
       add: "Add students",
       addDescription:
         "Pick existing trainees, or create a new one without leaving this screen.",
       createNew: "Create a new trainee",
-      selected: "{count} selected",
+      selected: "{count:number} selected",
       added: "Students added.",
       addFailed: "Could not add students.",
       remove: "Remove from group",
@@ -535,7 +540,7 @@ export default {
       lead: "Generated from the weekly schedule.",
       when: "When",
       duration: "Duration",
-      durationValue: "{minutes} min",
+      durationValue: "{minutes:number} min",
       status: "Status",
       statusOptions: {
         scheduled: "Scheduled",

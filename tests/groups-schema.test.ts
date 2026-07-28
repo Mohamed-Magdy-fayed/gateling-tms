@@ -13,6 +13,9 @@ const validSlot = { day: 1, startTime: "18:00", endTime: "20:00" };
 
 const validGroup = {
   name: "Beginners A",
+  courseId: null,
+  teacherId: null,
+  status: "active" as const,
   startDate: "2026-08-03",
   sessionCount: 12,
   schedule: [validSlot],
@@ -115,17 +118,39 @@ describe("groupMutationSchema", () => {
     expect(result.data?.teacherId ?? null).toBeNull();
   });
 
-  test("defaults status to active and schedule to empty", () => {
+  test("accepts a group with no weekly slots yet", () => {
     const result = groupMutationSchema.safeParse({
-      name: "Beginners A",
-      startDate: "2026-08-03",
-      sessionCount: 12,
+      ...validGroup,
+      schedule: [],
     });
 
     expect(result.success).toBe(true);
-    expect(result.data?.status).toBe("active");
-    expect(result.data?.schedule).toEqual([]);
   });
+
+  test("treats the empty string a 'none' select submits as a cleared reference", () => {
+    const result = groupMutationSchema.safeParse({
+      ...validGroup,
+      courseId: "",
+      teacherId: "",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  // The schema carries no .default() and no .transform() on purpose: TanStack
+  // Form needs a validator whose input and output types match, and either one
+  // makes the input optional. Every field is therefore required at the wire.
+  test.each(["status", "courseId", "teacherId", "schedule"])(
+    "requires %s to be supplied explicitly",
+    (field) => {
+      const { [field]: _omitted, ...withoutField } = validGroup as Record<
+        string,
+        unknown
+      >;
+
+      expect(groupMutationSchema.safeParse(withoutField).success).toBe(false);
+    },
+  );
 
   test("rejects a blank name with the required key", () => {
     const result = groupMutationSchema.safeParse({

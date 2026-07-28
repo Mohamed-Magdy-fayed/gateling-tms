@@ -10,6 +10,7 @@ export default {
     dashboard: "لوحة التحكم",
     contentLibrary: "مكتبة المحتوى",
     learningFlow: "مسار التعلم",
+    groups: "المجموعات",
     liveClasses: "الحصص المباشرة",
     settings: "الإعدادات",
     assessments: "التقييمات",
@@ -283,6 +284,7 @@ export default {
     pageLead: "إدارة الملف الشخصي للمؤسسة والخطة والأعضاء.",
     validation: {
       invalidWebsite: "أدخل رابط موقع إلكتروني صالحًا.",
+      invalidTimeZone: "اختر منطقة زمنية صالحة.",
     },
     plan: {
       free: "مجاني",
@@ -297,6 +299,8 @@ export default {
       businessNameLabel: "الاسم التجاري",
       phoneLabel: "الهاتف",
       websiteLabel: "الموقع الإلكتروني",
+      timeZoneLabel: "المنطقة الزمنية",
+      timeZoneHint: "تُعرض جداول الفصول ومواعيد الجلسات وفق هذا التوقيت.",
       saveSuccess: "تم تحديث المؤسسة.",
       saveFailed: "تعذر تحديث المؤسسة.",
     },
@@ -502,12 +506,12 @@ export default {
     },
     students: {
       title: "الطلاب",
-      lead: "{count} في القائمة",
+      lead: "{count:number} في القائمة",
       add: "إضافة طلاب",
       addDescription:
         "اختر متدربين موجودين، أو أنشئ متدربًا جديدًا دون مغادرة هذه الشاشة.",
       createNew: "إنشاء متدرب جديد",
-      selected: "{count} محدد",
+      selected: "{count:number} محدد",
       added: "تمت إضافة الطلاب.",
       addFailed: "تعذرت إضافة الطلاب.",
       remove: "إزالة من المجموعة",
@@ -526,7 +530,7 @@ export default {
       lead: "مُولّدة من الجدول الأسبوعي.",
       when: "الموعد",
       duration: "المدة",
-      durationValue: "{minutes} دقيقة",
+      durationValue: "{minutes:number} دقيقة",
       status: "الحالة",
       statusOptions: {
         scheduled: "مجدولة",

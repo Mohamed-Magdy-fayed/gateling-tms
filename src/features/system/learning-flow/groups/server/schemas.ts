@@ -31,15 +31,28 @@ export const groupScheduleSlotSchema = z
     path: ["endTime"],
   });
 
+/**
+ * An optional reference: a real id, or the empty string a "none" select option
+ * submits, or null. Normalized to null by the mutation, the same way trainees'
+ * optional phone/email are.
+ *
+ * Deliberately no `.transform()` and no `.default()` anywhere in this schema:
+ * TanStack Form requires a validator whose input and output types match its
+ * form values exactly, and either one makes the input type optional. Keeping
+ * the schema plain lets the client and the server share it instead of
+ * maintaining a near-duplicate form-only copy.
+ */
+const optionalReference = z.union([z.uuid(), z.literal("")]).nullable();
+
 export const groupMutationSchema = z.object({
   name: z
     .string()
     .trim()
     .min(1, translationKey("forms.validation.required"))
     .max(256, translationKey("forms.validation.max256")),
-  courseId: z.uuid().nullish(),
-  teacherId: z.uuid().nullish(),
-  status: z.enum(groupStatusValues).default("active"),
+  courseId: optionalReference,
+  teacherId: optionalReference,
+  status: z.enum(groupStatusValues),
   startDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, translationKey("groups.validation.date")),
@@ -53,8 +66,7 @@ export const groupMutationSchema = z.object({
     ),
   schedule: z
     .array(groupScheduleSlotSchema)
-    .max(MAX_SCHEDULE_SLOTS, translationKey("groups.validation.tooManySlots"))
-    .default([]),
+    .max(MAX_SCHEDULE_SLOTS, translationKey("groups.validation.tooManySlots")),
 });
 
 export const groupUpdateSchema = groupMutationSchema.extend({
