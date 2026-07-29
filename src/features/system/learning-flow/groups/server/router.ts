@@ -10,12 +10,7 @@ import {
   removeGroupStudent,
   updateGroup,
 } from "./mutations";
-import {
-  getGroup,
-  listGroupSessions,
-  listGroupStudents,
-  listGroups,
-} from "./queries";
+import { getGroup, listGroupStudents, listGroups } from "./queries";
 import {
   groupAddStudentsSchema,
   groupDeleteSchema,
@@ -41,9 +36,10 @@ export const groupsRouter = createTRPCRouter({
   students: orgContentManagerProcedure
     .input(groupDeleteSchema)
     .query(async ({ ctx, input }) => listGroupStudents(ctx, input.id)),
-  sessions: orgProcedure
-    .input(groupDeleteSchema)
-    .query(async ({ ctx, input }) => listGroupSessions(ctx, input.id)),
+  // A group's sessions live on `sessions.byGroup` (the live-classes feature),
+  // not here: the same rows now carry Zoom join links whose visibility rules
+  // belong with the rest of the meeting code, and one query beats two that
+  // drift apart.
   create: orgContentManagerProcedure
     .input(groupMutationSchema)
     .mutation(async ({ ctx, input }) => createGroup(ctx, input)),

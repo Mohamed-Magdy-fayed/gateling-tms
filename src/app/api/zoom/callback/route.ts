@@ -11,6 +11,8 @@ import {
   clearZoomConnectState,
   consumeZoomConnectState,
 } from "@/features/system/live-classes/zoom-clients/server/connect-state";
+import { inngest } from "@/integrations/inngest/client";
+import { organizationZoomConnectedEvent } from "@/integrations/inngest/functions/on-organization-zoom-connected";
 
 /**
  * Where Zoom sends the org's admin back after they approve (or refuse) the
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
       code,
       actorEmail: access.userEmail ?? access.userId,
     });
+    await requestPendingMeetingProvisioning(access.organizationId);
   } catch (error) {
     // Only a fixed code reaches the browser; the reason is logged here and
     // stored on the row for the org's admins (see redirect-codes.ts).
@@ -60,4 +63,26 @@ export async function GET(request: NextRequest) {
   }
 
   redirect(buildZoomClientsUrl(didFail ? "connect_failed" : "connected"));
+}
+
+/**
+ * Groups scheduled before this connection existed have sessions with no
+ * meeting; connecting is the moment they can get one, and nobody should have
+ * to re-save every group's schedule to trigger it.
+ *
+ * Swallows its own failures: the connection itself already succeeded, so a
+ * queue hiccup must not report it as broken. The catch-up runs again on the
+ * next connect or schedule edit.
+ */
+async function requestPendingMeetingProvisioning(organizationId: string) {
+  try {
+    await inngest.send(
+      organizationZoomConnectedEvent.create({ organizationId }),
+    );
+  } catch (error) {
+    console.error("Failed to enqueue organization/zoom-connected", {
+      organizationId,
+      error,
+    });
+  }
 }

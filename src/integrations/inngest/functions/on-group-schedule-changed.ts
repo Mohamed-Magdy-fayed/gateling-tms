@@ -10,6 +10,8 @@ import {
 } from "@/drizzle/schema";
 import { generateSessionOccurrences } from "@/features/system/learning-flow/groups/server/schedule";
 import { inngest } from "../client";
+import { sessionMeetingCancelledEvent } from "./on-session-meeting-cancelled";
+import { sessionMeetingSyncRequestedEvent } from "./on-session-meeting-sync-requested";
 
 /**
  * Fired whenever a group's generated sessions could have gone stale: on
@@ -21,6 +23,22 @@ import { inngest } from "../client";
  * body (STATE.md D80). The payload carries ids only — the handler re-reads the
  * group, so an Inngest retry or redelivery can never act on a stale schedule.
  */
+/** A meeting whose session no longer exists, so Zoom still has to be told. */
+type CancelledMeeting = { zoomClientId: string; zoomMeetingId: string };
+
+type RegenerationResult = {
+  removed: number;
+  writtenSessionIds: string[];
+  cancelledMeetings: CancelledMeeting[];
+};
+
+/** Nothing to regenerate: shaped like a real run so callers need no branch. */
+const emptyRegeneration: RegenerationResult = {
+  removed: 0,
+  writtenSessionIds: [],
+  cancelledMeetings: [],
+};
+
 export const groupScheduleChangedEvent = eventType("group/schedule-changed", {
   schema: z.object({
     organizationId: z.string(),
@@ -31,10 +49,10 @@ export const groupScheduleChangedEvent = eventType("group/schedule-changed", {
 export const onGroupScheduleChanged = inngest.createFunction(
   { id: "on-group-schedule-changed", triggers: [groupScheduleChangedEvent] },
   async ({ event, step }) => {
-    return step.run("regenerate-group-sessions", async () => {
-      const { organizationId, groupId } = event.data;
+    const { organizationId, groupId } = event.data;
 
-      const result = await db.transaction(async (trx) => {
+    const result = await step.run("regenerate-group-sessions", async () => {
+      return db.transaction(async (trx): Promise<RegenerationResult> => {
         // Two rapid schedule edits would otherwise interleave their
         // delete-then-insert sequences and leave a mix of both schedules.
         // Serializes per group; released automatically at commit — same idiom
@@ -71,7 +89,7 @@ export const onGroupScheduleChanged = inngest.createFunction(
 
         // The group was deleted between the mutation and this run. Nothing to
         // regenerate, and retrying will never change that.
-        if (!group) return { skipped: true as const };
+        if (!group) return emptyRegeneration;
 
         const occurrences = generateSessionOccurrences({
           schedule: group.schedule,
@@ -99,13 +117,33 @@ export const onGroupScheduleChanged = inngest.createFunction(
             : undefined,
         );
 
+        // The Zoom columns come back too: a dropped occurrence takes its
+        // meeting with it, and once the row is gone these ids are the only
+        // way to tell Zoom about it.
         const removed = await trx
           .delete(SessionsTable)
           .where(staleCondition)
-          .returning({ id: SessionsTable.id });
+          .returning({
+            id: SessionsTable.id,
+            zoomClientId: SessionsTable.zoomClientId,
+            zoomMeetingId: SessionsTable.zoomMeetingId,
+          });
+
+        const cancelledMeetings = removed.filter(
+          (
+            session,
+          ): session is typeof session & {
+            zoomClientId: string;
+            zoomMeetingId: string;
+          } => Boolean(session.zoomClientId && session.zoomMeetingId),
+        );
 
         if (occurrences.length === 0) {
-          return { removed: removed.length, written: 0 };
+          return {
+            removed: removed.length,
+            writtenSessionIds: [],
+            cancelledMeetings,
+          };
         }
 
         // Upsert against unique(groupId, scheduledAt) rather than
@@ -148,10 +186,49 @@ export const onGroupScheduleChanged = inngest.createFunction(
           })
           .returning({ id: SessionsTable.id });
 
-        return { removed: removed.length, written: written.length };
+        return {
+          removed: removed.length,
+          // Every touched row, not just the new ones: an occurrence whose
+          // duration or teacher changed keeps its id and its meeting, and
+          // that meeting now describes the wrong class.
+          writtenSessionIds: written.map((session) => session.id),
+          cancelledMeetings,
+        };
       });
-
-      return result;
     });
+
+    // Zoom is reached from the meeting functions, never from here: this step
+    // owns one transaction and shouldn't hold it open across an external API,
+    // and each session's meeting is then retried on its own.
+    if (result.cancelledMeetings.length > 0) {
+      await step.sendEvent(
+        "cancel-session-meetings",
+        result.cancelledMeetings.map((session) =>
+          sessionMeetingCancelledEvent.create({
+            organizationId,
+            zoomClientId: session.zoomClientId,
+            zoomMeetingId: session.zoomMeetingId,
+          }),
+        ),
+      );
+    }
+
+    if (result.writtenSessionIds.length > 0) {
+      await step.sendEvent(
+        "sync-session-meetings",
+        result.writtenSessionIds.map((sessionId) =>
+          sessionMeetingSyncRequestedEvent.create({
+            organizationId,
+            sessionId,
+          }),
+        ),
+      );
+    }
+
+    return {
+      removed: result.removed,
+      written: result.writtenSessionIds.length,
+      cancelledMeetings: result.cancelledMeetings.length,
+    };
   },
 );

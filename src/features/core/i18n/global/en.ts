@@ -14,6 +14,7 @@ export default {
     enrollments: "Enrollments",
     certificates: "Certificates",
     liveClasses: "Live Classes",
+    zoomConnections: "Zoom connections",
     settings: "Settings",
     assessments: "Assessments",
   },
@@ -551,12 +552,6 @@ export default {
       duration: "Duration",
       durationValue: "{minutes:number} min",
       status: "Status",
-      statusOptions: {
-        scheduled: "Scheduled",
-        ongoing: "Ongoing",
-        completed: "Completed",
-        cancelled: "Cancelled",
-      },
       emptyTitle: "No sessions yet",
       emptyDescription:
         "Add at least one weekly slot and sessions will appear here shortly.",
@@ -715,7 +710,7 @@ export default {
     searchHint: "Search by certificate or trainee",
     certificateTitle: "Certificate title",
     titleDescription:
-      "What the certificate says, e.g. \"Certificate of Completion — English B1\".",
+      'What the certificate says, e.g. "Certificate of Completion — English B1".',
     course: "Course",
     courseDescription: "Only courses this trainee has completed can be chosen.",
     noCourse: "No course",
@@ -735,7 +730,7 @@ export default {
     revoke: "Revoke",
     revokeTitle: "Revoke certificate?",
     revokeDescription:
-      "Revoke \"{name}\". The record is removed for good — the trainee's enrollment history is untouched.",
+      'Revoke "{name}". The record is removed for good — the trainee\'s enrollment history is untouched.',
     revoked: "Certificate revoked.",
     revokeFailed: "Could not revoke the certificate.",
     emptyTitle: "No certificates yet",
@@ -743,38 +738,66 @@ export default {
       "Once a trainee completes a course or a class, issue their certificate here.",
     loadFailedTitle: "Couldn't load certificates",
     notFoundTitle: "Certificate not found",
-    notFoundDescription:
-      "This certificate doesn't exist, or it was revoked.",
+    notFoundDescription: "This certificate doesn't exist, or it was revoked.",
     groupNotFound: "That class doesn't exist in this organization.",
     notEnrolled: "This trainee isn't enrolled in that course.",
     courseNotCompleted:
       "Mark the enrollment completed before issuing a certificate for it.",
   },
+  sessions: {
+    title: "Live classes",
+    lead: "Every scheduled class in one place. Connect a Zoom account and each class gets its meeting link here — the class itself runs in Zoom.",
+    scopeOptions: {
+      upcoming: "Upcoming",
+      past: "Past",
+    },
+    statusOptions: {
+      scheduled: "Scheduled",
+      ongoing: "Ongoing",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
+    start: "Start class",
+    join: "Join",
+    // Two different reasons a row has no link, and they mean very different
+    // things to whoever is looking at it.
+    offline: "No Zoom link",
+    preparing: "Link on the way",
+    noZoomAccount:
+      "No Zoom account is connected, so classes are scheduled without meeting links.",
+    connectZoom: "Connect Zoom",
+    emptyTitle: "Nothing scheduled",
+    emptyUpcoming:
+      "Give a class a weekly schedule and its sessions appear here.",
+    emptyPast: "Past classes will be listed here once some have run.",
+    previous: "Previous",
+    next: "Next",
+    pageOf: "Page {page:number} of {total:number}",
+  },
   zoomClients: {
     title: "Zoom connections",
     subtitle:
-      "Connect the Zoom account your classes run on. Scheduling works without it — automatic meeting links and attendance are coming next.",
+      "Connect the Zoom account your classes run on. Scheduling works without it — sessions simply stay offline until an account is connected.",
     connect: "Connect Zoom",
     connectDescription:
       "Name this connection, then approve it on Zoom. You'll come straight back here.",
     continueToZoom: "Continue to Zoom",
     name: "Connection name",
-    nameDescription:
-      "For your team, e.g. \"Main licence\" or \"Evening classes\".",
+    nameDescription: 'For your team, e.g. "Main licence" or "Evening classes".',
     notLinkedYet: "Not linked to a Zoom account yet",
     finishConnecting: "Finish connecting",
     reconnect: "Reconnect",
     disconnect: "Disconnect",
     disconnectTitle: "Disconnect this Zoom account?",
     disconnectDescription:
-      "Disconnect \"{name}\". Scheduled classes stay, but new sessions won't get Zoom meeting links from this account.",
+      'Disconnect "{name}". Scheduled classes stay, but new sessions won\'t get Zoom meeting links from this account.',
     disconnected: "Zoom account disconnected.",
     disconnectFailed: "Could not disconnect the Zoom account.",
     connectFailed: "Could not start the Zoom connection.",
     loadFailed: "Couldn't load Zoom connections.",
     emptyTitle: "No Zoom account connected",
     emptyDescription:
-      "Connect an account now and your scheduled classes will start using it as soon as automatic meeting links land.",
+      "Connect an account and your scheduled classes get Zoom meeting links automatically.",
     status: {
       pending: "Awaiting approval",
       active: "Connected",
@@ -786,8 +809,7 @@ export default {
       invalid_state:
         "That connection link expired. Start the connection again.",
       connect_failed: "Zoom couldn't complete the connection. Try again.",
-      not_configured:
-        "Zoom isn't configured on this deployment yet.",
+      not_configured: "Zoom isn't configured on this deployment yet.",
       forbidden: "Only an organization admin can connect Zoom.",
     },
     errors: {

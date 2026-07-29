@@ -5,6 +5,7 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   LibraryIcon,
+  PlugZapIcon,
   SettingsIcon,
   UserCheckIcon,
   UsersIcon,
@@ -27,7 +28,8 @@ export type SystemNavItem = {
     | "nav.groups"
     | "nav.enrollments"
     | "nav.certificates"
-    | "nav.liveClasses";
+    | "nav.liveClasses"
+    | "nav.zoomConnections";
   Icon: LucideIcon;
 };
 
@@ -38,9 +40,11 @@ export type SystemNavItem = {
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
  *
- * Live Classes points at the Zoom connections page, the only route that
- * exists in that area so far — the session/attendance views land in the
- * later Phase 6 segments and get their own entries then.
+ * Live Classes is the session agenda; the Zoom connections page sits beside
+ * it as its own entry rather than being the area's landing page — the agenda
+ * is what people open daily, and it works whether or not Zoom is connected.
+ * The attendance view lands in the next Phase 6 segment and gets its own
+ * entry then.
  */
 export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
   {
@@ -79,9 +83,14 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     Icon: ClipboardListIcon,
   },
   {
-    href: "/live-classes/zoom-clients",
+    href: "/live-classes/sessions",
     translationKey: "nav.liveClasses",
     Icon: VideoIcon,
+  },
+  {
+    href: "/live-classes/zoom-clients",
+    translationKey: "nav.zoomConnections",
+    Icon: PlugZapIcon,
   },
 ];
 
