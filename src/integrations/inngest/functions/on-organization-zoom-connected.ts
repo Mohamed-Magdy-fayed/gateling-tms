@@ -2,8 +2,12 @@ import { eventType } from "inngest";
 import { z } from "zod";
 
 import { listSessionIdsAwaitingMeetings } from "@/features/system/live-classes/sessions/server";
+import { chunk } from "@/lib/utils";
 import { inngest } from "../client";
 import { sessionMeetingSyncRequestedEvent } from "./on-session-meeting-sync-requested";
+
+/** Inngest rejects a send carrying more than 5,000 events. */
+const SEND_BATCH_SIZE = 1000;
 
 /**
  * Fired when an org finishes connecting a Zoom account.
@@ -35,12 +39,20 @@ export const onOrganizationZoomConnected = inngest.createFunction(
 
     // One event per session: each provisioning call is then retried on its
     // own, and a single failing session can't hold up the rest of the term.
-    await step.sendEvent(
-      "request-session-meetings",
-      sessionIds.map((sessionId) =>
-        sessionMeetingSyncRequestedEvent.create({ organizationId, sessionId }),
-      ),
-    );
+    // Sent in batches because Inngest caps a single send at 5,000 events, and
+    // nothing caps how many sessions an organization has — an academy with a
+    // full term of daily classes across many groups reaches that.
+    for (const [index, batch] of chunk(sessionIds, SEND_BATCH_SIZE).entries()) {
+      await step.sendEvent(
+        `request-session-meetings-${index}`,
+        batch.map((sessionId) =>
+          sessionMeetingSyncRequestedEvent.create({
+            organizationId,
+            sessionId,
+          }),
+        ),
+      );
+    }
 
     return { requested: sessionIds.length };
   },

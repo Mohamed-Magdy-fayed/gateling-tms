@@ -30,6 +30,11 @@ export type SessionMeetingSyncResult =
   /** A concurrent run won the race and its meeting is the one that counts. */
   | { status: "superseded" };
 
+type ZoomClientReservation =
+  | { status: "reserved"; zoomClientId: string }
+  | { status: "offline" }
+  | { status: "superseded" };
+
 /**
  * Makes the Zoom meeting for one session match the session.
  *
@@ -88,27 +93,27 @@ export async function syncSessionMeeting({
     await releaseStaleMeeting(organizationId, sessionId, session.zoomClientId);
   }
 
-  const zoomClientId = await selectZoomClientForSession(organizationId, {
+  const reservation = await reserveZoomClient(organizationId, {
     sessionId,
     scheduledAt: session.scheduledAt,
     durationMinutes: session.durationMinutes,
   });
 
-  if (!zoomClientId) return { status: "offline" };
+  if (reservation.status !== "reserved") return reservation;
 
+  const { zoomClientId } = reservation;
   const accessToken = await getValidZoomAccessToken(
     organizationId,
     zoomClientId,
   );
   const meeting = await createZoomMeeting(accessToken, request);
 
-  // The guard is the write itself: two concurrent runs can both reach Zoom,
-  // but only one can claim a row that still has no meeting. The loser deletes
-  // the meeting it just made instead of leaving it orphaned in the account.
+  // Guarded on the reservation this run made: anything that released or
+  // replaced it in the meantime means this meeting is the stale one, so it is
+  // deleted rather than left orphaned in the account.
   const [claimed] = await db
     .update(SessionsTable)
     .set({
-      zoomClientId,
       zoomMeetingId: meeting.meetingId,
       zoomMeetingPassword: meeting.password,
       zoomJoinUrl: meeting.joinUrl,
@@ -118,6 +123,7 @@ export async function syncSessionMeeting({
       and(
         eq(SessionsTable.id, sessionId),
         eq(SessionsTable.organizationId, organizationId),
+        eq(SessionsTable.zoomClientId, zoomClientId),
         isNull(SessionsTable.zoomMeetingId),
       ),
     )
@@ -226,53 +232,97 @@ async function releaseStaleMeeting(
 }
 
 /**
- * Connected accounts, oldest first, minus the ones already hosting something
- * that overlaps this session — a Zoom user can only host one meeting at a
- * time (SOURCE's `getAvailableZoomClient` solved the same problem).
+ * Picks the account this session will be hosted on and writes that choice to
+ * the row, before any meeting exists.
+ *
+ * Choosing and recording have to be one atomic step. A Zoom user can only host
+ * one meeting at a time, and two jobs provisioning two overlapping sessions
+ * would otherwise both read "account A is free", both create a meeting on it,
+ * and both succeed — each claim only guards its own row. Read Committed
+ * doesn't stop that (the conflict is a row neither transaction has written
+ * yet), so the selection runs under an advisory lock keyed on the
+ * organization; the reservation the winner writes is what the loser then sees
+ * as busy.
+ *
+ * The lock covers database work only — never the call to Zoom. Holding it
+ * across an external request would tie up a pooled connection per waiting job
+ * and could exhaust the pool with everyone blocked on the lock holder.
+ *
+ * A reservation with no meeting behind it (crash, or a Zoom error after this
+ * commits) is self-healing: the row still counts as awaiting a meeting, and
+ * the retry re-reserves and tries again.
  */
-async function selectZoomClientForSession(
+async function reserveZoomClient(
   organizationId: string,
   session: { sessionId: string; scheduledAt: Date; durationMinutes: number },
-): Promise<string | null> {
-  const clients = await db
-    .select({ id: ZoomClientsTable.id })
-    .from(ZoomClientsTable)
-    .where(
-      and(
-        eq(ZoomClientsTable.organizationId, organizationId),
-        eq(ZoomClientsTable.status, "active"),
-        isNull(ZoomClientsTable.deletedAt),
-      ),
-    )
-    .orderBy(asc(ZoomClientsTable.createdAt), asc(ZoomClientsTable.id));
-
-  if (clients.length === 0) return null;
-
-  const endsAt = sessionEndsAt(session.scheduledAt, session.durationMinutes);
-
-  const busy = await db
-    .selectDistinct({ zoomClientId: SessionsTable.zoomClientId })
-    .from(SessionsTable)
-    .where(
-      and(
-        eq(SessionsTable.organizationId, organizationId),
-        isNotNull(SessionsTable.zoomClientId),
-        ne(SessionsTable.id, session.sessionId),
-        ne(SessionsTable.status, "cancelled"),
-        // Half-open overlap: a class starting exactly when another ends is
-        // not a clash.
-        lt(SessionsTable.scheduledAt, endsAt),
-        gt(
-          sql`${SessionsTable.scheduledAt} + (${SessionsTable.durationMinutes} * interval '1 minute')`,
-          session.scheduledAt,
-        ),
-      ),
+): Promise<ZoomClientReservation> {
+  return db.transaction(async (trx) => {
+    await trx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${organizationId}, 0))`,
     );
 
-  return selectAvailableZoomClient(
-    clients.map((client) => client.id),
-    busy
-      .map((row) => row.zoomClientId)
-      .filter((id): id is string => id !== null),
-  );
+    const clients = await trx
+      .select({ id: ZoomClientsTable.id })
+      .from(ZoomClientsTable)
+      .where(
+        and(
+          eq(ZoomClientsTable.organizationId, organizationId),
+          eq(ZoomClientsTable.status, "active"),
+          isNull(ZoomClientsTable.deletedAt),
+        ),
+      )
+      .orderBy(asc(ZoomClientsTable.createdAt), asc(ZoomClientsTable.id));
+
+    if (clients.length === 0) return { status: "offline" };
+
+    const endsAt = sessionEndsAt(session.scheduledAt, session.durationMinutes);
+
+    // Every session already pointing at an account counts as busy, meeting or
+    // not — a reservation is a booking even before Zoom has been called.
+    const busy = await trx
+      .selectDistinct({ zoomClientId: SessionsTable.zoomClientId })
+      .from(SessionsTable)
+      .where(
+        and(
+          eq(SessionsTable.organizationId, organizationId),
+          isNotNull(SessionsTable.zoomClientId),
+          ne(SessionsTable.id, session.sessionId),
+          ne(SessionsTable.status, "cancelled"),
+          // Half-open overlap: a class starting exactly when another ends is
+          // not a clash.
+          lt(SessionsTable.scheduledAt, endsAt),
+          gt(
+            sql`${SessionsTable.scheduledAt} + (${SessionsTable.durationMinutes} * interval '1 minute')`,
+            session.scheduledAt,
+          ),
+        ),
+      );
+
+    const zoomClientId = selectAvailableZoomClient(
+      clients.map((client) => client.id),
+      busy
+        .map((row) => row.zoomClientId)
+        .filter((id): id is string => id !== null),
+    );
+
+    if (!zoomClientId) return { status: "offline" };
+
+    const [reserved] = await trx
+      .update(SessionsTable)
+      .set({ zoomClientId })
+      .where(
+        and(
+          eq(SessionsTable.id, session.sessionId),
+          eq(SessionsTable.organizationId, organizationId),
+          // Something provisioned this session while the lock was being
+          // waited on; that meeting stands.
+          isNull(SessionsTable.zoomMeetingId),
+        ),
+      )
+      .returning({ id: SessionsTable.id });
+
+    return reserved
+      ? { status: "reserved", zoomClientId }
+      : { status: "superseded" };
+  });
 }

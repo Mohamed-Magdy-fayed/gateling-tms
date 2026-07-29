@@ -746,7 +746,7 @@ export default {
   },
   sessions: {
     title: "Live classes",
-    lead: "Every scheduled class in one place. The class itself runs in Zoom — Gateling keeps the schedule and the links together.",
+    lead: "Every scheduled class in one place. Connect a Zoom account and each class gets its meeting link here — the class itself runs in Zoom.",
     scopeOptions: {
       upcoming: "Upcoming",
       past: "Past",

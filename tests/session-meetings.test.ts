@@ -12,6 +12,7 @@ import {
   resolveSessionLinks,
 } from "../src/features/system/live-classes/sessions/lib/session-links";
 import { listSessionsInput } from "../src/features/system/live-classes/sessions/server/schemas";
+import { chunk } from "../src/lib/utils";
 
 const scheduledAt = new Date("2026-08-03T15:00:00.000Z");
 
@@ -113,15 +114,15 @@ describe("session link visibility", () => {
   };
 
   test("the assigned teacher hosts", () => {
-    expect(canHostSession({ userId: teacherId, role: "teacher" }, teacherId)).toBe(
-      true,
-    );
+    expect(
+      canHostSession({ userId: teacherId, role: "teacher" }, teacherId),
+    ).toBe(true);
   });
 
   test("an admin hosts any session, assigned or not", () => {
-    expect(canHostSession({ userId: otherUserId, role: "admin" }, teacherId)).toBe(
-      true,
-    );
+    expect(
+      canHostSession({ userId: otherUserId, role: "admin" }, teacherId),
+    ).toBe(true);
   });
 
   test("another teacher does not get host rights over someone else's class", () => {
@@ -131,9 +132,9 @@ describe("session link visibility", () => {
   });
 
   test("a student never hosts", () => {
-    expect(canHostSession({ userId: otherUserId, role: "student" }, teacherId)).toBe(
-      false,
-    );
+    expect(
+      canHostSession({ userId: otherUserId, role: "student" }, teacherId),
+    ).toBe(false);
   });
 
   test("a teacher with no session assigned to them does not host", () => {
@@ -163,6 +164,26 @@ describe("session link visibility", () => {
         { teacherId, zoomJoinUrl: null, zoomStartUrl: null },
       ),
     ).toEqual({ joinUrl: null, startUrl: null });
+  });
+});
+
+// The Zoom-connected back-fill sends one event per pending session, and
+// Inngest rejects a send carrying more than 5,000 of them.
+describe("event fan-out batching", () => {
+  test("splits a list into full batches plus a remainder", () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  test("keeps a list that already fits as a single batch", () => {
+    expect(chunk([1, 2], 5)).toEqual([[1, 2]]);
+  });
+
+  test("has nothing to send for an empty list", () => {
+    expect(chunk([], 100)).toEqual([]);
+  });
+
+  test("refuses a size that would loop forever", () => {
+    expect(() => chunk([1], 0)).toThrow(RangeError);
   });
 });
 

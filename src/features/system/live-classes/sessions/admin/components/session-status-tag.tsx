@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { Tag } from "@/components/ui/tag";
 import type { SessionStatus } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
@@ -9,10 +10,7 @@ const SESSION_STATUS_COLORS = {
   ongoing: "green",
   completed: "neutral",
   cancelled: "orange",
-} as const satisfies Record<
-  SessionStatus,
-  React.ComponentProps<typeof Tag>["color"]
->;
+} as const satisfies Record<SessionStatus, ComponentProps<typeof Tag>["color"]>;
 
 export function SessionStatusTag({ status }: { status: SessionStatus }) {
   const { t } = useTranslation();
