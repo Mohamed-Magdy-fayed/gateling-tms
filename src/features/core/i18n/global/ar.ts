@@ -14,6 +14,7 @@ export default {
     enrollments: "التسجيلات",
     certificates: "الشهادات",
     liveClasses: "الحصص المباشرة",
+    zoomConnections: "اتصالات Zoom",
     settings: "الإعدادات",
     assessments: "التقييمات",
   },
@@ -539,12 +540,6 @@ export default {
       duration: "المدة",
       durationValue: "{minutes:number} دقيقة",
       status: "الحالة",
-      statusOptions: {
-        scheduled: "مجدولة",
-        ongoing: "جارية",
-        completed: "مكتملة",
-        cancelled: "ملغاة",
-      },
       emptyTitle: "لا توجد جلسات بعد",
       emptyDescription:
         "أضف موعدًا أسبوعيًا واحدًا على الأقل وستظهر الجلسات هنا قريبًا.",
@@ -723,10 +718,37 @@ export default {
     notEnrolled: "هذا المتدرب غير مسجل في تلك الدورة.",
     courseNotCompleted: "حدّد التسجيل كمكتمل قبل إصدار شهادة له.",
   },
+  sessions: {
+    title: "الحصص المباشرة",
+    lead: "كل الحصص المجدولة في مكان واحد. تُقام الحصة نفسها على Zoom — ويحتفظ Gateling بالجدول والروابط معًا.",
+    scopeOptions: {
+      upcoming: "القادمة",
+      past: "السابقة",
+    },
+    statusOptions: {
+      scheduled: "مجدولة",
+      ongoing: "جارية",
+      completed: "مكتملة",
+      cancelled: "ملغاة",
+    },
+    start: "بدء الحصة",
+    join: "انضمام",
+    offline: "بدون رابط Zoom",
+    preparing: "الرابط في الطريق",
+    noZoomAccount:
+      "لا يوجد حساب Zoom مرتبط، لذلك تُجدول الحصص بدون روابط اجتماعات.",
+    connectZoom: "ربط Zoom",
+    emptyTitle: "لا يوجد شيء مجدول",
+    emptyUpcoming: "أضف جدولًا أسبوعيًا لإحدى المجموعات لتظهر حصصها هنا.",
+    emptyPast: "ستظهر الحصص السابقة هنا بعد انتهاء أول حصة.",
+    previous: "السابق",
+    next: "التالي",
+    pageOf: "صفحة {page:number} من {total:number}",
+  },
   zoomClients: {
     title: "اتصالات Zoom",
     subtitle:
-      "اربط حساب Zoom الذي تُقام عليه حصصك. الجدولة تعمل بدونه — وروابط الاجتماعات وتسجيل الحضور تلقائيًا قادمة قريبًا.",
+      "اربط حساب Zoom الذي تُقام عليه حصصك. الجدولة تعمل بدونه — تبقى الحصص بدون رابط حتى تربط حسابًا.",
     connect: "ربط Zoom",
     connectDescription:
       "سمِّ هذا الاتصال ثم وافق عليه في Zoom، وستعود إلى هنا مباشرة.",
@@ -746,7 +768,7 @@ export default {
     loadFailed: "تعذّر تحميل اتصالات Zoom.",
     emptyTitle: "لا يوجد حساب Zoom مرتبط",
     emptyDescription:
-      "اربط حسابًا الآن وستبدأ حصصك المجدولة في استخدامه فور إتاحة روابط الاجتماعات التلقائية.",
+      "اربط حسابًا وستحصل حصصك المجدولة على روابط اجتماعات Zoom تلقائيًا.",
     status: {
       pending: "بانتظار الموافقة",
       active: "مرتبط",

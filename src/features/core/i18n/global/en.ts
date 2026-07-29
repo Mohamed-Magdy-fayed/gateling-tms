@@ -14,6 +14,7 @@ export default {
     enrollments: "Enrollments",
     certificates: "Certificates",
     liveClasses: "Live Classes",
+    zoomConnections: "Zoom connections",
     settings: "Settings",
     assessments: "Assessments",
   },
@@ -551,12 +552,6 @@ export default {
       duration: "Duration",
       durationValue: "{minutes:number} min",
       status: "Status",
-      statusOptions: {
-        scheduled: "Scheduled",
-        ongoing: "Ongoing",
-        completed: "Completed",
-        cancelled: "Cancelled",
-      },
       emptyTitle: "No sessions yet",
       emptyDescription:
         "Add at least one weekly slot and sessions will appear here shortly.",
@@ -750,10 +745,40 @@ export default {
     courseNotCompleted:
       "Mark the enrollment completed before issuing a certificate for it.",
   },
+  sessions: {
+    title: "Live classes",
+    lead: "Every scheduled class in one place. The class itself runs in Zoom — Gateling keeps the schedule and the links together.",
+    scopeOptions: {
+      upcoming: "Upcoming",
+      past: "Past",
+    },
+    statusOptions: {
+      scheduled: "Scheduled",
+      ongoing: "Ongoing",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
+    start: "Start class",
+    join: "Join",
+    // Two different reasons a row has no link, and they mean very different
+    // things to whoever is looking at it.
+    offline: "No Zoom link",
+    preparing: "Link on the way",
+    noZoomAccount:
+      "No Zoom account is connected, so classes are scheduled without meeting links.",
+    connectZoom: "Connect Zoom",
+    emptyTitle: "Nothing scheduled",
+    emptyUpcoming:
+      "Give a class a weekly schedule and its sessions appear here.",
+    emptyPast: "Past classes will be listed here once some have run.",
+    previous: "Previous",
+    next: "Next",
+    pageOf: "Page {page:number} of {total:number}",
+  },
   zoomClients: {
     title: "Zoom connections",
     subtitle:
-      "Connect the Zoom account your classes run on. Scheduling works without it — automatic meeting links and attendance are coming next.",
+      "Connect the Zoom account your classes run on. Scheduling works without it — sessions simply stay offline until an account is connected.",
     connect: "Connect Zoom",
     connectDescription:
       "Name this connection, then approve it on Zoom. You'll come straight back here.",
@@ -774,7 +799,7 @@ export default {
     loadFailed: "Couldn't load Zoom connections.",
     emptyTitle: "No Zoom account connected",
     emptyDescription:
-      "Connect an account now and your scheduled classes will start using it as soon as automatic meeting links land.",
+      "Connect an account and your scheduled classes get Zoom meeting links automatically.",
     status: {
       pending: "Awaiting approval",
       active: "Connected",

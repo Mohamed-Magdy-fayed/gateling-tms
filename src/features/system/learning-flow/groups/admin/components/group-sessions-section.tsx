@@ -12,8 +12,8 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "@/features/core/i18n/client";
+import { SessionList } from "@/features/system/live-classes/sessions/admin";
 import { useTRPC } from "@/integrations/trpc/client";
-import { SessionStatusTag } from "./group-status-tag";
 
 type GroupSessionsSectionProps = {
   groupId: string;
@@ -33,17 +33,20 @@ export function GroupSessionsSection({
   hasSchedule,
   timeZone,
 }: GroupSessionsSectionProps) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const trpc = useTRPC();
 
-  const { data: sessions, isLoading } = useQuery({
-    ...trpc.groups.sessions.queryOptions({ id: groupId }),
+  // `sessions.byGroup`, not a groups-owned query: these rows carry the Zoom
+  // join links, and the rules for who may see a host link live with the rest
+  // of the meeting code (live-classes/sessions).
+  const { data, isLoading } = useQuery({
+    ...trpc.sessions.byGroup.queryOptions({ groupId }),
     // Generation runs through Inngest, so an empty list right after saving a
     // schedule means "not yet", not "never". Poll until the first session
     // shows up, then stop — no reason to keep hitting the server once the
     // list is populated or the group has no slots to generate from.
     refetchInterval: (query) => {
-      const rows = query.state.data;
+      const rows = query.state.data?.rows;
       return hasSchedule && rows && rows.length === 0 ? PENDING_POLL_MS : false;
     },
   });
@@ -51,13 +54,7 @@ export function GroupSessionsSection({
   // An empty list means two very different things depending on whether any
   // slots exist. Telling someone who just saved a schedule to "add a slot"
   // reads as though their save was lost.
-  const isPending = hasSchedule && sessions?.length === 0;
-
-  const dateTimeFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-    timeZone,
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const isPending = hasSchedule && data?.rows.length === 0;
 
   return (
     <Card>
@@ -77,33 +74,18 @@ export function GroupSessionsSection({
             title={t("groups.sessions.pending")}
             description={t("groups.sessions.lead")}
           />
-        ) : !sessions || sessions.length === 0 ? (
+        ) : !data || data.rows.length === 0 ? (
           <EmptyState
             icon={<CalendarDaysIcon />}
             title={t("groups.sessions.emptyTitle")}
             description={t("groups.sessions.emptyDescription")}
           />
         ) : (
-          <ul className="divide-y divide-border">
-            {sessions.map((session) => (
-              <li
-                key={session.id}
-                className="flex items-center justify-between gap-3 py-2"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-sm">
-                    {dateTimeFmt.format(new Date(session.scheduledAt))}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {t("groups.sessions.durationValue", {
-                      minutes: session.durationMinutes,
-                    })}
-                  </p>
-                </div>
-                <SessionStatusTag status={session.status} />
-              </li>
-            ))}
-          </ul>
+          <SessionList
+            sessions={data.rows}
+            hasActiveZoomClient={data.hasActiveZoomClient}
+            timeZone={timeZone}
+          />
         )}
       </CardContent>
     </Card>
