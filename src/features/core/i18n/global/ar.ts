@@ -716,6 +716,7 @@ export default {
     revokeFailed: "تعذر إلغاء الشهادة.",
     emptyTitle: "لا توجد شهادات بعد",
     emptyDescription: "بمجرد أن يتم المتدرب دورة أو مجموعة، أصدر شهادته هنا.",
+    loadFailedTitle: "تعذر تحميل الشهادات",
     notFoundTitle: "الشهادة غير موجودة",
     notFoundDescription: "هذه الشهادة غير موجودة أو تم إلغاؤها.",
     groupNotFound: "هذه المجموعة غير موجودة في هذه المؤسسة.",

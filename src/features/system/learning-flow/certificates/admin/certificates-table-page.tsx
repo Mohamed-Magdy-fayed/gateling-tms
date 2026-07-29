@@ -26,6 +26,7 @@ import {
   type CertificateListRow,
   CertificateRevokeDialog,
   type CertificateRowActionVariant,
+  createCertificateDateFormat,
 } from "./components";
 
 type RowAction = {
@@ -123,6 +124,11 @@ export function CertificatesTablePage() {
     [locale, t, timeZone],
   );
 
+  const dateFmt = useMemo(
+    () => createCertificateDateFormat({ locale, timeZone }),
+    [locale, timeZone],
+  );
+
   const {
     table,
     globalFilter: resolvedGlobalFilter,
@@ -161,7 +167,12 @@ export function CertificatesTablePage() {
           >
             <DataTableExportButton
               table={table}
-              getExportRow={(row) => row}
+              // `issuedAt` is a Date; left raw it would stringify in the
+              // host's zone, so the CSV and the column would disagree.
+              getExportRow={(row) => ({
+                ...row,
+                issuedAt: dateFmt.format(row.issuedAt),
+              })}
               exportFileName="certificates.csv"
             />
             <DataTableViewOptions table={table} />

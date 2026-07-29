@@ -741,6 +741,7 @@ export default {
     emptyTitle: "No certificates yet",
     emptyDescription:
       "Once a trainee completes a course or a class, issue their certificate here.",
+    loadFailedTitle: "Couldn't load certificates",
     notFoundTitle: "Certificate not found",
     notFoundDescription:
       "This certificate doesn't exist, or it was revoked.",

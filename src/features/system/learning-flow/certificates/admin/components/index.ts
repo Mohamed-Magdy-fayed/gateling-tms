@@ -8,5 +8,6 @@ export {
 export {
   buildCertificateColumns,
   type CertificateListRow,
+  createCertificateDateFormat,
 } from "./certificates-table-columns";
 export { TraineeCertificatesSection } from "./trainee-certificates-section";

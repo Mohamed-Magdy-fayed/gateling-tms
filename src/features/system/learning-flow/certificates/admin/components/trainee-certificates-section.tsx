@@ -1,7 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AwardIcon, ExternalLinkIcon, PlusIcon } from "lucide-react";
+import {
+  AwardIcon,
+  ExternalLinkIcon,
+  PlusIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +24,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 import { CertificateIssueDialog } from "./certificate-issue-dialog";
 import { CertificateRevokeDialog } from "./certificate-revoke-dialog";
+import { createCertificateDateFormat } from "./certificates-table-columns";
 
 type RevokeTarget = { id: string; title: string } | null;
 
@@ -33,7 +39,11 @@ export function TraineeCertificatesSection({
   const [issueOpen, setIssueOpen] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<RevokeTarget>(null);
 
-  const { data: certificates, isLoading } = useQuery(
+  const {
+    data: certificates,
+    isLoading,
+    isError,
+  } = useQuery(
     trpc.certificates.list.queryOptions({
       page: 1,
       perPage: 50,
@@ -47,16 +57,11 @@ export function TraineeCertificatesSection({
     trpc.organizations.getActive.queryOptions(),
   );
 
-  // Without an explicit time zone the server formats in the host's zone and
-  // the browser in the viewer's, which hydrates mismatched and shows the wrong
-  // day either side of midnight.
+  const timeZone = organization?.timeZone ?? "UTC";
+
   const dateFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-        dateStyle: "medium",
-        timeZone: organization?.timeZone ?? "UTC",
-      }),
-    [locale, organization?.timeZone],
+    () => createCertificateDateFormat({ locale, timeZone }),
+    [locale, timeZone],
   );
 
   const rows = certificates?.rows ?? [];
@@ -79,6 +84,14 @@ export function TraineeCertificatesSection({
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
+        ) : isError ? (
+          // A failed fetch also leaves `rows` empty — say so rather than let it
+          // read as "this trainee has no certificates".
+          <EmptyState
+            icon={<TriangleAlertIcon />}
+            title={t("certificates.loadFailedTitle")}
+            description={t("errors.generic")}
+          />
         ) : rows.length === 0 ? (
           <EmptyState
             icon={<AwardIcon />}

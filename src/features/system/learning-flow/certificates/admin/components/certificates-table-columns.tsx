@@ -25,6 +25,24 @@ export type CertificateListRow = {
   issuedAt: Date;
 };
 
+/**
+ * Shared with the CSV export so a row exports the same string it displays —
+ * a raw `Date` would stringify in the host's zone and locale instead.
+ *
+ * Explicit time zone: without one the server formats in the host's zone and
+ * the browser in the viewer's, which hydrates mismatched (STATE.md D80's org
+ * clock is the one the academy actually works on).
+ */
+export function createCertificateDateFormat(opts: {
+  locale: string;
+  timeZone: string;
+}): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat(opts.locale === "ar" ? "ar" : "en", {
+    dateStyle: "medium",
+    timeZone: opts.timeZone,
+  });
+}
+
 export function buildCertificateColumns(opts: {
   locale: string;
   setRowAction: SetCertificateRowAction;
@@ -32,13 +50,7 @@ export function buildCertificateColumns(opts: {
   timeZone: string;
 }): ColumnDef<CertificateListRow>[] {
   const { locale, setRowAction, t, timeZone } = opts;
-  // Explicit time zone: without one the server formats in the host's zone and
-  // the browser in the viewer's, which hydrates mismatched (STATE.md D80's
-  // org clock is the one the academy actually works on).
-  const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-    dateStyle: "medium",
-    timeZone,
-  });
+  const dateFmt = createCertificateDateFormat({ locale, timeZone });
 
   return [
     {
