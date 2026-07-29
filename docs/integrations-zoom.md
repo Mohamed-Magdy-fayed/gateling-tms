@@ -5,9 +5,10 @@ and where the moving parts live. Written while building Phase 6 segment ① and
 extended by the later segments.
 
 Zoom is **optional**. An organization that never connects it still creates
-groups, generates sessions, and runs classes — it just doesn't get meeting
-links or automatic attendance. Nothing in the app fails when the credentials
-are absent; the connect screen says so instead.
+groups, generates sessions, and runs classes — those sessions are simply
+"offline": no meeting links, and (from the next segment) no automatic
+attendance. Nothing in the app fails when the credentials are absent; the
+connect screen and the session agenda both say so instead.
 
 ## 1. Zoom Marketplace app (one per deployment, done once)
 
@@ -85,10 +86,48 @@ admin clicks "Connect Zoom"
   deliberate exception to `docs/inngest-offload-policy.md`: the admin is
   waiting on that exact result, and a Zoom authorization code expires in
   seconds, so deferring it would trade a working handshake for a spinner.
-  Everything else that talks to Zoom (revoking on disconnect, and from the
-  next segment on, creating meetings) goes through Inngest.
+  Everything else that talks to Zoom — revoking on disconnect, and creating,
+  updating, or deleting meetings — goes through Inngest.
 
-## 4. Tokens
+## 4. Sessions and meetings
+
+Each class session gets **its own Zoom meeting** (a `type: 2` scheduled
+meeting), rather than SOURCE's single recurring meeting per group: TARGET's
+sessions are individually generated rows that can move or be cancelled one at a
+time, which a recurring series can't follow without rewriting itself on every
+edit.
+
+```text
+group schedule saved
+  └─ group/schedule-changed             regenerates the group's session rows
+       ├─ session/meeting-cancelled     for every dropped occurrence (per row)
+       └─ session/meeting-sync-requested for every created/updated occurrence
+
+zoom account connected
+  └─ organization/zoom-connected        fans out a sync request for every
+                                        future session with no meeting yet
+```
+
+- `syncSessionMeeting` creates a meeting when the row has none and otherwise
+  PATCHes the existing one, so re-running it is always safe. The meeting is
+  claimed with a conditional `UPDATE ... WHERE zoomMeetingId IS NULL`; a run
+  that loses that race deletes the meeting it just created rather than leaving
+  an orphan in the account.
+- An org can connect **several Zoom accounts**. A session is placed on the
+  oldest connected account that isn't already hosting an overlapping class — a
+  Zoom user can only host one meeting at a time. If every account is busy the
+  session stays offline; it is never double-booked.
+- **Offline is a supported state, not an error.** No connected account (or
+  none free) means the session simply has no links, and the agenda says so.
+- Meeting settings deliberately leave `auto_recording` alone. Forcing
+  `"cloud"` (as SOURCE did) fails outright on accounts without cloud
+  recording, which would turn a recording preference into a reason a class has
+  no meeting.
+- The host `start_url` grants host control to whoever opens it, so it is only
+  ever returned to the session's assigned teacher and to org admins
+  (`sessions/lib/session-links.ts`).
+
+## 5. Tokens
 
 - Access and refresh tokens are stored **AES-256-GCM encrypted**
   (`src/integrations/zoom/token-crypto.ts`); the plaintext never reaches the
@@ -101,7 +140,7 @@ admin clicks "Connect Zoom"
   and asks Zoom to revoke the grant from an Inngest job
   (`zoom-client/disconnected`).
 
-## 5. Local testing without a paid Zoom account
+## 6. Local testing without a paid Zoom account
 
 A free Zoom account can create and authorize a Marketplace app, so the connect
 flow is testable end to end locally. Meeting creation, recording links, and
