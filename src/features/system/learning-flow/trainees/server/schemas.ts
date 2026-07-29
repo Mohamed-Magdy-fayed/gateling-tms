@@ -45,20 +45,34 @@ export const traineeDeleteSchema = z.object({
  * then has a total, string-keyed shape the commit path can rely on.
  */
 export const traineeImportRowSchema = z.object({
-  id: z.union([
-    z.uuid(translationKey("import.validation.invalidId")),
-    z.literal(""),
-  ]),
+  // `id` and `email` trim before the "or empty" branch: the file path already
+  // trims every cell, but `importCommit` validates rows straight off the
+  // client, and a whitespace-only value there would fail both branches
+  // instead of reading as "not given".
+  id: z
+    .string()
+    .trim()
+    .pipe(
+      z.union([
+        z.uuid(translationKey("import.validation.invalidId")),
+        z.literal(""),
+      ]),
+    ),
   name: z
     .string()
     .trim()
     .min(1, translationKey("forms.validation.required"))
     .max(256, translationKey("forms.validation.max256")),
   phone: z.string().trim().max(32, translationKey("forms.validation.max32")),
-  email: z.union([
-    z.email(translationKey("auth.validation.invalidEmail")),
-    z.literal(""),
-  ]),
+  email: z
+    .string()
+    .trim()
+    .pipe(
+      z.union([
+        z.email(translationKey("auth.validation.invalidEmail")),
+        z.literal(""),
+      ]),
+    ),
   groupName: z
     .string()
     .trim()

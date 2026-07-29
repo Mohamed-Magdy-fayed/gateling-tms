@@ -156,6 +156,22 @@ describe("XLSX round trip", () => {
     });
   });
 
+  test("blank rows past the data are not counted as rows", async () => {
+    const ExcelJS = (await import("exceljs")).default;
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Trainees");
+    sheet.addRow(["Name", "Email"]);
+    sheet.addRow(["Sara", "sara@x.com"]);
+    // A sheet whose used range outgrew its data — ordinary in real files, and
+    // it must not inflate the count checked against MAX_IMPORT_ROWS.
+    sheet.addRow(["", ""]);
+    sheet.addRow(["", ""]);
+
+    const table = await parseWorkbook(await workbook.xlsx.writeBuffer());
+
+    expect(table?.rows).toEqual([["Sara", "sara@x.com"]]);
+  });
+
   test("the reference sheet is not mistaken for data", async () => {
     const workbook = await buildTemplateWorkbook(
       [{ label: "Name", required: true, example: "Sara", hint: "Required." }],

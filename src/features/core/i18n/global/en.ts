@@ -535,6 +535,7 @@ export default {
       unknownId: "No trainee in this organization has this id.",
       duplicateId: "This id appears in an earlier row.",
       duplicateEmail: "This email appears in an earlier row.",
+      duplicateTrainee: "An earlier row already updates this trainee.",
     },
     trainees: {
       title: "Trainees",

@@ -11,11 +11,8 @@ import {
   flagDuplicateRows,
   type ImportCommitResult,
   type ImportPreviewResult,
-  type ImportRowAction,
-  type InvalidImportRow,
   type MessageKey,
   type ReviewedRows,
-  type ValidImportRow,
   zodRowValidator,
 } from "@/features/core/import/lib";
 import {
@@ -27,6 +24,14 @@ import {
   type WorkbookTable,
 } from "@/features/core/import/server";
 import { PLAN_LIMITS } from "@/features/core/organizations/server";
+import {
+  distinctGroupNames,
+  type ExistingTrainees,
+  emailKey,
+  groupKey,
+  type ImportedTraineeRow,
+  resolveRows,
+} from "./import-resolution";
 import { traineeImportColumns } from "./import-template";
 import {
   type TraineeImportCommitInput,
@@ -36,20 +41,10 @@ import {
 } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
-type ImportedRow = ValidImportRow<TraineeImportRow>;
+type ImportedRow = ImportedTraineeRow;
 
 /** Reads run either on the request connection or inside the commit's own transaction. */
 type Reader = OrgTRPCContext["db"] | Transaction;
-
-/** Case-insensitive, so "Sara@X.com" and "sara@x.com" are the same person. */
-function emailKey(email: string): string | null {
-  const trimmed = email.trim().toLowerCase();
-  return trimmed === "" ? null : trimmed;
-}
-
-function groupKey(name: string): string {
-  return name.trim().toLowerCase();
-}
 
 function actorLabel(ctx: OrgTRPCContext): string {
   const session = ctx.session;
@@ -60,11 +55,6 @@ function actorLabel(ctx: OrgTRPCContext): string {
 function translateLabel(ctx: OrgTRPCContext, key: MessageKey): string {
   return ctx.t(key, {});
 }
-
-type ExistingTrainees = {
-  byId: Map<string, string>;
-  byEmail: Map<string, string>;
-};
 
 /**
  * The trainees the file refers to that already exist in this organization,
@@ -118,66 +108,6 @@ async function findExistingTrainees(
   }
 
   return { byId, byEmail };
-}
-
-/**
- * What committing one row would do. `null` means the row names an `id` this
- * organization doesn't have — rejected rather than created, since silently
- * inserting a new trainee under a different id would look like the edit
- * worked while leaving the original untouched.
- */
-type RowResolution =
-  | { action: "create" }
-  | { action: "update"; traineeId: string }
-  | null;
-
-function resolveRow(
-  row: ImportedRow,
-  existing: ExistingTrainees,
-): RowResolution {
-  if (row.parsed.id !== "") {
-    const traineeId = existing.byId.get(row.parsed.id);
-    return traineeId ? { action: "update", traineeId } : null;
-  }
-
-  const key = emailKey(row.parsed.email);
-  const traineeId = key === null ? undefined : existing.byEmail.get(key);
-  return traineeId ? { action: "update", traineeId } : { action: "create" };
-}
-
-type ResolvedRows = {
-  valid: ImportedRow[];
-  invalid: InvalidImportRow[];
-  actions: ImportRowAction[];
-};
-
-function resolveRows(
-  reviewed: ReviewedRows<TraineeImportRow>,
-  existing: ExistingTrainees,
-): ResolvedRows {
-  const valid: ImportedRow[] = [];
-  const actions: ImportRowAction[] = [];
-  const invalid = [...reviewed.invalid];
-
-  for (const row of reviewed.valid) {
-    const resolution = resolveRow(row, existing);
-    if (resolution === null) {
-      invalid.push({
-        rowNumber: row.rowNumber,
-        values: row.values,
-        errors: [{ column: "id", message: "import.validation.unknownId" }],
-      });
-      continue;
-    }
-    valid.push(row);
-    actions.push(resolution.action);
-  }
-
-  return {
-    valid,
-    actions,
-    invalid: invalid.sort((a, b) => a.rowNumber - b.rowNumber),
-  };
 }
 
 function remainingStudentCapacity(organization: {
@@ -363,18 +293,6 @@ async function resolveGroupIds(
   return idByKey;
 }
 
-/** The distinct group names in the batch, keeping each one's first spelling. */
-function distinctGroupNames(rows: ImportedRow[]): string[] {
-  return [
-    ...new Map(
-      rows
-        .map((row) => row.parsed.groupName.trim())
-        .filter((name) => name !== "")
-        .map((name) => [groupKey(name), name] as const),
-    ).values(),
-  ];
-}
-
 export async function commitTraineeImport(
   ctx: OrgTRPCContext,
   input: TraineeImportCommitInput,
@@ -402,19 +320,21 @@ export async function commitTraineeImport(
     }
 
     const existing = await findExistingTrainees(trx, ctx.organizationId, rows);
-    const resolutions = rows.map((row) => resolveRow(row, existing));
+    // The same resolution the preview ran, so the commit can't accept a row
+    // the review screen rejected — an unknown id, or a second row targeting a
+    // trainee an earlier row already claims.
+    const resolved = resolveRows({ valid: rows, invalid: [] }, existing);
 
-    if (resolutions.some((resolution) => resolution === null)) {
+    if (resolved.invalid.length > 0) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: ctx.t("import.errors.invalidRows"),
       });
     }
 
+    const { resolutions } = resolved;
     const createIndexes = resolutions
-      .map((resolution, index) =>
-        resolution?.action === "create" ? index : -1,
-      )
+      .map((resolution, index) => (resolution.action === "create" ? index : -1))
       .filter((index) => index !== -1);
     const capacity = remainingStudentCapacity(organization);
 
@@ -432,7 +352,7 @@ export async function commitTraineeImport(
 
     for (let index = 0; index < rows.length; index++) {
       const resolution = resolutions[index];
-      if (resolution?.action !== "update") continue;
+      if (resolution.action !== "update") continue;
       const { parsed } = rows[index];
 
       await trx

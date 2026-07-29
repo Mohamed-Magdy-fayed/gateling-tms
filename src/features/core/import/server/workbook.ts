@@ -66,10 +66,13 @@ export async function parseWorkbook(
 
   worksheet.eachRow({ includeEmpty: true }, (row) => {
     const cells = rowToStrings(row, width);
+    // Blank rows are dropped wherever they appear: above the header (a spacer
+    // row), between records, or — most often — as the tail of a sheet whose
+    // used range outgrew its data. Counting those against MAX_IMPORT_ROWS
+    // would reject a perfectly ordinary file. Matches the CSV parser, which
+    // already drops blank lines.
+    if (cells.every((cell) => cell === "")) return;
     if (headers === null) {
-      // Leading blank rows are skipped so a file with a spacer above the
-      // header still imports.
-      if (cells.every((cell) => cell === "")) return;
       headers = cells;
       return;
     }

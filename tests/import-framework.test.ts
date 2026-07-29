@@ -13,6 +13,7 @@ import {
   capacityCutoff,
   reviewImportTable,
 } from "../src/features/core/import/server/review";
+import { resolveRows } from "../src/features/system/learning-flow/trainees/server/import-resolution";
 import { traineeImportColumns } from "../src/features/system/learning-flow/trainees/server/import-template";
 import { traineeImportRowSchema } from "../src/features/system/learning-flow/trainees/server/schemas";
 
@@ -253,6 +254,93 @@ describe("reviewImportTable", () => {
     expect(result.totalRows).toBe(2);
     expect(result.reviewed.valid).toHaveLength(1);
     expect(result.reviewed.invalid[0].rowNumber).toBe(3);
+  });
+});
+
+describe("the trainees row schema's whitespace handling", () => {
+  const base = { id: "", name: "Sara", phone: "", email: "", groupName: "" };
+
+  test("reads a whitespace-only id as 'not given', not as invalid", () => {
+    const result = validate({ ...base, id: "   " });
+
+    expect(result).toEqual({ ok: true, parsed: { ...base, id: "" } });
+  });
+
+  test("reads a whitespace-only email the same way", () => {
+    const result = validate({ ...base, email: " " });
+
+    expect(result).toEqual({ ok: true, parsed: { ...base, email: "" } });
+  });
+});
+
+describe("resolveRows", () => {
+  const TRAINEE_ID = "11111111-1111-4111-8111-111111111111";
+  const existing = {
+    byId: new Map([[TRAINEE_ID, TRAINEE_ID]]),
+    byEmail: new Map([["sara@x.com", TRAINEE_ID]]),
+  };
+
+  function row(rowNumber: number, values: Record<string, string>) {
+    const parsed = validate({
+      id: "",
+      name: "Sara",
+      phone: "",
+      email: "",
+      groupName: "",
+      ...values,
+    });
+    if (!parsed.ok) throw new Error("fixture row must be valid");
+    return { rowNumber, values, parsed: parsed.parsed };
+  }
+
+  test("matches by id, then by email, and creates otherwise", () => {
+    const result = resolveRows(
+      {
+        valid: [
+          row(2, { id: TRAINEE_ID }),
+          row(3, { email: "omar@x.com" }),
+          row(4, {}),
+        ],
+        invalid: [],
+      },
+      existing,
+    );
+
+    expect(result.actions).toEqual(["update", "create", "create"]);
+  });
+
+  test("rejects an id this organization doesn't have", () => {
+    const result = resolveRows(
+      {
+        valid: [row(2, { id: "22222222-2222-4222-8222-222222222222" })],
+        invalid: [],
+      },
+      existing,
+    );
+
+    expect(result.valid).toEqual([]);
+    expect(result.invalid[0].errors).toEqual([
+      { column: "id", message: "import.validation.unknownId" },
+    ]);
+  });
+
+  test("rejects a second row targeting the trainee an earlier row claims, even by a different column", () => {
+    const result = resolveRows(
+      {
+        valid: [row(2, { id: TRAINEE_ID }), row(3, { email: "sara@x.com" })],
+        invalid: [],
+      },
+      existing,
+    );
+
+    expect(result.valid.map((entry) => entry.rowNumber)).toEqual([2]);
+    expect(result.invalid).toEqual([
+      {
+        rowNumber: 3,
+        values: expect.anything(),
+        errors: [{ column: "", message: "import.validation.duplicateTrainee" }],
+      },
+    ]);
   });
 });
 
