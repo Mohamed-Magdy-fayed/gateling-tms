@@ -750,6 +750,51 @@ export default {
     courseNotCompleted:
       "Mark the enrollment completed before issuing a certificate for it.",
   },
+  zoomClients: {
+    title: "Zoom connections",
+    subtitle:
+      "Connect the Zoom account your classes run on. Scheduling works without it — Zoom adds the meeting links.",
+    connect: "Connect Zoom",
+    connectDescription:
+      "Name this connection, then approve it on Zoom. You'll come straight back here.",
+    continueToZoom: "Continue to Zoom",
+    name: "Connection name",
+    nameDescription:
+      "For your team, e.g. \"Main licence\" or \"Evening classes\".",
+    notLinkedYet: "Not linked to a Zoom account yet",
+    finishConnecting: "Finish connecting",
+    reconnect: "Reconnect",
+    disconnect: "Disconnect",
+    disconnectTitle: "Disconnect this Zoom account?",
+    disconnectDescription:
+      "Disconnect \"{name}\". Scheduled classes stay, but new sessions won't get Zoom meeting links from this account.",
+    disconnected: "Zoom account disconnected.",
+    disconnectFailed: "Could not disconnect the Zoom account.",
+    connectFailed: "Could not start the Zoom connection.",
+    loadFailed: "Couldn't load Zoom connections.",
+    emptyTitle: "No Zoom account connected",
+    emptyDescription:
+      "Connect Zoom to turn scheduled classes into real meetings with join links and attendance.",
+    status: {
+      pending: "Awaiting approval",
+      active: "Connected",
+      error: "Needs attention",
+    },
+    result: {
+      connected: "Zoom account connected.",
+      denied: "The Zoom connection was cancelled.",
+      invalid_state:
+        "That connection link expired. Start the connection again.",
+      connect_failed: "Zoom couldn't complete the connection. Try again.",
+      not_configured:
+        "Zoom isn't configured on this deployment yet.",
+      forbidden: "Only an organization admin can connect Zoom.",
+    },
+    errors: {
+      notConfigured:
+        "Zoom isn't configured on this deployment yet. Ask your operator to add the Zoom credentials.",
+    },
+  },
   assessments: {
     title: "Assessments",
     lead: "Build assignments, quizzes, final exams, and placement tests, then track responses.",

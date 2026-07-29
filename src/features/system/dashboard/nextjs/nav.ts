@@ -8,6 +8,7 @@ import {
   SettingsIcon,
   UserCheckIcon,
   UsersIcon,
+  VideoIcon,
 } from "lucide-react";
 
 // Narrowed to the specific zero-argument keys nav items use (rather than the
@@ -25,7 +26,8 @@ export type SystemNavItem = {
     | "nav.learningFlow"
     | "nav.groups"
     | "nav.enrollments"
-    | "nav.certificates";
+    | "nav.certificates"
+    | "nav.liveClasses";
   Icon: LucideIcon;
 };
 
@@ -36,9 +38,9 @@ export type SystemNavItem = {
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
  *
- * Live Classes is intentionally still absent — phase-02.md step 8 calls for
- * "no dead links", and its routes don't exist until Phase 6. Add it here
- * when its pages land.
+ * Live Classes points at the Zoom connections page, the only route that
+ * exists in that area so far — the session/attendance views land in the
+ * later Phase 6 segments and get their own entries then.
  */
 export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
   {
@@ -75,6 +77,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/assessments",
     translationKey: "nav.assessments",
     Icon: ClipboardListIcon,
+  },
+  {
+    href: "/live-classes/zoom-clients",
+    translationKey: "nav.liveClasses",
+    Icon: VideoIcon,
   },
 ];
 

@@ -723,6 +723,48 @@ export default {
     notEnrolled: "هذا المتدرب غير مسجل في تلك الدورة.",
     courseNotCompleted: "حدّد التسجيل كمكتمل قبل إصدار شهادة له.",
   },
+  zoomClients: {
+    title: "اتصالات Zoom",
+    subtitle:
+      "اربط حساب Zoom الذي تُقام عليه حصصك. الجدولة تعمل بدونه — يضيف Zoom روابط الاجتماعات.",
+    connect: "ربط Zoom",
+    connectDescription:
+      "سمِّ هذا الاتصال ثم وافق عليه في Zoom، وستعود إلى هنا مباشرة.",
+    continueToZoom: "المتابعة إلى Zoom",
+    name: "اسم الاتصال",
+    nameDescription: "لفريقك، مثل «الرخصة الرئيسية» أو «الحصص المسائية».",
+    notLinkedYet: "غير مرتبط بحساب Zoom بعد",
+    finishConnecting: "إكمال الربط",
+    reconnect: "إعادة الربط",
+    disconnect: "فصل",
+    disconnectTitle: "فصل حساب Zoom هذا؟",
+    disconnectDescription:
+      "سيتم فصل «{name}». تبقى الحصص المجدولة كما هي، لكن الجلسات الجديدة لن تحصل على روابط اجتماعات من هذا الحساب.",
+    disconnected: "تم فصل حساب Zoom.",
+    disconnectFailed: "تعذّر فصل حساب Zoom.",
+    connectFailed: "تعذّر بدء الربط مع Zoom.",
+    loadFailed: "تعذّر تحميل اتصالات Zoom.",
+    emptyTitle: "لا يوجد حساب Zoom مرتبط",
+    emptyDescription:
+      "اربط Zoom لتحويل الحصص المجدولة إلى اجتماعات حقيقية بروابط دخول وتسجيل حضور.",
+    status: {
+      pending: "بانتظار الموافقة",
+      active: "مرتبط",
+      error: "يحتاج إلى مراجعة",
+    },
+    result: {
+      connected: "تم ربط حساب Zoom.",
+      denied: "تم إلغاء الربط مع Zoom.",
+      invalid_state: "انتهت صلاحية رابط الربط. ابدأ العملية من جديد.",
+      connect_failed: "تعذّر على Zoom إكمال الربط. حاول مرة أخرى.",
+      not_configured: "لم يتم إعداد Zoom على هذا النظام بعد.",
+      forbidden: "يمكن لمدير المؤسسة فقط ربط Zoom.",
+    },
+    errors: {
+      notConfigured:
+        "لم يتم إعداد Zoom على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Zoom.",
+    },
+  },
   assessments: {
     title: "التقييمات",
     lead: "أنشئ الواجبات والاختبارات والامتحانات النهائية واختبارات تحديد المستوى، وتابع الردود.",
