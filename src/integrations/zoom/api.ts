@@ -39,6 +39,42 @@ export type ZoomTokens = {
   expiresAt: Date;
 };
 
+// Zoom answers with the meeting number as a JSON number; it is an identifier,
+// not an amount, and it is wider than a safe display value, so it becomes a
+// string at the boundary and stays one everywhere else.
+const zoomMeetingSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  join_url: z.url(),
+  start_url: z.url(),
+  password: z.string().optional(),
+});
+
+export type ZoomMeeting = {
+  meetingId: string;
+  joinUrl: string;
+  startUrl: string;
+  password: string | null;
+};
+
+/** Body of a Zoom "scheduled meeting" create/update request. */
+export type ZoomMeetingRequest = {
+  topic: string;
+  agenda: string;
+  /** Zoom's scheduled-meeting type. */
+  type: 2;
+  /** `yyyy-MM-ddTHH:mm:ssZ`, always UTC. */
+  start_time: string;
+  duration: number;
+  timezone: string;
+  settings: {
+    host_video: boolean;
+    participant_video: boolean;
+    join_before_host: boolean;
+    jbh_time: number;
+    waiting_room: boolean;
+  };
+};
+
 export type ZoomAccount = {
   userId: string;
   accountId: string;
@@ -143,6 +179,96 @@ export async function fetchZoomAccount(
     email: user.data.email,
     displayName: displayName || user.data.email,
   };
+}
+
+/**
+ * Creates the meeting on the authorizing user's own Zoom account (`users/me`),
+ * which is the account that granted the token — a school with several licences
+ * connects one client per licence rather than one client hosting for others.
+ */
+export async function createZoomMeeting(
+  accessToken: string,
+  request: ZoomMeetingRequest,
+): Promise<ZoomMeeting> {
+  const response = await fetchWithTimeout(
+    `${ZOOM_API_BASE_URL}/users/me/meetings`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+  );
+
+  const payload = await readJson(response);
+  if (!response.ok) {
+    throw new ZoomApiError(zoomErrorMessage(payload), response.status);
+  }
+
+  const meeting = zoomMeetingSchema.safeParse(payload);
+  if (!meeting.success) {
+    throw new ZoomApiError("Unexpected Zoom meeting payload.", response.status);
+  }
+
+  return {
+    meetingId: String(meeting.data.id),
+    joinUrl: meeting.data.join_url,
+    startUrl: meeting.data.start_url,
+    password: meeting.data.password ?? null,
+  };
+}
+
+/** Zoom answers 204 with no body, so nothing comes back to the caller. */
+export async function updateZoomMeeting(
+  accessToken: string,
+  meetingId: string,
+  request: ZoomMeetingRequest,
+): Promise<void> {
+  const response = await fetchWithTimeout(
+    `${ZOOM_API_BASE_URL}/meetings/${encodeURIComponent(meetingId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    },
+  );
+
+  if (!response.ok) {
+    throw new ZoomApiError(
+      zoomErrorMessage(await readJson(response)),
+      response.status,
+    );
+  }
+}
+
+/**
+ * A meeting Zoom no longer has (404) counts as deleted: the caller's goal is
+ * "this meeting must not exist", and throwing would make the cancellation job
+ * retry forever over an outcome it already has.
+ */
+export async function deleteZoomMeeting(
+  accessToken: string,
+  meetingId: string,
+): Promise<void> {
+  const response = await fetchWithTimeout(
+    `${ZOOM_API_BASE_URL}/meetings/${encodeURIComponent(meetingId)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+
+  if (response.ok || response.status === 404) return;
+
+  throw new ZoomApiError(
+    zoomErrorMessage(await readJson(response)),
+    response.status,
+  );
 }
 
 async function requestTokens(
