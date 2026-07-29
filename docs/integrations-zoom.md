@@ -15,6 +15,16 @@ connect screen and the session agenda both say so instead.
 Gateling-TMS is the OAuth *client*; each organization authorizes its own Zoom
 account against that one app.
 
+> **This deployment reuses the Marketplace app from the legacy system**, and
+> `ZOOM_CLIENT_ID`/`ZOOM_CLIENT_SECRET`/`ZOOM_WEBHOOK_SECRET_TOKEN`/
+> `ZOOM_TOKEN_ENCRYPTION_KEY` are already set in Vercel's Production scope
+> (Mohamed, 2026-07-29) — so steps 1–2 below are history rather than a to-do.
+> Two things still have to match on that existing app, because the rebuild
+> changed them: the **redirect URL** is now `<origin>/api/zoom/callback` (the
+> legacy app used its own path, so the new one has to be added to both the
+> redirect URL and the OAuth allow list), and the **meeting scopes** in step 4
+> must be present or meeting creation fails with a scope error.
+
 1. Sign in at <https://marketplace.zoom.us> with the account that should own
    the app → **Develop → Build App → General App**.
 2. **Basic Information**
