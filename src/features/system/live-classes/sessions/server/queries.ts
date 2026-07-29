@@ -23,6 +23,7 @@ import {
 import { resolveSessionLinks } from "../lib/session-links";
 import type { ListSessionsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
+import { needsZoomMeeting } from "./zoom-binding";
 
 const sessionColumns = {
   id: SessionsTable.id,
@@ -135,12 +136,21 @@ export async function listSessionIdsAwaitingMeetings(
   const rows = await db
     .select({ id: SessionsTable.id })
     .from(SessionsTable)
+    // Sessions left stranded on a disconnected account count too: connecting
+    // a replacement is exactly when they can be moved onto it.
+    .leftJoin(
+      ZoomClientsTable,
+      and(
+        eq(ZoomClientsTable.id, SessionsTable.zoomClientId),
+        eq(ZoomClientsTable.organizationId, SessionsTable.organizationId),
+      ),
+    )
     .where(
       and(
         eq(SessionsTable.organizationId, organizationId),
         eq(SessionsTable.status, "scheduled"),
         gt(SessionsTable.scheduledAt, now),
-        isNull(SessionsTable.zoomMeetingId),
+        needsZoomMeeting,
       ),
     )
     .orderBy(asc(SessionsTable.scheduledAt), asc(SessionsTable.id));

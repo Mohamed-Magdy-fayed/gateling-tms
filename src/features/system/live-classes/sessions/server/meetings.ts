@@ -18,6 +18,7 @@ import {
   selectAvailableZoomClient,
   sessionEndsAt,
 } from "../lib/meeting-window";
+import { isUsableZoomClient } from "./zoom-binding";
 
 export type SessionMeetingSyncResult =
   | { status: "created"; zoomMeetingId: string }
@@ -67,15 +68,24 @@ export async function syncSessionMeeting({
   });
 
   if (session.zoomClientId && session.zoomMeetingId) {
-    const accessToken = await getValidZoomAccessToken(
-      organizationId,
-      session.zoomClientId,
-    );
-    // Pushed unconditionally rather than diffed: the row doesn't record what
-    // Zoom was last told, and one PATCH per touched session is cheaper than
-    // storing and reconciling a second copy of the schedule.
-    await updateZoomMeeting(accessToken, session.zoomMeetingId, request);
-    return { status: "updated", zoomMeetingId: session.zoomMeetingId };
+    if (session.isZoomClientUsable) {
+      const accessToken = await getValidZoomAccessToken(
+        organizationId,
+        session.zoomClientId,
+      );
+      // Pushed unconditionally rather than diffed: the row doesn't record what
+      // Zoom was last told, and one PATCH per touched session is cheaper than
+      // storing and reconciling a second copy of the schedule.
+      await updateZoomMeeting(accessToken, session.zoomMeetingId, request);
+      return { status: "updated", zoomMeetingId: session.zoomMeetingId };
+    }
+
+    // The account this session was booked on has been disconnected. Its
+    // links can't be maintained any more, and leaving them in place would
+    // strand the class on a dead meeting with nothing in the UI able to fix
+    // it — so the binding is released and the session re-provisioned below,
+    // onto another connected account if the org has one.
+    await releaseStaleMeeting(organizationId, sessionId, session.zoomClientId);
   }
 
   const zoomClientId = await selectZoomClientForSession(organizationId, {
@@ -150,6 +160,9 @@ async function loadSession(organizationId: string, sessionId: string) {
       status: SessionsTable.status,
       zoomClientId: SessionsTable.zoomClientId,
       zoomMeetingId: SessionsTable.zoomMeetingId,
+      // Whether the account this session is booked on is still connected —
+      // a disconnected one can't maintain the meeting any more.
+      isZoomClientUsable: isUsableZoomClient,
       groupName: GroupsTable.name,
       courseName: CoursesTable.name,
       timeZone: OrganizationsTable.timeZone,
@@ -167,6 +180,13 @@ async function loadSession(organizationId: string, sessionId: string) {
       eq(OrganizationsTable.id, SessionsTable.organizationId),
     )
     .leftJoin(CoursesTable, eq(CoursesTable.id, GroupsTable.courseId))
+    .leftJoin(
+      ZoomClientsTable,
+      and(
+        eq(ZoomClientsTable.id, SessionsTable.zoomClientId),
+        eq(ZoomClientsTable.organizationId, SessionsTable.organizationId),
+      ),
+    )
     .where(
       and(
         eq(SessionsTable.id, sessionId),
@@ -175,6 +195,34 @@ async function loadSession(organizationId: string, sessionId: string) {
     );
 
   return session;
+}
+
+/**
+ * Drops the meeting a disconnected account left behind, guarded on that exact
+ * account so a concurrent run that already re-provisioned the session can't
+ * have its fresh links wiped.
+ */
+async function releaseStaleMeeting(
+  organizationId: string,
+  sessionId: string,
+  staleZoomClientId: string,
+) {
+  await db
+    .update(SessionsTable)
+    .set({
+      zoomClientId: null,
+      zoomMeetingId: null,
+      zoomMeetingPassword: null,
+      zoomJoinUrl: null,
+      zoomStartUrl: null,
+    })
+    .where(
+      and(
+        eq(SessionsTable.id, sessionId),
+        eq(SessionsTable.organizationId, organizationId),
+        eq(SessionsTable.zoomClientId, staleZoomClientId),
+      ),
+    );
 }
 
 /**
