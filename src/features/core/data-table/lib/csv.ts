@@ -38,7 +38,7 @@ function exceedsMaxImportBytes(text: string): boolean {
  * that cell instead of splitting the row. Blank lines are dropped, matching
  * the previous line-split behavior.
  */
-function parseCsvRecords(text: string): string[][] {
+export function parseCsvRecords(text: string): string[][] {
   const records: string[][] = [];
   let row: string[] = [];
   let cur = "";

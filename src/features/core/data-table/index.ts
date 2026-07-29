@@ -21,7 +21,12 @@ export {
   useDataTable,
 } from "./hooks/use-data-table";
 export { useTableUrlState } from "./hooks/use-table-url-state";
-export { downloadCsv, parseCsvToObjects, rowsToCsv } from "./lib/csv";
+export {
+  downloadCsv,
+  parseCsvRecords,
+  parseCsvToObjects,
+  rowsToCsv,
+} from "./lib/csv";
 export { createEntityActionsColumn } from "./lib/entity-actions-column";
 export { getEntityColumnPinning } from "./lib/entity-column-pinning";
 export type {
