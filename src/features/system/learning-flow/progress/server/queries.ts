@@ -6,6 +6,7 @@ import {
   GroupStudentsTable,
   GroupsTable,
   LevelsTable,
+  SessionStudentsTable,
   SessionsTable,
   TraineesTable,
 } from "@/drizzle/schema";
@@ -108,19 +109,31 @@ export async function getTraineeProgress(
             ),
           )
       : [],
-    // Sessions of every group the trainee is on. This is phase-05.md step 6's
-    // "attendance summary placeholder" — real per-trainee attendance needs
-    // Phase 6's session_students, so what is reported here is the class
-    // schedule, not presence.
+    // Sessions of every group the trainee is on, each carrying whatever
+    // attendance is recorded for *this* trainee — a LEFT JOIN, because a class
+    // nobody marked and Zoom never saw has no row and must not read as an
+    // absence (phase-06.md step 6 closes phase-05.md step 6's placeholder).
     ctx.db
       .select({
         scheduledAt: SessionsTable.scheduledAt,
         status: SessionsTable.status,
+        attendance: SessionStudentsTable.status,
       })
       .from(SessionsTable)
       .innerJoin(
         GroupStudentsTable,
         eq(GroupStudentsTable.groupId, SessionsTable.groupId),
+      )
+      .leftJoin(
+        SessionStudentsTable,
+        and(
+          eq(SessionStudentsTable.sessionId, SessionsTable.id),
+          eq(SessionStudentsTable.traineeId, GroupStudentsTable.traineeId),
+          eq(
+            SessionStudentsTable.organizationId,
+            SessionsTable.organizationId,
+          ),
+        ),
       )
       .where(
         and(

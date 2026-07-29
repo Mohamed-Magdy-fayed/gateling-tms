@@ -675,7 +675,11 @@ export default {
     nextSession: "الحصة القادمة {when}",
     notEnrolled: "غير مسجل",
     attendanceNote:
-      "أرقام الحصص مأخوذة من جدول المجموعة. تتبّع الحضور يأتي مع الحصص المباشرة.",
+      "أرقام الحصص مأخوذة من جدول المجموعة. افتح أي حصة لعرض كشف حضورها وتعديله.",
+    attendance: "الحضور",
+    attendanceDetail: dt("حضر {attended:number} من {recorded:number}", {}),
+    attendanceNone:
+      "لم يُسجَّل حضور بعد — يظهر تلقائيًا بعد انعقاد الحصص على Zoom، أو عندما يسجّله المعلم.",
     emptyTitle: "لا يوجد ما يُقاس بعد",
     traineeEmptyDescription:
       "سجّل هذا المتدرب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",

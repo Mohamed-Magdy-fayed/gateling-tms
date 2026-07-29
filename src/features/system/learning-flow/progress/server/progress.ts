@@ -1,4 +1,5 @@
 import type {
+  AttendanceStatus,
   EnrollmentLevelStatus,
   EnrollmentStatus,
   SessionStatus,
@@ -91,6 +92,19 @@ export function summarizeEnrollmentStatuses(
 export type SessionProgressRow = {
   scheduledAt: Date;
   status: SessionStatus;
+  /**
+   * What is recorded for this trainee on this class, if anything. Always null
+   * on a group-wide summary, where the rows aren't about one person.
+   */
+  attendance?: AttendanceStatus | null;
+};
+
+export type AttendanceProgressSummary = {
+  /** Classes that ran and have something recorded for this trainee. */
+  recorded: number;
+  attended: number;
+  /** 0–100, rounded, over `recorded`. Zero when nothing is recorded. */
+  percentAttended: number;
 };
 
 export type SessionProgressSummary = {
@@ -102,17 +116,21 @@ export type SessionProgressSummary = {
   nextAt: Date | null;
   /** 0–100, rounded. Cancelled sessions are excluded from the denominator. */
   percentComplete: number;
+  attendance: AttendanceProgressSummary;
 };
 
 /**
- * The attendance placeholder phase-05.md step 6 asks for: real session counts,
- * no invented per-trainee presence. Actual attendance arrives with Phase 6's
- * `session_students`, and inventing a number here would be worse than saying
- * nothing.
+ * How a trainee's classes are going: how many have run, when the next one is,
+ * and — since Phase 6 — how many of the ones that ran they were actually in.
  *
- * A cancelled session counts toward neither side of the ratio — a class that
- * was called off is not progress made, and it is not progress outstanding
- * either.
+ * A cancelled session counts toward neither side of the completion ratio — a
+ * class that was called off is not progress made, and it is not progress
+ * outstanding either.
+ *
+ * Attendance has its own, narrower denominator: only classes with something
+ * recorded for this trainee. A class nobody marked and Zoom never saw (an
+ * academy running without Zoom, say) is not evidence of absence, and counting
+ * it as one would accuse a student of missing a class on no evidence at all.
  */
 export function summarizeSessions(
   sessions: readonly SessionProgressRow[],
@@ -121,11 +139,18 @@ export function summarizeSessions(
   let completed = 0;
   let cancelled = 0;
   let upcoming = 0;
+  let recorded = 0;
+  let attended = 0;
   let nextAt: Date | null = null;
 
   for (const session of sessions) {
     if (session.status === "completed") completed += 1;
     else if (session.status === "cancelled") cancelled += 1;
+
+    if (session.status !== "cancelled" && session.attendance) {
+      recorded += 1;
+      if (session.attendance === "present") attended += 1;
+    }
 
     const isFutureScheduled =
       session.status === "scheduled" &&
@@ -149,5 +174,11 @@ export function summarizeSessions(
     nextAt,
     percentComplete:
       countable === 0 ? 0 : Math.round((completed / countable) * 100),
+    attendance: {
+      recorded,
+      attended,
+      percentAttended:
+        recorded === 0 ? 0 : Math.round((attended / recorded) * 100),
+    },
   };
 }

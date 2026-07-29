@@ -105,6 +105,7 @@ describe("summarizeSessions", () => {
       upcoming: 0,
       nextAt: null,
       percentComplete: 0,
+      attendance: { recorded: 0, attended: 0, percentAttended: 0 },
     });
   });
 
