@@ -41,6 +41,18 @@ export const env = createEnv({
     SMTP_FROM_EMAIL: z.email().optional(),
     SMTP_FROM_NAME: z.string().min(1).optional(),
 
+    // Dormant until Mohamed provides Zoom credentials (Phase 6). An org can
+    // schedule classes without Zoom — connecting a Zoom account is the
+    // optional part — so these stay optional and the connect flow reports
+    // "integration not configured" instead of the app failing to boot.
+    // ZOOM_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
+    // (`openssl rand -base64 32`); it encrypts the per-org OAuth tokens at
+    // rest — see docs/integrations-zoom.md.
+    ZOOM_CLIENT_ID: z.string().min(1).optional(),
+    ZOOM_CLIENT_SECRET: z.string().min(1).optional(),
+    ZOOM_WEBHOOK_SECRET_TOKEN: z.string().min(1).optional(),
+    ZOOM_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
+
     // Where /contact form submissions are emailed. Falls back to
     // SMTP_FROM_EMAIL/SMTP_USER if unset — see
     // integrations/inngest/functions/on-contact-message-submitted.ts.

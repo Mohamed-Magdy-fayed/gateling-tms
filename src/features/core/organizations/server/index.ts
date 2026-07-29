@@ -1,4 +1,7 @@
-export type { Organization, OrganizationMembershipRole } from "@/drizzle/schema";
+export type {
+  Organization,
+  OrganizationMembershipRole,
+} from "@/drizzle/schema";
 export {
   assertCanAddCourse,
   assertCanAddStudent,
@@ -6,6 +9,8 @@ export {
   PLAN_LIMITS,
 } from "./limits";
 export { createOrganizationForUser } from "./mutations";
-export { resolveDefaultActiveOrganizationId } from "./queries";
 export type { OrganizationMemberRow } from "./queries";
+export { resolveDefaultActiveOrganizationId } from "./queries";
 export { organizationsRouter } from "./router";
+export type { OrgSessionAccess } from "./session-access";
+export { resolveOrgAccessFromSession } from "./session-access";

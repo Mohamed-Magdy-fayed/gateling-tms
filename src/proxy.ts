@@ -20,6 +20,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/content-library",
   "/assessments",
   "/learning-flow",
+  "/live-classes",
   // The printable certificate lives outside the (system) route group so it can
   // render without the app shell (phase-05.md step 7) — it still names a real
   // trainee, so it is gated here like every other (system) page.
