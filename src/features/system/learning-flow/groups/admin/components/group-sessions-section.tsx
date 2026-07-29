@@ -23,6 +23,9 @@ type GroupSessionsSectionProps = {
   /** The org's IANA zone — sessions are displayed on the academy's clock,
    * not the viewer's, so a teacher abroad still reads the local class time. */
   timeZone: string;
+  /** Whether to link each row to its register — staff only, since the
+   * attendance routes refuse a student (`attendance/server/router.ts`). */
+  canOpenRegister: boolean;
 };
 
 /** How often to re-check while generation is expected but hasn't landed. */
@@ -32,6 +35,7 @@ export function GroupSessionsSection({
   groupId,
   hasSchedule,
   timeZone,
+  canOpenRegister,
 }: GroupSessionsSectionProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
@@ -85,6 +89,7 @@ export function GroupSessionsSection({
             sessions={data.rows}
             hasActiveZoomClient={data.hasActiveZoomClient}
             timeZone={timeZone}
+            canOpenRegister={canOpenRegister}
           />
         )}
       </CardContent>

@@ -105,6 +105,7 @@ describe("summarizeSessions", () => {
       upcoming: 0,
       nextAt: null,
       percentComplete: 0,
+      attendance: { recorded: 0, attended: 0, percentAttended: 0 },
     });
   });
 
@@ -122,6 +123,59 @@ describe("summarizeSessions", () => {
 
     expect(summary.cancelled).toBe(1);
     expect(summary.percentComplete).toBe(50);
+  });
+
+  test("counts attendance only over classes with something recorded", () => {
+    // Four classes ran; only three have a record for this trainee. The fourth
+    // is not evidence they missed it, so it stays out of the denominator.
+    const summary = summarizeSessions(
+      [
+        {
+          scheduledAt: new Date("2026-03-01T18:00:00Z"),
+          status: "completed",
+          attendance: "present",
+        },
+        {
+          scheduledAt: new Date("2026-03-03T18:00:00Z"),
+          status: "completed",
+          attendance: "absent",
+        },
+        {
+          scheduledAt: new Date("2026-03-05T18:00:00Z"),
+          status: "completed",
+          attendance: "present",
+        },
+        {
+          scheduledAt: new Date("2026-03-07T18:00:00Z"),
+          status: "completed",
+          attendance: null,
+        },
+      ],
+      now,
+    );
+
+    expect(summary.completed).toBe(4);
+    expect(summary.attendance).toEqual({
+      recorded: 3,
+      attended: 2,
+      percentAttended: 67,
+    });
+  });
+
+  test("a cancelled class counts toward attendance on neither side", () => {
+    const summary = summarizeSessions(
+      [
+        {
+          scheduledAt: new Date("2026-03-01T18:00:00Z"),
+          status: "cancelled",
+          attendance: "absent",
+        },
+      ],
+      now,
+    );
+
+    expect(summary.attendance.recorded).toBe(0);
+    expect(summary.attendance.percentAttended).toBe(0);
   });
 
   test("reports 0 percent when every session was cancelled", () => {

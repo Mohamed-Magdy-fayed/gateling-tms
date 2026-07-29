@@ -39,6 +39,8 @@ const sessionColumns = {
   // Selected but never returned as-is: `toSessionRow` hands it only to the
   // assigned teacher or an admin (lib/session-links.ts).
   zoomStartUrl: SessionsTable.zoomStartUrl,
+  recordingUrl: SessionsTable.zoomRecordingUrl,
+  recordingPassword: SessionsTable.zoomRecordingPassword,
 } as const;
 
 export type SessionRow = {
@@ -54,6 +56,17 @@ export type SessionRow = {
   joinUrl: string | null;
   /** Host link, present only for the teacher running it and for admins. */
   startUrl: string | null;
+  /**
+   * Zoom's share link for the cloud recording, once there is one. Not gated
+   * per viewer: a student only ever sees their own classes, and a recording of
+   * the class you sat in is the one thing you are most likely to want back.
+   */
+  recordingUrl: string | null;
+  /**
+   * Zoom's share links usually need this to open, so it travels with the link
+   * rather than being kept back — a link nobody can play is not a recording.
+   */
+  recordingPassword: string | null;
 };
 
 /**
@@ -242,10 +255,19 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     teacherName: row.teacherName,
     joinUrl: links.joinUrl,
     startUrl: links.startUrl,
+    recordingUrl: row.recordingUrl,
+    recordingPassword: row.recordingPassword,
   };
 }
 
-async function hasActiveZoomClient(ctx: OrgTRPCContext): Promise<boolean> {
+/**
+ * Whether the org has any Zoom account connected at all — the difference
+ * between "this class hasn't been provisioned yet" and "this academy doesn't
+ * use Zoom", which read very differently to whoever is looking (D102).
+ */
+export async function hasActiveZoomClient(
+  ctx: OrgTRPCContext,
+): Promise<boolean> {
   const [{ value }] = await ctx.db
     .select({ value: count() })
     .from(ZoomClientsTable)

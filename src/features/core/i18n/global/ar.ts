@@ -675,7 +675,11 @@ export default {
     nextSession: "الحصة القادمة {when}",
     notEnrolled: "غير مسجل",
     attendanceNote:
-      "أرقام الحصص مأخوذة من جدول المجموعة. تتبّع الحضور يأتي مع الحصص المباشرة.",
+      "أرقام الحصص مأخوذة من جدول المجموعة. افتح أي حصة لعرض كشف حضورها وتعديله.",
+    attendance: "الحضور",
+    attendanceDetail: dt("حضر {attended:number} من {recorded:number}", {}),
+    attendanceNone:
+      "لم يُسجَّل حضور بعد — يظهر تلقائيًا بعد انعقاد الحصص على Zoom، أو عندما يسجّله المعلم.",
     emptyTitle: "لا يوجد ما يُقاس بعد",
     traineeEmptyDescription:
       "سجّل هذا المتدرب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",
@@ -744,6 +748,30 @@ export default {
     previous: "السابق",
     next: "التالي",
     pageOf: "صفحة {page:number} من {total:number}",
+    register: "كشف الحضور",
+    recording: "التسجيل",
+  },
+  attendance: {
+    title: "الحضور",
+    lead: "مأخوذ ممن انضم إلى اجتماع Zoom. صحِّح ما فاته — الطالب الذي حضر بالهاتف أو داخل القاعة حاضر أيضًا.",
+    statusOptions: {
+      present: "حاضر",
+      absent: "غائب",
+      unmarked: "لم يُسجَّل",
+    },
+    markedManually: "سجّله المعلم",
+    leftTheClass: "لم يعد في هذه المجموعة",
+    marked: "تم تحديث الحضور.",
+    markFailed: "تعذّر تحديث الحضور. حاول مرة أخرى.",
+    joinedAt: "انضم في {time:string}",
+    noZoomRecord: "لم يسجّل Zoom شيئًا",
+    watchRecording: "مشاهدة التسجيل",
+    recordingPasscode: "رمز الدخول: {passcode:string}",
+    emptyTitle: "لا يوجد طلاب في المجموعة",
+    emptyDescription: "أضف متدربين إلى هذه المجموعة ليظهروا هنا لتسجيل حضورهم.",
+    openGroup: "فتح المجموعة",
+    notFoundTitle: "الحصة غير موجودة",
+    notFoundDescription: "هذه الحصة غير موجودة أو تم حذفها.",
   },
   zoomClients: {
     title: "اتصالات Zoom",

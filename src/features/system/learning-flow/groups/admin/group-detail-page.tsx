@@ -107,6 +107,11 @@ export function GroupDetailPage({ groupId }: { groupId: string }) {
           groupId={group.id}
           hasSchedule={group.schedule.length > 0}
           timeZone={organization?.timeZone ?? "UTC"}
+          // `groups.get` is readable by any member, so a student can reach
+          // this page — the register is not theirs to open.
+          canOpenRegister={
+            organization ? organization.role !== "student" : false
+          }
         />
       </div>
 

@@ -1,6 +1,8 @@
 "use client";
 
+import { ClipboardListIcon, PlayIcon } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/core/i18n/client";
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
 import { SessionJoinActions } from "./session-join-actions";
@@ -14,6 +16,12 @@ type SessionListProps = {
   timeZone: string;
   /** Off on a group's own page, where every row is the same class. */
   showGroup?: boolean;
+  /**
+   * Whether to offer the register. The attendance routes are staff-only
+   * (`attendance/server/router.ts`), so a student is not sent to a page that
+   * can only answer FORBIDDEN.
+   */
+  canOpenRegister?: boolean;
 };
 
 export function SessionList({
@@ -21,6 +29,7 @@ export function SessionList({
   hasActiveZoomClient,
   timeZone,
   showGroup = false,
+  canOpenRegister = false,
 }: SessionListProps) {
   const { t, locale } = useTranslation();
 
@@ -55,15 +64,48 @@ export function SessionList({
                 minutes: session.durationMinutes,
               })}
               {session.teacherName ? ` · ${session.teacherName}` : null}
+              {/* Next to the recording button rather than hidden on the
+                  register: Zoom's share link usually won't open without it. */}
+              {session.recordingUrl && session.recordingPassword
+                ? ` · ${t("attendance.recordingPasscode", {
+                    passcode: session.recordingPassword,
+                  })}`
+                : null}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {session.recordingUrl ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                render={
+                  <a
+                    href={session.recordingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <PlayIcon className="size-3.5" />
+                    {t("sessions.recording")}
+                  </a>
+                }
+              />
+            ) : null}
             <SessionStatusTag status={session.status} />
             <SessionJoinActions
               session={session}
               hasActiveZoomClient={hasActiveZoomClient}
             />
+            {canOpenRegister ? (
+              <Button
+                size="sm"
+                variant="outline"
+                render={<Link href={`/live-classes/sessions/${session.id}`} />}
+              >
+                <ClipboardListIcon className="size-3.5" />
+                {t("sessions.register")}
+              </Button>
+            ) : null}
           </div>
         </li>
       ))}

@@ -694,10 +694,15 @@ export default {
     sessionsDetail: dt("{completed:number} of {total:number}", {}),
     nextSession: "Next session {when}",
     notEnrolled: "Not enrolled",
-    // Named for what it is: these are scheduled classes, not a record of who
-    // attended. Real attendance arrives with Phase 6.
+    // Session counts and attendance are two different measurements, and the
+    // copy keeps saying so: these figures are the schedule, the register is
+    // per class.
     attendanceNote:
-      "Session figures come from the class schedule. Attendance tracking arrives with Live Classes.",
+      "Session figures come from the class schedule. Open a class to see and correct its register.",
+    attendance: "Attendance",
+    attendanceDetail: dt("{attended:number} of {recorded:number} attended", {}),
+    attendanceNone:
+      "No attendance recorded yet — it fills in as classes run on Zoom, or when a teacher marks the register.",
     emptyTitle: "Nothing to measure yet",
     traineeEmptyDescription:
       "Enroll this trainee in a course or add them to a class, and their progress shows up here.",
@@ -773,6 +778,33 @@ export default {
     previous: "Previous",
     next: "Next",
     pageOf: "Page {page:number} of {total:number}",
+    register: "Register",
+    recording: "Recording",
+  },
+  attendance: {
+    title: "Attendance",
+    // Says exactly where the figures come from and who can change them —
+    // Zoom reports who joined the meeting, a teacher has the final word.
+    lead: "Taken from who joined the Zoom meeting. Correct anything it got wrong — a student on the phone or in the room is still present.",
+    statusOptions: {
+      present: "Present",
+      absent: "Absent",
+      unmarked: "Not marked",
+    },
+    markedManually: "Set by a teacher",
+    leftTheClass: "No longer in this class",
+    marked: "Attendance updated.",
+    markFailed: "Couldn't update attendance. Please try again.",
+    joinedAt: "Joined at {time:string}",
+    noZoomRecord: "Nothing reported by Zoom",
+    watchRecording: "Watch the recording",
+    recordingPasscode: "Passcode: {passcode:string}",
+    emptyTitle: "No one on the roster",
+    emptyDescription:
+      "Add trainees to this class and they'll appear here to be marked.",
+    openGroup: "Open the class",
+    notFoundTitle: "Class not found",
+    notFoundDescription: "This class doesn't exist, or it was removed.",
   },
   zoomClients: {
     title: "Zoom connections",

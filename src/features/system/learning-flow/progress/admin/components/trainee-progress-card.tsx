@@ -97,11 +97,23 @@ export function TraineeProgressCard({ traineeId }: { traineeId: string }) {
               </p>
             ) : null}
 
-            {/* Said plainly rather than implied: these are scheduled classes,
-                not a record of who actually turned up (Phase 6). */}
-            <p className="text-muted-foreground text-xs">
-              {t("progress.attendanceNote")}
-            </p>
+            {/* Attendance is a separate measurement from "classes held", and
+                only classes with something recorded count — a class nobody
+                marked is not evidence this trainee missed it. */}
+            {progress.sessions.attendance.recorded > 0 ? (
+              <ProgressMeter
+                label={t("progress.attendance")}
+                detail={t("progress.attendanceDetail", {
+                  attended: progress.sessions.attendance.attended,
+                  recorded: progress.sessions.attendance.recorded,
+                })}
+                percent={progress.sessions.attendance.percentAttended}
+              />
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                {t("progress.attendanceNone")}
+              </p>
+            )}
           </>
         )}
       </CardContent>
