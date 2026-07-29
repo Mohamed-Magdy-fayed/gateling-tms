@@ -17,10 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { H2, Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
+// The zod module directly, not the server barrel: the barrel also re-exports
+// the meeting code, which pulls the database driver into the client bundle.
 import {
   type SessionScope,
   sessionScopeValues,
-} from "@/features/system/live-classes/sessions/server";
+} from "@/features/system/live-classes/sessions/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 import { SessionList } from "./components";
 
