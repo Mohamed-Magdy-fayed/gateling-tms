@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { likeContains } from "@/drizzle/lib/search";
 import {
   AnswersTable,
   FormSectionsTable,
@@ -38,7 +39,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListFormsInput) {
     input.type ? eq(FormsTable.type, input.type) : undefined,
     input.status ? eq(FormsTable.status, input.status) : undefined,
     input.globalFilter?.trim()
-      ? ilike(FormsTable.title, `%${input.globalFilter.trim()}%`)
+      ? ilike(FormsTable.title, likeContains(input.globalFilter.trim()))
       : undefined,
   );
 }

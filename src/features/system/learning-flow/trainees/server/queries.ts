@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { likeContains } from "@/drizzle/lib/search";
 import {
   CoursesTable,
   GroupStudentsTable,
@@ -17,9 +18,9 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListTraineesInput) {
     isNull(TraineesTable.deletedAt),
     search
       ? or(
-          ilike(TraineesTable.name, `%${search}%`),
-          ilike(TraineesTable.email, `%${search}%`),
-          ilike(TraineesTable.phone, `%${search}%`),
+          ilike(TraineesTable.name, likeContains(search)),
+          ilike(TraineesTable.email, likeContains(search)),
+          ilike(TraineesTable.phone, likeContains(search)),
         )
       : undefined,
   );

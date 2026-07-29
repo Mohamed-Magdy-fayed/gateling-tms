@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull } from "drizzle-orm";
+import { likeContains } from "@/drizzle/lib/search";
 import { CoursesTable } from "@/drizzle/schema";
 import type { ListCoursesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -9,7 +10,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListCoursesInput) {
     eq(CoursesTable.organizationId, ctx.organizationId),
     isNull(CoursesTable.deletedAt),
     input.globalFilter?.trim()
-      ? ilike(CoursesTable.name, `%${input.globalFilter.trim()}%`)
+      ? ilike(CoursesTable.name, likeContains(input.globalFilter.trim()))
       : undefined,
   );
 }
