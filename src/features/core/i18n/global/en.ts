@@ -804,7 +804,6 @@ export default {
     openGroup: "Open the class",
     notFoundTitle: "Class not found",
     notFoundDescription: "This class doesn't exist, or it was removed.",
-    summary: "{attended:number} of {held:number} classes attended",
   },
   zoomClients: {
     title: "Zoom connections",

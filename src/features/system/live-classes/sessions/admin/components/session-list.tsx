@@ -64,6 +64,13 @@ export function SessionList({
                 minutes: session.durationMinutes,
               })}
               {session.teacherName ? ` · ${session.teacherName}` : null}
+              {/* Next to the recording button rather than hidden on the
+                  register: Zoom's share link usually won't open without it. */}
+              {session.recordingUrl && session.recordingPassword
+                ? ` · ${t("attendance.recordingPasscode", {
+                    passcode: session.recordingPassword,
+                  })}`
+                : null}
             </p>
           </div>
 

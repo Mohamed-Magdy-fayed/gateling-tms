@@ -216,6 +216,15 @@ describe("applyJoin / applyLeave", () => {
     expect(times.joinedAt).toEqual(secondJoin);
   });
 
+  test("two leaves with no join between them don't double-count the first stretch", () => {
+    let times = applyJoin(null, firstJoin);
+    times = applyLeave(times, firstLeave);
+    times = applyLeave(times, secondLeave);
+
+    // 15:00–15:20 then 15:20–16:00, not 15:00–15:20 plus 15:00–16:00.
+    expect(times.attendedMinutes).toBe(60);
+  });
+
   test("a leave with no join on record still counts as being there", () => {
     expect(applyLeave(null, firstLeave)).toEqual({
       joinedAt: null,

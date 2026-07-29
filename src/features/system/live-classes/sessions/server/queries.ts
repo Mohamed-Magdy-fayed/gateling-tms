@@ -40,6 +40,7 @@ const sessionColumns = {
   // assigned teacher or an admin (lib/session-links.ts).
   zoomStartUrl: SessionsTable.zoomStartUrl,
   recordingUrl: SessionsTable.zoomRecordingUrl,
+  recordingPassword: SessionsTable.zoomRecordingPassword,
 } as const;
 
 export type SessionRow = {
@@ -61,6 +62,11 @@ export type SessionRow = {
    * the class you sat in is the one thing you are most likely to want back.
    */
   recordingUrl: string | null;
+  /**
+   * Zoom's share links usually need this to open, so it travels with the link
+   * rather than being kept back — a link nobody can play is not a recording.
+   */
+  recordingPassword: string | null;
 };
 
 /**
@@ -250,6 +256,7 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     joinUrl: links.joinUrl,
     startUrl: links.startUrl,
     recordingUrl: row.recordingUrl,
+    recordingPassword: row.recordingPassword,
   };
 }
 

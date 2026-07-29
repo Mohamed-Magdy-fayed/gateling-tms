@@ -99,9 +99,19 @@ export function applyLeave(
   return {
     joinedAt: current.joinedAt,
     leftAt,
+    // Measured from whichever came last, the open join or the previous leave.
+    // Using the join alone would double-count the first stretch if Zoom ever
+    // sends two leaves without a join between them.
     attendedMinutes:
-      current.attendedMinutes + minutesBetween(current.joinedAt, leftAt),
+      current.attendedMinutes +
+      minutesBetween(latest(current.joinedAt, current.leftAt), leftAt),
   };
+}
+
+function latest(a: Date | null, b: Date | null): Date | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a.getTime() >= b.getTime() ? a : b;
 }
 
 function minutesBetween(from: Date | null, to: Date): number {

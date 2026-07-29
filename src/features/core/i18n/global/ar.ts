@@ -771,7 +771,6 @@ export default {
     openGroup: "فتح المجموعة",
     notFoundTitle: "الحصة غير موجودة",
     notFoundDescription: "هذه الحصة غير موجودة أو تم حذفها.",
-    summary: "حضر {attended:number} من {held:number} حصة",
   },
   zoomClients: {
     title: "اتصالات Zoom",
