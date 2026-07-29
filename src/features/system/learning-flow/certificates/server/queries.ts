@@ -7,6 +7,7 @@ import {
   OrganizationsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { likeContains } from "@/drizzle/lib/search";
 import type { ListCertificatesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -20,8 +21,8 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListCertificatesInput) {
       : undefined,
     search
       ? or(
-          ilike(CertificatesTable.title, `%${search}%`),
-          ilike(TraineesTable.name, `%${search}%`),
+          ilike(CertificatesTable.title, likeContains(search)),
+          ilike(TraineesTable.name, likeContains(search)),
         )
       : undefined,
   );

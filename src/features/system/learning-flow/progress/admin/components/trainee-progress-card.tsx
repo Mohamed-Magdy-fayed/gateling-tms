@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheckIcon, TrendingUpIcon } from "lucide-react";
-import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +16,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { EnrollmentStatusTag } from "@/features/system/learning-flow/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import { ProgressMeter } from "./progress-meter";
+import { useOrgDateTimeFormat } from "./use-org-date-time-format";
 
 // Only the statuses worth a tile on a summary card — `cancelled` and
 // `postponed` are visible in the enrollments list right below this one.
@@ -27,25 +27,14 @@ const HIGHLIGHTED_STATUSES = [
 ] as const satisfies readonly EnrollmentStatus[];
 
 export function TraineeProgressCard({ traineeId }: { traineeId: string }) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const trpc = useTRPC();
 
   const { data: progress, isLoading } = useQuery(
     trpc.progress.trainee.queryOptions({ traineeId }),
   );
-  const { data: organization } = useQuery(
-    trpc.organizations.getActive.queryOptions(),
-  );
 
-  const dateTimeFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: organization?.timeZone ?? "UTC",
-      }),
-    [locale, organization?.timeZone],
-  );
+  const dateTimeFmt = useOrgDateTimeFormat();
 
   return (
     <Card>

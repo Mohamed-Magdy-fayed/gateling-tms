@@ -905,6 +905,7 @@ export default {
       emptyTitle: "Nothing scheduled today",
       emptyDescription:
         "Classes you schedule show up here on the day they run.",
+      errorTitle: "Couldn't load today's sessions",
       groupsCta: "Go to classes",
     },
     recent: {

@@ -5,6 +5,7 @@ import {
   AwardIcon,
   BookOpenIcon,
   CalendarDaysIcon,
+  TriangleAlertIcon,
   UserCheckIcon,
   UsersIcon,
 } from "lucide-react";
@@ -33,9 +34,11 @@ export function DashboardOverview() {
   const { data: organization } = useQuery(
     trpc.organizations.getActive.queryOptions(),
   );
-  const { data: overview, isLoading } = useQuery(
-    trpc.dashboard.overview.queryOptions(),
-  );
+  const {
+    data: overview,
+    isLoading,
+    isError,
+  } = useQuery(trpc.dashboard.overview.queryOptions());
   // Students get a FORBIDDEN here by design (the strip names trainees), so the
   // query is only issued for the roles allowed to read it and the section is
   // simply absent otherwise — no failed request, no error toast.
@@ -126,6 +129,14 @@ export function DashboardOverview() {
             <div className="flex justify-center py-10">
               <Spinner />
             </div>
+          ) : isError ? (
+            // A failed fetch also leaves `overview` undefined — saying so beats
+            // rendering "nothing scheduled", which is a claim about the day.
+            <EmptyState
+              icon={<TriangleAlertIcon />}
+              title={t("dashboard.today.errorTitle")}
+              description={t("errors.generic")}
+            />
           ) : !overview || overview.todaysSessions.length === 0 ? (
             <EmptyState
               icon={<CalendarDaysIcon />}

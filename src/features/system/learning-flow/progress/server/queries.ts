@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import {
   EnrollmentLevelsTable,
   EnrollmentsTable,
@@ -56,39 +56,79 @@ export async function getTraineeProgress(
         eq(EnrollmentsTable.organizationId, ctx.organizationId),
         eq(EnrollmentsTable.traineeId, traineeId),
       ),
-    );
+    )
+    .orderBy(desc(EnrollmentsTable.createdAt), desc(EnrollmentsTable.id));
+
+  // A repeat student is normal — `createEnrollment` blocks only a *second
+  // active* enrollment in a course, so a trainee who finished or cancelled one
+  // and signed up again has two rows for it. The status tiles count every row
+  // (finishing a course and restarting it really is one completed and one
+  // ongoing), but the curriculum figures must not: counting the same course's
+  // levels twice would report a trainee who is 4/5 through their retake as
+  // 6/10. The newest enrollment per course is the one they're on now.
+  const latestByCourse = new Map<string, (typeof enrollments)[number]>();
+  for (const enrollment of enrollments) {
+    if (!latestByCourse.has(enrollment.courseId)) {
+      latestByCourse.set(enrollment.courseId, enrollment);
+    }
+  }
+  const currentEnrollments = [...latestByCourse.values()];
 
   // Driven by each course's own level list with a LEFT JOIN onto
   // `enrollment_levels`, exactly like `listEnrollmentLevels`: a level added to
   // the course later counts as not started instead of being invisible.
-  const levelRows = enrollments.length
-    ? await ctx.db
-        .select({
-          enrollmentId: EnrollmentsTable.id,
-          status: EnrollmentLevelsTable.status,
-        })
-        .from(EnrollmentsTable)
-        .innerJoin(
-          LevelsTable,
-          and(
-            eq(LevelsTable.courseId, EnrollmentsTable.courseId),
-            eq(LevelsTable.organizationId, ctx.organizationId),
-          ),
-        )
-        .leftJoin(
-          EnrollmentLevelsTable,
-          and(
-            eq(EnrollmentLevelsTable.enrollmentId, EnrollmentsTable.id),
-            eq(EnrollmentLevelsTable.levelId, LevelsTable.id),
-          ),
-        )
-        .where(
-          inArray(
-            EnrollmentsTable.id,
-            enrollments.map((enrollment) => enrollment.id),
-          ),
-        )
-    : [];
+  // Independent of each other, so they go out together rather than costing
+  // two sequential round trips.
+  const [levelRows, sessions] = await Promise.all([
+    currentEnrollments.length
+      ? ctx.db
+          .select({
+            enrollmentId: EnrollmentsTable.id,
+            status: EnrollmentLevelsTable.status,
+          })
+          .from(EnrollmentsTable)
+          .innerJoin(
+            LevelsTable,
+            and(
+              eq(LevelsTable.courseId, EnrollmentsTable.courseId),
+              eq(LevelsTable.organizationId, ctx.organizationId),
+            ),
+          )
+          .leftJoin(
+            EnrollmentLevelsTable,
+            and(
+              eq(EnrollmentLevelsTable.enrollmentId, EnrollmentsTable.id),
+              eq(EnrollmentLevelsTable.levelId, LevelsTable.id),
+            ),
+          )
+          .where(
+            inArray(
+              EnrollmentsTable.id,
+              currentEnrollments.map((enrollment) => enrollment.id),
+            ),
+          )
+      : [],
+    // Sessions of every group the trainee is on. This is phase-05.md step 6's
+    // "attendance summary placeholder" — real per-trainee attendance needs
+    // Phase 6's session_students, so what is reported here is the class
+    // schedule, not presence.
+    ctx.db
+      .select({
+        scheduledAt: SessionsTable.scheduledAt,
+        status: SessionsTable.status,
+      })
+      .from(SessionsTable)
+      .innerJoin(
+        GroupStudentsTable,
+        eq(GroupStudentsTable.groupId, SessionsTable.groupId),
+      )
+      .where(
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          eq(GroupStudentsTable.traineeId, traineeId),
+        ),
+      ),
+  ]);
 
   const levelsByEnrollment = new Map<string, LevelProgressRow[]>();
   for (const row of levelRows) {
@@ -97,28 +137,7 @@ export async function getTraineeProgress(
     else levelsByEnrollment.set(row.enrollmentId, [{ status: row.status }]);
   }
 
-  // Sessions of every group the trainee is on. This is phase-05.md step 6's
-  // "attendance summary placeholder" — real per-trainee attendance needs
-  // Phase 6's session_students, so what is reported here is the class
-  // schedule, not presence.
-  const sessions = await ctx.db
-    .select({
-      scheduledAt: SessionsTable.scheduledAt,
-      status: SessionsTable.status,
-    })
-    .from(SessionsTable)
-    .innerJoin(
-      GroupStudentsTable,
-      eq(GroupStudentsTable.groupId, SessionsTable.groupId),
-    )
-    .where(
-      and(
-        eq(SessionsTable.organizationId, ctx.organizationId),
-        eq(GroupStudentsTable.traineeId, traineeId),
-      ),
-    );
-
-  const allLevels = enrollments.flatMap(
+  const allLevels = currentEnrollments.flatMap(
     (enrollment) => levelsByEnrollment.get(enrollment.id) ?? [],
   );
 
@@ -153,39 +172,40 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
     });
   }
 
-  const sessions = await ctx.db
-    .select({
-      scheduledAt: SessionsTable.scheduledAt,
-      status: SessionsTable.status,
-    })
-    .from(SessionsTable)
-    .where(
-      and(
-        eq(SessionsTable.organizationId, ctx.organizationId),
-        eq(SessionsTable.groupId, groupId),
+  const [sessions, roster] = await Promise.all([
+    ctx.db
+      .select({
+        scheduledAt: SessionsTable.scheduledAt,
+        status: SessionsTable.status,
+      })
+      .from(SessionsTable)
+      .where(
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          eq(SessionsTable.groupId, groupId),
+        ),
       ),
-    );
-
-  const roster = await ctx.db
-    .select({
-      traineeId: TraineesTable.id,
-      traineeName: TraineesTable.name,
-    })
-    .from(GroupStudentsTable)
-    .innerJoin(
-      TraineesTable,
-      and(
-        eq(TraineesTable.id, GroupStudentsTable.traineeId),
-        isNull(TraineesTable.deletedAt),
-      ),
-    )
-    .where(
-      and(
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
-        eq(GroupStudentsTable.groupId, groupId),
-      ),
-    )
-    .orderBy(asc(TraineesTable.name), asc(TraineesTable.id));
+    ctx.db
+      .select({
+        traineeId: TraineesTable.id,
+        traineeName: TraineesTable.name,
+      })
+      .from(GroupStudentsTable)
+      .innerJoin(
+        TraineesTable,
+        and(
+          eq(TraineesTable.id, GroupStudentsTable.traineeId),
+          isNull(TraineesTable.deletedAt),
+        ),
+      )
+      .where(
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          eq(GroupStudentsTable.groupId, groupId),
+        ),
+      )
+      .orderBy(asc(TraineesTable.name), asc(TraineesTable.id)),
+  ]);
 
   const sessionSummary = summarizeSessions(sessions, new Date());
 
@@ -219,42 +239,58 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
           roster.map((student) => student.traineeId),
         ),
       ),
-    );
+    )
+    .orderBy(desc(EnrollmentsTable.createdAt), desc(EnrollmentsTable.id));
 
-  const enrollmentByTrainee = new Map(
-    enrollments.map((enrollment) => [enrollment.traineeId, enrollment]),
+  // Same rule as `getTraineeProgress`: a repeat student has more than one row
+  // for this course, so the newest is the one their place in the class is read
+  // from. Without the ordering the row was whichever the scan happened to
+  // return last, which could differ between two loads of the same page.
+  const enrollmentByTrainee = new Map<string, (typeof enrollments)[number]>();
+  for (const enrollment of enrollments) {
+    if (!enrollmentByTrainee.has(enrollment.traineeId)) {
+      enrollmentByTrainee.set(enrollment.traineeId, enrollment);
+    }
+  }
+
+  // Only the enrollments actually rendered — a superseded one from an earlier
+  // attempt is never read out of the map below, so there is no point fetching
+  // its levels.
+  const currentEnrollmentIds = [...enrollmentByTrainee.values()].map(
+    (enrollment) => enrollment.id,
   );
 
-  // The course's full level list is the denominator for everyone on the
-  // roster, so it is fetched once rather than per trainee.
-  const courseLevels = await ctx.db
-    .select({ id: LevelsTable.id })
-    .from(LevelsTable)
-    .where(
-      and(
-        eq(LevelsTable.courseId, courseId),
-        eq(LevelsTable.organizationId, ctx.organizationId),
+  const [courseLevels, touchedLevels] = await Promise.all([
+    // The course's full level list is the denominator for everyone on the
+    // roster, so it is fetched once rather than per trainee.
+    ctx.db
+      .select({ id: LevelsTable.id })
+      .from(LevelsTable)
+      .where(
+        and(
+          eq(LevelsTable.courseId, courseId),
+          eq(LevelsTable.organizationId, ctx.organizationId),
+        ),
       ),
-    );
-
-  const touchedLevels = enrollments.length
-    ? await ctx.db
-        .select({
-          enrollmentId: EnrollmentLevelsTable.enrollmentId,
-          levelId: EnrollmentLevelsTable.levelId,
-          status: EnrollmentLevelsTable.status,
-        })
-        .from(EnrollmentLevelsTable)
-        .where(
-          and(
-            eq(EnrollmentLevelsTable.organizationId, ctx.organizationId),
-            inArray(
-              EnrollmentLevelsTable.enrollmentId,
-              enrollments.map((enrollment) => enrollment.id),
+    currentEnrollmentIds.length
+      ? ctx.db
+          .select({
+            enrollmentId: EnrollmentLevelsTable.enrollmentId,
+            levelId: EnrollmentLevelsTable.levelId,
+            status: EnrollmentLevelsTable.status,
+          })
+          .from(EnrollmentLevelsTable)
+          .where(
+            and(
+              eq(EnrollmentLevelsTable.organizationId, ctx.organizationId),
+              inArray(
+                EnrollmentLevelsTable.enrollmentId,
+                currentEnrollmentIds,
+              ),
             ),
-          ),
-        )
-    : [];
+          )
+      : [],
+  ]);
 
   const statusByEnrollmentLevel = new Map(
     touchedLevels.map((row) => [

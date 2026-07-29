@@ -875,6 +875,7 @@ export default {
       duration: dt("{minutes:number} دقيقة", {}),
       emptyTitle: "لا توجد حصص اليوم",
       emptyDescription: "تظهر الحصص التي تجدولها هنا في يوم انعقادها.",
+      errorTitle: "تعذر تحميل حصص اليوم",
       groupsCta: "الذهاب إلى المجموعات",
     },
     recent: {

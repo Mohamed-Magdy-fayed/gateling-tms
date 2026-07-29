@@ -1,4 +1,5 @@
 export {
+  type EnrollmentStatusSummary,
   type LevelProgressSummary,
   type SessionProgressSummary,
   summarizeEnrollmentStatuses,

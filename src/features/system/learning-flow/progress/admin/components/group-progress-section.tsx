@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheckIcon, TrendingUpIcon } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -17,27 +16,17 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { EnrollmentStatusTag } from "@/features/system/learning-flow/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import { ProgressMeter } from "./progress-meter";
+import { useOrgDateTimeFormat } from "./use-org-date-time-format";
 
 export function GroupProgressSection({ groupId }: { groupId: string }) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const trpc = useTRPC();
 
   const { data: progress, isLoading } = useQuery(
     trpc.progress.group.queryOptions({ groupId }),
   );
-  const { data: organization } = useQuery(
-    trpc.organizations.getActive.queryOptions(),
-  );
 
-  const dateTimeFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: organization?.timeZone ?? "UTC",
-      }),
-    [locale, organization?.timeZone],
-  );
+  const dateTimeFmt = useOrgDateTimeFormat();
 
   return (
     <Card>

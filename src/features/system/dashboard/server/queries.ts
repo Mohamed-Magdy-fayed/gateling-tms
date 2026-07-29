@@ -44,37 +44,40 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
     });
   }
 
-  const [{ value: groupCount }] = await ctx.db
-    .select({ value: count() })
-    .from(GroupsTable)
-    .where(eq(GroupsTable.organizationId, ctx.organizationId));
-
   const { start, end } = getDayBoundsInZone(new Date(), organization.timeZone);
 
-  const todaysSessions = await ctx.db
-    .select({
-      id: SessionsTable.id,
-      groupId: SessionsTable.groupId,
-      groupName: GroupsTable.name,
-      scheduledAt: SessionsTable.scheduledAt,
-      durationMinutes: SessionsTable.durationMinutes,
-      status: SessionsTable.status,
-      teacherName: UsersTable.name,
-    })
-    .from(SessionsTable)
-    .innerJoin(GroupsTable, eq(GroupsTable.id, SessionsTable.groupId))
-    .leftJoin(UsersTable, eq(UsersTable.id, SessionsTable.teacherId))
-    .where(
-      and(
-        eq(SessionsTable.organizationId, ctx.organizationId),
-        gte(SessionsTable.scheduledAt, start),
-        lt(SessionsTable.scheduledAt, end),
-        // A called-off class isn't part of today's plan, but it stays visible
-        // on the group's own page as history.
-        ne(SessionsTable.status, "cancelled"),
-      ),
-    )
-    .orderBy(SessionsTable.scheduledAt);
+  // Both need the organization row (the day bounds are on its clock), but not
+  // each other — so they go out together.
+  const [[{ value: groupCount }], todaysSessions] = await Promise.all([
+    ctx.db
+      .select({ value: count() })
+      .from(GroupsTable)
+      .where(eq(GroupsTable.organizationId, ctx.organizationId)),
+    ctx.db
+      .select({
+        id: SessionsTable.id,
+        groupId: SessionsTable.groupId,
+        groupName: GroupsTable.name,
+        scheduledAt: SessionsTable.scheduledAt,
+        durationMinutes: SessionsTable.durationMinutes,
+        status: SessionsTable.status,
+        teacherName: UsersTable.name,
+      })
+      .from(SessionsTable)
+      .innerJoin(GroupsTable, eq(GroupsTable.id, SessionsTable.groupId))
+      .leftJoin(UsersTable, eq(UsersTable.id, SessionsTable.teacherId))
+      .where(
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          gte(SessionsTable.scheduledAt, start),
+          lt(SessionsTable.scheduledAt, end),
+          // A called-off class isn't part of today's plan, but it stays
+          // visible on the group's own page as history.
+          ne(SessionsTable.status, "cancelled"),
+        ),
+      )
+      .orderBy(SessionsTable.scheduledAt),
+  ]);
 
   const limits = PLAN_LIMITS[organization.plan];
 
@@ -102,35 +105,43 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
  * a student simply gets the counts and today's schedule.
  */
 export async function getRecentActivity(ctx: OrgTRPCContext) {
-  const enrollments = await ctx.db
-    .select({
-      id: EnrollmentsTable.id,
-      traineeId: EnrollmentsTable.traineeId,
-      traineeName: TraineesTable.name,
-      courseName: CoursesTable.name,
-      status: EnrollmentsTable.status,
-      at: EnrollmentsTable.createdAt,
-    })
-    .from(EnrollmentsTable)
-    .innerJoin(TraineesTable, eq(TraineesTable.id, EnrollmentsTable.traineeId))
-    .innerJoin(CoursesTable, eq(CoursesTable.id, EnrollmentsTable.courseId))
-    .where(eq(EnrollmentsTable.organizationId, ctx.organizationId))
-    .orderBy(desc(EnrollmentsTable.createdAt), desc(EnrollmentsTable.id))
-    .limit(RECENT_ACTIVITY_LIMIT);
-
-  const certificates = await ctx.db
-    .select({
-      id: CertificatesTable.id,
-      traineeId: CertificatesTable.traineeId,
-      traineeName: TraineesTable.name,
-      title: CertificatesTable.title,
-      at: CertificatesTable.issuedAt,
-    })
-    .from(CertificatesTable)
-    .innerJoin(TraineesTable, eq(TraineesTable.id, CertificatesTable.traineeId))
-    .where(eq(CertificatesTable.organizationId, ctx.organizationId))
-    .orderBy(desc(CertificatesTable.issuedAt), desc(CertificatesTable.id))
-    .limit(RECENT_ACTIVITY_LIMIT);
+  // Neither strip depends on the other, so one round trip instead of two.
+  const [enrollments, certificates] = await Promise.all([
+    ctx.db
+      .select({
+        id: EnrollmentsTable.id,
+        traineeId: EnrollmentsTable.traineeId,
+        traineeName: TraineesTable.name,
+        courseName: CoursesTable.name,
+        status: EnrollmentsTable.status,
+        at: EnrollmentsTable.createdAt,
+      })
+      .from(EnrollmentsTable)
+      .innerJoin(
+        TraineesTable,
+        eq(TraineesTable.id, EnrollmentsTable.traineeId),
+      )
+      .innerJoin(CoursesTable, eq(CoursesTable.id, EnrollmentsTable.courseId))
+      .where(eq(EnrollmentsTable.organizationId, ctx.organizationId))
+      .orderBy(desc(EnrollmentsTable.createdAt), desc(EnrollmentsTable.id))
+      .limit(RECENT_ACTIVITY_LIMIT),
+    ctx.db
+      .select({
+        id: CertificatesTable.id,
+        traineeId: CertificatesTable.traineeId,
+        traineeName: TraineesTable.name,
+        title: CertificatesTable.title,
+        at: CertificatesTable.issuedAt,
+      })
+      .from(CertificatesTable)
+      .innerJoin(
+        TraineesTable,
+        eq(TraineesTable.id, CertificatesTable.traineeId),
+      )
+      .where(eq(CertificatesTable.organizationId, ctx.organizationId))
+      .orderBy(desc(CertificatesTable.issuedAt), desc(CertificatesTable.id))
+      .limit(RECENT_ACTIVITY_LIMIT),
+  ]);
 
   return { enrollments, certificates };
 }
