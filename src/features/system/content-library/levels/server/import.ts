@@ -357,9 +357,19 @@ export async function commitLevelImport(
       const explicitOrder =
         row.parsed.order === "" ? null : Number(row.parsed.order);
       const levelId = resolved.targets[index];
+      const appended = nextOrder.get(courseId) ?? 0;
+      const claimed = explicitOrder ?? appended;
+      // Every position this file actually writes pushes the append counter
+      // past it. Without that, a row asking for position 7 followed by a
+      // blank-position row in the same course would both land on 7 and order
+      // arbitrarily against each other. An update that leaves the position
+      // blank writes nothing, so it claims nothing.
+      if (levelId === null || explicitOrder !== null) {
+        nextOrder.set(courseId, Math.max(appended, claimed + 1));
+      }
 
       if (levelId !== null) {
-        await trx
+        const [updatedLevel] = await trx
           .update(LevelsTable)
           .set({
             name: row.parsed.name,
@@ -372,19 +382,19 @@ export async function commitLevelImport(
               eq(LevelsTable.id, levelId),
               eq(LevelsTable.organizationId, ctx.organizationId),
             ),
-          );
-        updated++;
+          )
+          .returning({ id: LevelsTable.id });
+
+        if (updatedLevel) updated++;
         continue;
       }
 
-      const appended = nextOrder.get(courseId) ?? 0;
       inserts.push({
         organizationId: ctx.organizationId,
         courseId,
         name: row.parsed.name,
-        order: explicitOrder ?? appended,
+        order: claimed,
       });
-      if (explicitOrder === null) nextOrder.set(courseId, appended + 1);
     }
 
     if (inserts.length > 0) await trx.insert(LevelsTable).values(inserts);

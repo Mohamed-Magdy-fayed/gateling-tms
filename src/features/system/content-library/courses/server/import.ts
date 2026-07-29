@@ -220,24 +220,6 @@ export async function commitCourseImport(
   const actor = actorLabel(ctx);
 
   return ctx.db.transaction(async (trx) => {
-    // Same lock as createCourse: two concurrent imports must not both read the
-    // same courseCount and both pass the plan check.
-    const [organization] = await trx
-      .select({
-        plan: OrganizationsTable.plan,
-        courseCount: OrganizationsTable.courseCount,
-      })
-      .from(OrganizationsTable)
-      .where(eq(OrganizationsTable.id, ctx.organizationId))
-      .for("update");
-
-    if (!organization) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: ctx.t("errors.noActiveOrganization"),
-      });
-    }
-
     const existing = await findExistingCourses(trx, ctx.organizationId, rows);
     // The same resolution the preview ran, so the commit can't accept a row
     // the review screen rejected — an unknown id, or a second row targeting a
@@ -254,16 +236,6 @@ export async function commitCourseImport(
     const createIndexes = resolved.actions
       .map((action, index) => (action === "create" ? index : -1))
       .filter((index) => index !== -1);
-    const capacity = remainingCourseCapacity(organization);
-
-    if (capacity !== null && createIndexes.length > capacity) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: ctx.t("organizations.limits.courseLimitReached", {
-          limit: PLAN_LIMITS[organization.plan].maxCourses ?? 0,
-        }),
-      });
-    }
 
     let updated = 0;
 
@@ -271,7 +243,10 @@ export async function commitCourseImport(
       const courseId = resolved.targets[index];
       if (courseId === null) continue;
 
-      await trx
+      // `returning` rather than a bare update: a course soft-deleted between
+      // the resolution and here matches nothing, and reporting it as updated
+      // would overstate what the file actually did.
+      const [updatedCourse] = await trx
         .update(CoursesTable)
         .set({
           name: rows[index].parsed.name,
@@ -284,28 +259,61 @@ export async function commitCourseImport(
             eq(CoursesTable.organizationId, ctx.organizationId),
             isNull(CoursesTable.deletedAt),
           ),
-        );
+        )
+        .returning({ id: CoursesTable.id });
 
-      updated++;
+      if (updatedCourse) updated++;
     }
 
-    if (createIndexes.length > 0) {
-      await trx.insert(CoursesTable).values(
-        createIndexes.map((index) => ({
-          organizationId: ctx.organizationId,
-          name: rows[index].parsed.name,
-          description: rows[index].parsed.description || null,
-          createdBy: actor,
-        })),
-      );
+    if (createIndexes.length === 0) return { created: 0, updated };
 
-      await trx
-        .update(OrganizationsTable)
-        .set({
-          courseCount: sql`${OrganizationsTable.courseCount} + ${createIndexes.length}`,
-        })
-        .where(eq(OrganizationsTable.id, ctx.organizationId));
+    // The organization row is locked only around the creates, and only when
+    // there are any: the plan check and the counter bump have to be atomic
+    // against a concurrent createCourse, but the updates above don't touch the
+    // counter, so holding the lock across them would serialize every other
+    // write to this organization for the length of the file.
+    const [organization] = await trx
+      .select({
+        plan: OrganizationsTable.plan,
+        courseCount: OrganizationsTable.courseCount,
+      })
+      .from(OrganizationsTable)
+      .where(eq(OrganizationsTable.id, ctx.organizationId))
+      .for("update");
+
+    if (!organization) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.noActiveOrganization"),
+      });
     }
+
+    const capacity = remainingCourseCapacity(organization);
+
+    if (capacity !== null && createIndexes.length > capacity) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: ctx.t("organizations.limits.courseLimitReached", {
+          limit: PLAN_LIMITS[organization.plan].maxCourses ?? 0,
+        }),
+      });
+    }
+
+    await trx.insert(CoursesTable).values(
+      createIndexes.map((index) => ({
+        organizationId: ctx.organizationId,
+        name: rows[index].parsed.name,
+        description: rows[index].parsed.description || null,
+        createdBy: actor,
+      })),
+    );
+
+    await trx
+      .update(OrganizationsTable)
+      .set({
+        courseCount: sql`${OrganizationsTable.courseCount} + ${createIndexes.length}`,
+      })
+      .where(eq(OrganizationsTable.id, ctx.organizationId));
 
     return { created: createIndexes.length, updated };
   });
