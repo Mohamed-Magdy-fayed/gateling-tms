@@ -1,4 +1,5 @@
 import { rowsToCsv } from "@/features/core/data-table/lib/csv";
+import { escapeSpreadsheetCell } from "./formula-safety";
 
 /**
  * Shared by the two file downloads the import feature serves: the blank
@@ -23,13 +24,19 @@ export function resolveDownloadFormat(value: string | null): DownloadFormat {
 /**
  * A CSV whose header row is the localized column labels and whose rows are
  * keyed by those same labels, which is what `rowsToCsv` expects.
+ *
+ * Cell values go through `escapeSpreadsheetCell` on the way out; the headers
+ * don't, since they are this app's own translated labels rather than anything
+ * a user typed.
  */
-export function toLocalizedCsv(
-  headers: string[],
-  rows: string[][],
-): string {
+export function toLocalizedCsv(headers: string[], rows: string[][]): string {
   const keyed = rows.map((cells) =>
-    Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""])),
+    Object.fromEntries(
+      headers.map((header, index) => [
+        header,
+        escapeSpreadsheetCell(cells[index] ?? ""),
+      ]),
+    ),
   );
 
   return UTF8_BYTE_ORDER_MARK + rowsToCsv(headers, keyed);

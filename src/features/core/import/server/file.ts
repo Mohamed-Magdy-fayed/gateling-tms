@@ -4,6 +4,7 @@ import {
   MAX_IMPORT_FILE_BYTES,
   MAX_IMPORT_ROWS,
 } from "../lib/limits";
+import { unescapeSpreadsheetCell } from "./formula-safety";
 import { parseWorkbook, type WorkbookTable } from "./workbook";
 
 export type ImportFileProblem =
@@ -37,10 +38,19 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return copy;
 }
 
+/**
+ * CSV only: undoes the apostrophe the export adds to a cell a spreadsheet
+ * would otherwise read as a formula, so a downloaded file re-imports as the
+ * values it was exported from. XLSX needs no equivalent — nothing is escaped
+ * on the way out, because a string cell is never evaluated.
+ */
 function toTable(records: string[][]): WorkbookTable | null {
   const headers = records[0];
   if (headers === undefined) return null;
-  return { headers, rows: records.slice(1) };
+  return {
+    headers,
+    rows: records.slice(1).map((row) => row.map(unescapeSpreadsheetCell)),
+  };
 }
 
 /**

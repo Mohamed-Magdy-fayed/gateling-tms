@@ -8,6 +8,10 @@ import {
 import type { ImportColumn } from "../src/features/core/import/lib/types";
 import { toLocalizedCsv } from "../src/features/core/import/server/download";
 import {
+  escapeSpreadsheetCell,
+  unescapeSpreadsheetCell,
+} from "../src/features/core/import/server/formula-safety";
+import {
   buildExportWorkbook,
   parseWorkbook,
 } from "../src/features/core/import/server/workbook";
@@ -146,6 +150,37 @@ describe("CSV export round trip", () => {
     const parsed = parseCsvRecords(csv.replace(/^﻿/, ""));
 
     expect(parsed[1]).toHaveLength(traineeImportColumns.length);
+  });
+});
+
+describe("CSV formula safety", () => {
+  test("a cell a spreadsheet would run as a formula is neutralized on export", () => {
+    const csv = toLocalizedCsv(EN_HEADERS, [
+      ["", "=1+1", "+20100000000", "", "@here"],
+    ]);
+    const parsed = parseCsvRecords(csv.replace(/^﻿/, ""));
+
+    expect(parsed[1]).toEqual(["", "'=1+1", "'+20100000000", "", "'@here"]);
+  });
+
+  test("and comes back as the value it started as", () => {
+    const dangerous = ["", "=1+1", "+20100000000", "", "@here"];
+    const csv = toLocalizedCsv(EN_HEADERS, [dangerous]);
+    const parsed = parseCsvRecords(csv.replace(/^﻿/, ""));
+
+    expect(parsed[1].map(unescapeSpreadsheetCell)).toEqual(dangerous);
+  });
+
+  test("a value that already starts with an apostrophe survives the round trip", () => {
+    const value = "'=not a formula";
+
+    expect(unescapeSpreadsheetCell(escapeSpreadsheetCell(value))).toBe(value);
+  });
+
+  test("an ordinary value is left alone", () => {
+    expect(escapeSpreadsheetCell("Sara Ahmed")).toBe("Sara Ahmed");
+    expect(unescapeSpreadsheetCell("Sara Ahmed")).toBe("Sara Ahmed");
+    expect(unescapeSpreadsheetCell("O'Brien")).toBe("O'Brien");
   });
 });
 
