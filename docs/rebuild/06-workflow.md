@@ -28,7 +28,9 @@ How the agent works day-to-day. This is process law, same weight as `02-dependen
 4. **Ask Mohamed to merge.** The agent **never merges**. The merge request message includes: segment summary, how-to-test, CodeRabbit outcome (N findings fixed, M disputed + why), gates status.
 5. After Mohamed merges: pull `master`, update `STATE.md` (segment done, next action), start the next segment branch. If Mohamed requests changes instead, that feedback outranks everything — address it first.
 
-Iterate: segment → PR → CodeRabbit fixes → Mohamed merges → next segment. **No new segment is started while a previous PR is awaiting CodeRabbit fixes** (waiting for Mohamed's merge is fine — prepare the next branch off the pending one only if independent, and say so).
+Iterate: segment → PR → CodeRabbit fixes → Mohamed merges → next segment. ~~**No new segment is started while a previous PR is awaiting CodeRabbit fixes**~~ — superseded by STATE.md D57: keep building forward, and circle back to a review once it actually posts. Waiting for Mohamed's merge is likewise not a reason to stop; prepare the next branch off the pending one only if it's genuinely dependent, and say so.
+
+**But every PR's review must be addressed before the session ends** (STATE.md D100). Closing checklist for each PR opened during the session: re-check `gh api repos/<repo>/pulls/<n>/comments` **and** the CodeRabbit summary comment — a review can post inline findings even when the summary says "review limit reached" — fix every actionable finding, reply per thread plus one summary comment, and re-run the gates. If a review truly hasn't posted, say so explicitly in the closing message and carry it as the next session's first task.
 
 ## 4. Code quality standard (human-readable, maintainable)
 
