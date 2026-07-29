@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/drizzle";
+import { likeContains } from "@/drizzle/lib/search";
 import {
   OrganizationMembershipsTable,
   OrganizationsTable,
@@ -18,7 +19,10 @@ export async function getActiveOrganization(ctx: OrgTRPCContext) {
   });
 
   if (!organization) {
-    throw new TRPCError({ code: "NOT_FOUND", message: ctx.t("errors.notFound") });
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
   }
 
   return { ...organization, role: ctx.role };
@@ -28,16 +32,14 @@ export async function listMyOrganizations(ctx: TRPCContext) {
   const session = ctx.session;
   if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-  const memberships = await ctx.db.query.OrganizationMembershipsTable.findMany(
-    {
-      where: eq(OrganizationMembershipsTable.userId, session.user.id),
-      orderBy: [desc(OrganizationMembershipsTable.createdAt)],
-      columns: { role: true },
-      with: {
-        organization: { columns: { id: true, name: true, plan: true } },
-      },
+  const memberships = await ctx.db.query.OrganizationMembershipsTable.findMany({
+    where: eq(OrganizationMembershipsTable.userId, session.user.id),
+    orderBy: [desc(OrganizationMembershipsTable.createdAt)],
+    columns: { role: true },
+    with: {
+      organization: { columns: { id: true, name: true, plan: true } },
     },
-  );
+  });
 
   return memberships.map((membership) => ({
     id: membership.organization.id,
@@ -76,7 +78,10 @@ function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
 
   return and(
     base,
-    or(ilike(UsersTable.name, `%${query}%`), ilike(UsersTable.email, `%${query}%`)),
+    or(
+      ilike(UsersTable.name, likeContains(query)),
+      ilike(UsersTable.email, likeContains(query)),
+    ),
   );
 }
 
@@ -120,13 +125,19 @@ export type OrganizationMemberRow = {
   email: string | null;
 };
 
-export async function listMembers(ctx: OrgTRPCContext, input: ListMembersInput) {
+export async function listMembers(
+  ctx: OrgTRPCContext,
+  input: ListMembersInput,
+) {
   const whereClause = buildMembersWhereClause(ctx, input);
 
   const [{ value: total }] = await ctx.db
     .select({ value: count() })
     .from(OrganizationMembershipsTable)
-    .innerJoin(UsersTable, eq(UsersTable.id, OrganizationMembershipsTable.userId))
+    .innerJoin(
+      UsersTable,
+      eq(UsersTable.id, OrganizationMembershipsTable.userId),
+    )
     .where(whereClause);
 
   const pageCount = Math.max(1, Math.ceil(Number(total) / input.perPage));
@@ -142,7 +153,10 @@ export async function listMembers(ctx: OrgTRPCContext, input: ListMembersInput) 
       email: UsersTable.email,
     })
     .from(OrganizationMembershipsTable)
-    .innerJoin(UsersTable, eq(UsersTable.id, OrganizationMembershipsTable.userId))
+    .innerJoin(
+      UsersTable,
+      eq(UsersTable.id, OrganizationMembershipsTable.userId),
+    )
     .where(whereClause)
     .orderBy(...membersSortExpr(input))
     .limit(input.perPage)

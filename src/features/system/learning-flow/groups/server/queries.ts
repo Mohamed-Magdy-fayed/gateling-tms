@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull } from "drizzle-orm";
+import { likeContains } from "@/drizzle/lib/search";
 import {
   CoursesTable,
   GroupStudentsTable,
@@ -16,7 +17,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListGroupsInput) {
 
   return and(
     eq(GroupsTable.organizationId, ctx.organizationId),
-    search ? ilike(GroupsTable.name, `%${search}%`) : undefined,
+    search ? ilike(GroupsTable.name, likeContains(search)) : undefined,
   );
 }
 

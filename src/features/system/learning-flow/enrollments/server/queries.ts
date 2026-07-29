@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { likeContains } from "@/drizzle/lib/search";
 import {
   CoursesTable,
   EnrollmentLevelsTable,
@@ -23,8 +24,8 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListEnrollmentsInput) {
     // what a user expects — the enrollment itself has no text of its own.
     search
       ? or(
-          ilike(TraineesTable.name, `%${search}%`),
-          ilike(CoursesTable.name, `%${search}%`),
+          ilike(TraineesTable.name, likeContains(search)),
+          ilike(CoursesTable.name, likeContains(search)),
         )
       : undefined,
   );
