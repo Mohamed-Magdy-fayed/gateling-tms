@@ -47,6 +47,9 @@ export function SessionsAgendaPage() {
     trpc.organizations.getActive.queryOptions(),
   );
   const timeZone = organization?.timeZone ?? "UTC";
+  // The register is admin-or-teacher; a student's agenda shows their classes
+  // and how to join them, and stops there.
+  const isStaff = organization ? organization.role !== "student" : false;
 
   const { data, isLoading } = useQuery(
     trpc.sessions.list.queryOptions({ page, perPage: PER_PAGE, scope }),
@@ -118,6 +121,7 @@ export function SessionsAgendaPage() {
                   hasActiveZoomClient={data?.hasActiveZoomClient ?? false}
                   timeZone={timeZone}
                   showGroup
+                  canOpenRegister={isStaff}
                 />
               </CardContent>
             </Card>

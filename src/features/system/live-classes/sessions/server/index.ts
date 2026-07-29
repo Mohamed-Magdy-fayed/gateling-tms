@@ -4,6 +4,7 @@ export {
   syncSessionMeeting,
 } from "./meetings";
 export {
+  hasActiveZoomClient,
   listGroupSessions,
   listSessionIdsAwaitingMeetings,
   listSessions,

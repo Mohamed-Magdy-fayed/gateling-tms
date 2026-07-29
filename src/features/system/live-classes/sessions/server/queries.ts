@@ -253,7 +253,14 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
   };
 }
 
-async function hasActiveZoomClient(ctx: OrgTRPCContext): Promise<boolean> {
+/**
+ * Whether the org has any Zoom account connected at all — the difference
+ * between "this class hasn't been provisioned yet" and "this academy doesn't
+ * use Zoom", which read very differently to whoever is looking (D102).
+ */
+export async function hasActiveZoomClient(
+  ctx: OrgTRPCContext,
+): Promise<boolean> {
   const [{ value }] = await ctx.db
     .select({ value: count() })
     .from(ZoomClientsTable)

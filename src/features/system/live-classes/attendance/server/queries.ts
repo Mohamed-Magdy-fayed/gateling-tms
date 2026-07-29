@@ -14,6 +14,7 @@ import {
   canHostSession,
   resolveSessionLinks,
 } from "@/features/system/live-classes/sessions/lib/session-links";
+import { hasActiveZoomClient } from "@/features/system/live-classes/sessions/server/queries";
 import type { OrgTRPCContext } from "./types";
 
 export type AttendanceRow = {
@@ -45,6 +46,8 @@ export type SessionAttendance = {
   rows: AttendanceRow[];
   /** Whether this viewer may correct the register (see `router.ts`). */
   canMark: boolean;
+  /** Tells "no meeting yet" apart from "this academy has no Zoom" (D102). */
+  hasActiveZoomClient: boolean;
 };
 
 /**
@@ -173,6 +176,7 @@ export async function getSessionAttendance(
       attendedMinutes: row.attendedMinutes ?? 0,
     })),
     canMark: canMarkAttendance(ctx, session.teacherId),
+    hasActiveZoomClient: await hasActiveZoomClient(ctx),
   };
 }
 

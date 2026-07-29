@@ -773,6 +773,33 @@ export default {
     previous: "Previous",
     next: "Next",
     pageOf: "Page {page:number} of {total:number}",
+    register: "Register",
+    recording: "Recording",
+  },
+  attendance: {
+    title: "Attendance",
+    // Says exactly where the figures come from and who can change them —
+    // Zoom reports who joined the meeting, a teacher has the final word.
+    lead: "Taken from who joined the Zoom meeting. Correct anything it got wrong — a student on the phone or in the room is still present.",
+    statusOptions: {
+      present: "Present",
+      absent: "Absent",
+      unmarked: "Not marked",
+    },
+    markedManually: "Set by a teacher",
+    marked: "Attendance updated.",
+    markFailed: "Couldn't update attendance. Please try again.",
+    joinedAt: "Joined at {time:string}",
+    noZoomRecord: "Nothing reported by Zoom",
+    watchRecording: "Watch the recording",
+    recordingPasscode: "Passcode: {passcode:string}",
+    emptyTitle: "No one on the roster",
+    emptyDescription:
+      "Add trainees to this class and they'll appear here to be marked.",
+    openGroup: "Open the class",
+    notFoundTitle: "Class not found",
+    notFoundDescription: "This class doesn't exist, or it was removed.",
+    summary: "{attended:number} of {held:number} classes attended",
   },
   zoomClients: {
     title: "Zoom connections",
