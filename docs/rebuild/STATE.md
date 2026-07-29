@@ -37,7 +37,7 @@
 
 ## Next action
 
-> **Phase 5 segment ④ submitted as [PR #33](https://github.com/Mohamed-Magdy-fayed/gateling-tms/pull/33)** — progress view, certificates, dashboard (`phases/phase-05.md` steps 6–8), branched off the merged `master` at `7f2e6cb`. See D89–D92. **Awaiting Mohamed's merge** — the standing `06-workflow.md` §3.4 rule (Mohamed merges) is back in force; the agent self-merging in the previous session was a one-off on his explicit instruction. When picking this up cold:
+> **Phase 5 segment ④ submitted as [PR #33](https://github.com/Mohamed-Magdy-fayed/gateling-tms/pull/33)** — progress view, certificates, dashboard (`phases/phase-05.md` steps 6–8), branched off the merged `master` at `7f2e6cb`. See D89–D92. When picking this up cold:
 > 1. **Check PR #33 for a CodeRabbit round** and fix every finding before asking for the merge.
 > 2. Once merged: pull `master`, re-run the full gate. **No new migration in this segment** — `certificates` has existed since segment ①'s `0008`, so nothing needs applying to Neon.
 > 3. Then **Phase 5 is feature-complete through step 8**; what remains before closing the phase is its **verification gate** (`phase-05.md`), which is a manual walk and therefore Mohamed's, same pattern as D54/D74: the zero-master-data journey, an enroll → complete → certificate round trip, a placement-test round trip, and the 51st-student limit message. Step 9's automated tests are done (schedule expansion, status transitions, progress arithmetic, day bounds, student-limit check, EN/AR parity).
