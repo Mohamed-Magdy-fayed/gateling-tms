@@ -39,6 +39,7 @@ const sessionColumns = {
   // Selected but never returned as-is: `toSessionRow` hands it only to the
   // assigned teacher or an admin (lib/session-links.ts).
   zoomStartUrl: SessionsTable.zoomStartUrl,
+  recordingUrl: SessionsTable.zoomRecordingUrl,
 } as const;
 
 export type SessionRow = {
@@ -54,6 +55,12 @@ export type SessionRow = {
   joinUrl: string | null;
   /** Host link, present only for the teacher running it and for admins. */
   startUrl: string | null;
+  /**
+   * Zoom's share link for the cloud recording, once there is one. Not gated
+   * per viewer: a student only ever sees their own classes, and a recording of
+   * the class you sat in is the one thing you are most likely to want back.
+   */
+  recordingUrl: string | null;
 };
 
 /**
@@ -242,6 +249,7 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     teacherName: row.teacherName,
     joinUrl: links.joinUrl,
     startUrl: links.startUrl,
+    recordingUrl: row.recordingUrl,
   };
 }
 

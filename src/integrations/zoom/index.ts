@@ -21,3 +21,12 @@ export {
   ZoomTokenCipherError,
   ZoomTokenKeyError,
 } from "./token-crypto";
+export {
+  buildUrlValidationResponse,
+  verifyZoomWebhookSignature,
+  WEBHOOK_TIMESTAMP_TOLERANCE_MS,
+  ZOOM_URL_VALIDATION_EVENT,
+  type ZoomWebhookEnvelope,
+  zoomUrlValidationPayloadSchema,
+  zoomWebhookEnvelopeSchema,
+} from "./webhook";

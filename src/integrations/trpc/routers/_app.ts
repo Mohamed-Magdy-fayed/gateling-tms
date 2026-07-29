@@ -16,6 +16,7 @@ import { groupsRouter } from "@/features/system/learning-flow/groups/server";
 import { placementTestsRouter } from "@/features/system/learning-flow/placement-tests/server";
 import { progressRouter } from "@/features/system/learning-flow/progress/server";
 import { traineesRouter } from "@/features/system/learning-flow/trainees/server";
+import { attendanceRouter } from "@/features/system/live-classes/attendance/server";
 import { sessionsRouter } from "@/features/system/live-classes/sessions/server";
 import { zoomClientsRouter } from "@/features/system/live-classes/zoom-clients/server";
 import { createTRPCRouter } from "../init";
@@ -43,6 +44,7 @@ export const appRouter = createTRPCRouter({
   dashboard: dashboardRouter,
   zoomClients: zoomClientsRouter,
   sessions: sessionsRouter,
+  attendance: attendanceRouter,
 });
 
 export type AppRouter = typeof appRouter;

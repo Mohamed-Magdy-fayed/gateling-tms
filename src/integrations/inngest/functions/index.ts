@@ -7,6 +7,7 @@ import { onSessionMeetingCancelled } from "./on-session-meeting-cancelled";
 import { onSessionMeetingSyncRequested } from "./on-session-meeting-sync-requested";
 import { onUserRegistered } from "./on-user-registered";
 import { onZoomClientDisconnected } from "./on-zoom-client-disconnected";
+import { onZoomWebhookReceived } from "./on-zoom-webhook-received";
 
 export const functions = [
   processTask,
@@ -18,4 +19,5 @@ export const functions = [
   onOrganizationZoomConnected,
   onSessionMeetingSyncRequested,
   onSessionMeetingCancelled,
+  onZoomWebhookReceived,
 ];
