@@ -137,7 +137,49 @@ zoom account connected
   ever returned to the session's assigned teacher and to org admins
   (`sessions/lib/session-links.ts`).
 
-## 5. Tokens
+## 5. Webhooks and attendance
+
+Zoom tells the app what actually happened in a class. The endpoint is
+`POST /api/webhooks/zoom`, and it is deliberately thin: verify, acknowledge,
+hand the work to Inngest — Zoom retries anything it doesn't get a prompt 2xx
+for, so slow work in the request would turn into duplicate deliveries.
+
+```text
+Zoom event
+  └─ POST /api/webhooks/zoom          HMAC check + freshness check
+       ├─ endpoint.url_validation     answered inline (this is how Zoom
+       │                              switches the subscription on)
+       └─ zoom/webhook-received       Inngest → applyZoomWebhookEvent
+```
+
+| Event | Effect |
+|---|---|
+| `meeting.started` | Session `scheduled` → `ongoing` |
+| `meeting.ended` | Session → `completed`, and everyone on the roster with nothing recorded is marked absent |
+| `meeting.participant_joined` | Attendance row for the matched trainee, `present`, join time recorded |
+| `meeting.participant_left` | Leave time recorded, minutes accumulated |
+| `recording.completed` | Share URL + passcode stored on the session |
+
+- **Verification** (`src/integrations/zoom/webhook.ts`) is an HMAC-SHA256 over
+  `v0:{timestamp}:{raw body}` compared in constant time, plus a five-minute
+  freshness window. The **raw body** is what gets hashed — re-serializing the
+  parsed JSON changes key order and whitespace and invalidates every delivery.
+  Without the freshness window a captured delivery could be replayed forever,
+  since the signature covers the timestamp and an attacker can't refresh it.
+- **Matching a participant to a trainee** is by email first, then by an exact
+  name — but only when either picks out exactly one roster entry. Two trainees
+  with the same name (or sharing a parent's inbox) leave the participant
+  unmatched on purpose: a teacher's correction is a better answer than a wrong
+  one, and unmatched participants (guests, the teacher's own connection) are
+  simply not recorded.
+- **A teacher's manual mark outranks Zoom.** Records carry a `source`, and
+  anything set by hand is never overwritten by a later webhook — Zoom can't
+  know about a student who dialled in by phone or sat in the room.
+- Attendance figures on a trainee's progress card count **only classes with
+  something recorded**. A class nobody marked and Zoom never saw is not
+  evidence of absence.
+
+## 6. Tokens
 
 - Access and refresh tokens are stored **AES-256-GCM encrypted**
   (`src/integrations/zoom/token-crypto.ts`); the plaintext never reaches the
@@ -150,7 +192,7 @@ zoom account connected
   and asks Zoom to revoke the grant from an Inngest job
   (`zoom-client/disconnected`).
 
-## 6. Local testing without a paid Zoom account
+## 7. Local testing without a paid Zoom account
 
 A free Zoom account can create and authorize a Marketplace app, so the connect
 flow is testable end to end locally. Meeting creation, recording links, and
