@@ -3,11 +3,14 @@ import {
   orgContentManagerProcedure,
   orgProcedure,
 } from "@/integrations/trpc/init";
+import { commitTraineeImport, previewTraineeImport } from "./import";
 import { createTrainee, deleteTrainee, updateTrainee } from "./mutations";
 import { getTrainee, listTraineeGroups, listTrainees } from "./queries";
 import {
   listTraineesInput,
   traineeDeleteSchema,
+  traineeImportCommitInput,
+  traineeImportPreviewInput,
   traineeMutationSchema,
   traineeUpdateSchema,
 } from "./schemas";
@@ -45,4 +48,12 @@ export const traineesRouter = createTRPCRouter({
   delete: orgContentManagerProcedure
     .input(traineeDeleteSchema)
     .mutation(async ({ ctx, input }) => deleteTrainee(ctx, input)),
+  // A mutation rather than a query: it takes a file body, and re-running it
+  // is the point (fix the file, upload again) rather than something to cache.
+  importPreview: orgContentManagerProcedure
+    .input(traineeImportPreviewInput)
+    .mutation(async ({ ctx, input }) => previewTraineeImport(ctx, input)),
+  importCommit: orgContentManagerProcedure
+    .input(traineeImportCommitInput)
+    .mutation(async ({ ctx, input }) => commitTraineeImport(ctx, input)),
 });
