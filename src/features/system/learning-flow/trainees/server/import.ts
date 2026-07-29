@@ -332,9 +332,8 @@ export async function commitTraineeImport(
       });
     }
 
-    const { resolutions } = resolved;
-    const createIndexes = resolutions
-      .map((resolution, index) => (resolution.action === "create" ? index : -1))
+    const createIndexes = resolved.actions
+      .map((action, index) => (action === "create" ? index : -1))
       .filter((index) => index !== -1);
     const capacity = remainingStudentCapacity(organization);
 
@@ -351,8 +350,8 @@ export async function commitTraineeImport(
     let updated = 0;
 
     for (let index = 0; index < rows.length; index++) {
-      const resolution = resolutions[index];
-      if (resolution.action !== "update") continue;
+      const traineeId = resolved.targets[index];
+      if (traineeId === null) continue;
       const { parsed } = rows[index];
 
       await trx
@@ -365,13 +364,13 @@ export async function commitTraineeImport(
         })
         .where(
           and(
-            eq(TraineesTable.id, resolution.traineeId),
+            eq(TraineesTable.id, traineeId),
             eq(TraineesTable.organizationId, ctx.organizationId),
             isNull(TraineesTable.deletedAt),
           ),
         );
 
-      traineeIdByRow[index] = resolution.traineeId;
+      traineeIdByRow[index] = traineeId;
       updated++;
     }
 

@@ -20,6 +20,11 @@ export type {
   ImportRowAction,
 } from "./preview";
 export {
+  type ResolvedImportRows,
+  resolveEntityRows,
+  type RowOutcome,
+} from "./resolve";
+export {
   flagDuplicateRows,
   type ReviewedRows,
   type RowValidator,
