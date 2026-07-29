@@ -51,29 +51,46 @@ export async function markAttendance(
     });
   }
 
-  // The trainee has to be on this class's roster — not merely in the org.
-  // Checked here rather than left to the foreign key, which only proves the
-  // trainee belongs to the same organization.
-  const [rosterEntry] = await ctx.db
-    .select({ traineeId: GroupStudentsTable.traineeId })
-    .from(GroupStudentsTable)
-    .innerJoin(
-      TraineesTable,
-      and(
-        eq(TraineesTable.id, GroupStudentsTable.traineeId),
-        eq(TraineesTable.organizationId, GroupStudentsTable.organizationId),
-        isNull(TraineesTable.deletedAt),
+  // The trainee has to belong on this class's register — not merely in the
+  // org. Checked here rather than left to the foreign key, which only proves
+  // the trainee belongs to the same organization.
+  //
+  // "Belongs" is the same union the register itself shows: on the group's
+  // roster now, *or* already carrying a record for this class. Requiring
+  // current membership would leave a trainee who has since moved classes with
+  // an attendance record nobody can ever correct.
+  const [onRoster, [recorded]] = await Promise.all([
+    ctx.db
+      .select({ traineeId: GroupStudentsTable.traineeId })
+      .from(GroupStudentsTable)
+      .innerJoin(
+        TraineesTable,
+        and(
+          eq(TraineesTable.id, GroupStudentsTable.traineeId),
+          eq(TraineesTable.organizationId, GroupStudentsTable.organizationId),
+          isNull(TraineesTable.deletedAt),
+        ),
+      )
+      .where(
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          eq(GroupStudentsTable.groupId, session.groupId),
+          eq(GroupStudentsTable.traineeId, input.traineeId),
+        ),
       ),
-    )
-    .where(
-      and(
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
-        eq(GroupStudentsTable.groupId, session.groupId),
-        eq(GroupStudentsTable.traineeId, input.traineeId),
+    ctx.db
+      .select({ traineeId: SessionStudentsTable.traineeId })
+      .from(SessionStudentsTable)
+      .where(
+        and(
+          eq(SessionStudentsTable.organizationId, ctx.organizationId),
+          eq(SessionStudentsTable.sessionId, input.sessionId),
+          eq(SessionStudentsTable.traineeId, input.traineeId),
+        ),
       ),
-    );
+  ]);
 
-  if (!rosterEntry) {
+  if (onRoster.length === 0 && !recorded) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: ctx.t("errors.notFound"),

@@ -202,6 +202,11 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Their record stays on the class they actually sat in,
+                        and stays correctable, even after they move on. */}
+                    {row.onRoster ? null : (
+                      <Tag color="neutral">{t("attendance.leftTheClass")}</Tag>
+                    )}
                     {row.source === "manual" ? (
                       <Tag color="violet">{t("attendance.markedManually")}</Tag>
                     ) : null}

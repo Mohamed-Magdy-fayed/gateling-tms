@@ -760,6 +760,7 @@ export default {
       unmarked: "لم يُسجَّل",
     },
     markedManually: "سجّله المعلم",
+    leftTheClass: "لم يعد في هذه المجموعة",
     marked: "تم تحديث الحضور.",
     markFailed: "تعذّر تحديث الحضور. حاول مرة أخرى.",
     joinedAt: "انضم في {time:string}",

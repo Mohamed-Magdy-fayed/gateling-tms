@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   type AttendanceSource,
   type AttendanceStatus,
@@ -26,6 +26,11 @@ export type AttendanceRow = {
   joinedAt: Date | null;
   leftAt: Date | null;
   attendedMinutes: number;
+  /**
+   * False for a trainee who has attendance recorded for this class but has
+   * since left the group — their record stays visible and correctable.
+   */
+  onRoster: boolean;
 };
 
 export type SessionAttendance = {
@@ -102,45 +107,7 @@ export async function getSessionAttendance(
     });
   }
 
-  const rows = await ctx.db
-    .select({
-      traineeId: TraineesTable.id,
-      traineeName: TraineesTable.name,
-      status: SessionStudentsTable.status,
-      source: SessionStudentsTable.source,
-      joinedAt: SessionStudentsTable.joinedAt,
-      leftAt: SessionStudentsTable.leftAt,
-      attendedMinutes: SessionStudentsTable.attendedMinutes,
-    })
-    .from(GroupStudentsTable)
-    .innerJoin(
-      TraineesTable,
-      and(
-        eq(TraineesTable.id, GroupStudentsTable.traineeId),
-        eq(TraineesTable.organizationId, GroupStudentsTable.organizationId),
-        isNull(TraineesTable.deletedAt),
-      ),
-    )
-    .leftJoin(
-      SessionStudentsTable,
-      and(
-        eq(SessionStudentsTable.sessionId, sessionId),
-        eq(SessionStudentsTable.traineeId, GroupStudentsTable.traineeId),
-        eq(
-          SessionStudentsTable.organizationId,
-          GroupStudentsTable.organizationId,
-        ),
-      ),
-    )
-    .where(
-      and(
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
-        eq(GroupStudentsTable.groupId, session.groupId),
-      ),
-    )
-    // `id` tiebreaks so two trainees with the same name keep a stable order
-    // between loads (STATE.md D35).
-    .orderBy(asc(TraineesTable.name), asc(TraineesTable.id));
+  const rows = await listRegisterRows(ctx, sessionId, session.groupId);
 
   const links = resolveSessionLinks(
     { userId: ctx.session.user.id, role: ctx.role },
@@ -166,18 +133,112 @@ export async function getSessionAttendance(
       recordingUrl: session.recordingUrl,
       recordingPassword: session.recordingPassword,
     },
-    rows: rows.map((row) => ({
-      traineeId: row.traineeId,
-      traineeName: row.traineeName,
-      status: row.status,
-      source: row.source,
-      joinedAt: row.joinedAt,
-      leftAt: row.leftAt,
-      attendedMinutes: row.attendedMinutes ?? 0,
-    })),
+    rows,
     canMark: canMarkAttendance(ctx, session.teacherId),
     hasActiveZoomClient: await hasActiveZoomClient(ctx),
   };
+}
+
+/**
+ * Who belongs on this class's register: everyone currently on the group's
+ * roster, **plus** anyone with attendance already recorded for it.
+ *
+ * Group membership is mutable and the register is history. Deriving the list
+ * from the roster alone would make a trainee's recorded attendance vanish the
+ * moment they are moved to another class — and, worse, leave it uncorrectable,
+ * since the row would still be counted in their progress while being invisible
+ * to the teacher. The union keeps every recorded fact reachable without
+ * introducing a per-session roster snapshot: the snapshot would be a second
+ * source of truth for membership, and everything it buys beyond this is the
+ * cosmetic difference of a later-added trainee showing as "not marked" on an
+ * older class, which is a true statement about them.
+ *
+ * Two queries rather than one outer join: each is a plain indexed lookup, and
+ * they answer two different questions that happen to be merged for display.
+ */
+async function listRegisterRows(
+  ctx: OrgTRPCContext,
+  sessionId: string,
+  groupId: string,
+): Promise<AttendanceRow[]> {
+  const [roster, recorded] = await Promise.all([
+    ctx.db
+      .select({
+        traineeId: TraineesTable.id,
+        traineeName: TraineesTable.name,
+      })
+      .from(GroupStudentsTable)
+      .innerJoin(
+        TraineesTable,
+        and(
+          eq(TraineesTable.id, GroupStudentsTable.traineeId),
+          eq(TraineesTable.organizationId, GroupStudentsTable.organizationId),
+          isNull(TraineesTable.deletedAt),
+        ),
+      )
+      .where(
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          eq(GroupStudentsTable.groupId, groupId),
+        ),
+      ),
+    ctx.db
+      .select({
+        traineeId: TraineesTable.id,
+        traineeName: TraineesTable.name,
+        status: SessionStudentsTable.status,
+        source: SessionStudentsTable.source,
+        joinedAt: SessionStudentsTable.joinedAt,
+        leftAt: SessionStudentsTable.leftAt,
+        attendedMinutes: SessionStudentsTable.attendedMinutes,
+      })
+      .from(SessionStudentsTable)
+      .innerJoin(
+        TraineesTable,
+        and(
+          eq(TraineesTable.id, SessionStudentsTable.traineeId),
+          eq(TraineesTable.organizationId, SessionStudentsTable.organizationId),
+          isNull(TraineesTable.deletedAt),
+        ),
+      )
+      .where(
+        and(
+          eq(SessionStudentsTable.organizationId, ctx.organizationId),
+          eq(SessionStudentsTable.sessionId, sessionId),
+        ),
+      ),
+  ]);
+
+  const rowsByTrainee = new Map<string, AttendanceRow>();
+
+  for (const entry of roster) {
+    rowsByTrainee.set(entry.traineeId, {
+      traineeId: entry.traineeId,
+      traineeName: entry.traineeName,
+      status: null,
+      source: null,
+      joinedAt: null,
+      leftAt: null,
+      attendedMinutes: 0,
+      onRoster: true,
+    });
+  }
+
+  for (const entry of recorded) {
+    rowsByTrainee.set(entry.traineeId, {
+      ...entry,
+      attendedMinutes: entry.attendedMinutes ?? 0,
+      onRoster: rowsByTrainee.has(entry.traineeId),
+    });
+  }
+
+  // `traineeId` tiebreaks so two trainees with the same name keep a stable
+  // order between loads (STATE.md D35).
+  return [...rowsByTrainee.values()].sort(
+    (a, b) =>
+      a.traineeName.localeCompare(b.traineeName) ||
+      a.traineeId.localeCompare(b.traineeId),
+  );
 }
 
 /**

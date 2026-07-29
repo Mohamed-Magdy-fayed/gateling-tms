@@ -792,6 +792,7 @@ export default {
       unmarked: "Not marked",
     },
     markedManually: "Set by a teacher",
+    leftTheClass: "No longer in this class",
     marked: "Attendance updated.",
     markFailed: "Couldn't update attendance. Please try again.",
     joinedAt: "Joined at {time:string}",

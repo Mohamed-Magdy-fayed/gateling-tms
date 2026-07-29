@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { db } from "@/drizzle";
+import { db, type Transaction } from "@/drizzle";
 import {
   GroupStudentsTable,
   SessionStudentsTable,
@@ -133,25 +133,33 @@ async function endSession(session: SessionRef): Promise<ZoomWebhookOutcome> {
   const roster = await loadRoster(session);
 
   if (roster.length > 0) {
-    await db
-      .insert(SessionStudentsTable)
-      .values(
-        roster.map((candidate) => ({
-          organizationId: session.organizationId,
-          sessionId: session.id,
-          traineeId: candidate.traineeId,
-          status: "absent" as const,
-          source: "zoom" as const,
-        })),
-      )
-      // Whoever already has a record keeps it — including a teacher's manual
-      // one, which this must never overwrite.
-      .onConflictDoNothing({
-        target: [
-          SessionStudentsTable.sessionId,
-          SessionStudentsTable.traineeId,
-        ],
-      });
+    // Under the same per-session lock the participant fold takes. Zoom
+    // delivers `meeting.ended` and the last `participant_left` within moments
+    // of each other, so an unlocked backfill here would routinely insert the
+    // absent row in the window between that fold's SELECT and its INSERT.
+    await db.transaction(async (trx) => {
+      await lockSession(trx, session.id);
+
+      await trx
+        .insert(SessionStudentsTable)
+        .values(
+          roster.map((candidate) => ({
+            organizationId: session.organizationId,
+            sessionId: session.id,
+            traineeId: candidate.traineeId,
+            status: "absent" as const,
+            source: "zoom" as const,
+          })),
+        )
+        // Whoever already has a record keeps it — including a teacher's manual
+        // one, which this must never overwrite.
+        .onConflictDoNothing({
+          target: [
+            SessionStudentsTable.sessionId,
+            SessionStudentsTable.traineeId,
+          ],
+        });
+    });
   }
 
   return { status: "session-updated", sessionId: session.id };
@@ -178,9 +186,7 @@ async function recordParticipant(
     // Join and leave events for one class arrive in bursts and out of order.
     // The fold below is read-modify-write, so it is serialized per session —
     // the same idiom the meeting provisioning uses (STATE.md D106).
-    await trx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtextextended(${session.id}, 0))`,
-    );
+    await lockSession(trx, session.id);
 
     const [existing] = await trx
       .select({
@@ -216,14 +222,27 @@ async function recordParticipant(
       existing?.source === "manual" ? undefined : ("present" as const);
 
     if (!existing) {
-      await trx.insert(SessionStudentsTable).values({
-        organizationId: session.organizationId,
-        sessionId: session.id,
-        traineeId,
-        status: "present",
-        source: "zoom",
-        ...times,
-      });
+      await trx
+        .insert(SessionStudentsTable)
+        .values({
+          organizationId: session.organizationId,
+          sessionId: session.id,
+          traineeId,
+          status: "present",
+          source: "zoom",
+          ...times,
+        })
+        // The lock covers the other webhook path, but `markAttendance` is a
+        // user action that doesn't take it — a teacher marking this trainee in
+        // the same instant would otherwise turn a normal collision into a
+        // failed run. Their verdict wins; only the times are folded in.
+        .onConflictDoUpdate({
+          target: [
+            SessionStudentsTable.sessionId,
+            SessionStudentsTable.traineeId,
+          ],
+          set: { ...times, updatedAt: new Date() },
+        });
       return;
     }
 
@@ -257,6 +276,16 @@ async function attachRecording(
     .where(eq(SessionsTable.id, session.id));
 
   return { status: "recording-attached", sessionId: session.id };
+}
+
+/**
+ * Serializes every write to one session's register. Both webhook paths take
+ * it, so `meeting.ended`'s backfill and a participant fold can't interleave.
+ */
+function lockSession(trx: Transaction, sessionId: string) {
+  return trx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtextextended(${sessionId}, 0))`,
+  );
 }
 
 async function loadRoster(session: SessionRef): Promise<RosterCandidate[]> {
