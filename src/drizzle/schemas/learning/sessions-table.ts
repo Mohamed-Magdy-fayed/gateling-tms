@@ -65,6 +65,11 @@ export const SessionsTable = pgTable(
     // selected for the assigned teacher or an org admin (sessions/lib
     // resolve-session-links.ts).
     zoomStartUrl: varchar({ length: 2048 }),
+    // Filled by the `recording.completed` webhook, and only for accounts whose
+    // plan records to the cloud — nothing forces recording on (STATE.md D101),
+    // so a null here means "no recording", never "not loaded yet".
+    zoomRecordingUrl: varchar({ length: 2048 }),
+    zoomRecordingPassword: varchar({ length: 64 }),
     createdAt,
     updatedAt,
   },

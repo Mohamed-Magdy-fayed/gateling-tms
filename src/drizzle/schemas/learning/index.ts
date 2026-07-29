@@ -4,5 +4,6 @@ export * from "./enrollments-table";
 export * from "./group-students-table";
 export * from "./groups-table";
 export * from "./placement-tests-table";
+export * from "./session-students-table";
 export * from "./sessions-table";
 export * from "./trainees-table";
