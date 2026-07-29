@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  AwardIcon,
   ClipboardListIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
@@ -23,7 +24,8 @@ export type SystemNavItem = {
     | "nav.assessments"
     | "nav.learningFlow"
     | "nav.groups"
-    | "nav.enrollments";
+    | "nav.enrollments"
+    | "nav.certificates";
   Icon: LucideIcon;
 };
 
@@ -63,6 +65,11 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     href: "/learning-flow/enrollments",
     translationKey: "nav.enrollments",
     Icon: UserCheckIcon,
+  },
+  {
+    href: "/learning-flow/certificates",
+    translationKey: "nav.certificates",
+    Icon: AwardIcon,
   },
   {
     href: "/assessments",

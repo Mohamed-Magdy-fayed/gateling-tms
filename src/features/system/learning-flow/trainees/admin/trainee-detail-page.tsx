@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "@/features/core/i18n/client";
+import { TraineeCertificatesSection } from "@/features/system/learning-flow/certificates/admin";
 import { TraineeEnrollmentsSection } from "@/features/system/learning-flow/enrollments/admin";
 import { TraineePlacementTestsSection } from "@/features/system/learning-flow/placement-tests/admin";
+import { TraineeProgressCard } from "@/features/system/learning-flow/progress/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import { TraineeFormDialog, TraineeGroupsSection } from "./components";
 
@@ -94,6 +96,8 @@ export function TraineeDetailPage({ traineeId }: { traineeId: string }) {
         ) : null}
       </div>
 
+      <TraineeProgressCard traineeId={trainee.id} />
+
       <TraineeEnrollmentsSection traineeId={trainee.id} />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -103,6 +107,8 @@ export function TraineeDetailPage({ traineeId }: { traineeId: string }) {
         />
         <TraineeGroupsSection traineeId={trainee.id} />
       </div>
+
+      <TraineeCertificatesSection traineeId={trainee.id} />
 
       <TraineeFormDialog
         open={editOpen}
