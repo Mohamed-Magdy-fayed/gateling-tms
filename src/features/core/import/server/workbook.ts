@@ -82,6 +82,41 @@ export async function parseWorkbook(
   return headers === null ? null : { headers, rows };
 }
 
+/** Roughly wide enough for the header without truncating it. */
+function fitColumnWidths(
+  sheet: ExcelJS.Worksheet,
+  labels: string[],
+  minimum = 16,
+): void {
+  sheet.columns.forEach((column, index) => {
+    column.width = Math.max(minimum, (labels[index]?.length ?? 0) + 4);
+  });
+}
+
+/**
+ * Writes the organization's own rows in the shape its import template accepts,
+ * so an export can be edited and uploaded straight back (`phase-07.md` step 3,
+ * STATE.md D118). One sheet only — the reference sheet belongs on a blank
+ * template, not on a file full of real data.
+ */
+export async function buildExportWorkbook(
+  headers: string[],
+  rows: string[][],
+  labels: { sheetName: string; rightToLeft: boolean },
+): Promise<ArrayBuffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(labels.sheetName, {
+    views: labels.rightToLeft ? [{ rightToLeft: true }] : undefined,
+  });
+
+  sheet.addRow(headers);
+  sheet.getRow(1).font = { bold: true };
+  for (const row of rows) sheet.addRow(row);
+  fitColumnWidths(sheet, headers);
+
+  return workbook.xlsx.writeBuffer();
+}
+
 export type TemplateSheetLabels = {
   /** Name of the sheet holding the headers and the example row. */
   dataSheetName: string;
@@ -116,10 +151,10 @@ export async function buildTemplateWorkbook(
   dataSheet.addRow(columns.map((column) => column.label));
   dataSheet.addRow(columns.map((column) => column.example));
   dataSheet.getRow(1).font = { bold: true };
-  dataSheet.columns.forEach((column, index) => {
-    const label = columns[index]?.label ?? "";
-    column.width = Math.max(16, label.length + 4);
-  });
+  fitColumnWidths(
+    dataSheet,
+    columns.map((column) => column.label),
+  );
 
   const referenceSheet = workbook.addWorksheet(labels.referenceSheetName, {
     views,

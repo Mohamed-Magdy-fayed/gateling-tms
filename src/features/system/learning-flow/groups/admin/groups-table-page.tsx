@@ -27,7 +27,10 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
-import { EntityImportDialog } from "@/features/core/import/admin";
+import {
+  EntityExportButton,
+  EntityImportDialog,
+} from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -169,6 +172,14 @@ export function GroupsTablePage() {
               table={table}
               getExportRow={(row) => row}
               exportFileName="groups.csv"
+            />
+            <EntityExportButton
+              entities={[
+                {
+                  entity: "group-students",
+                  titleKey: "import.groupStudents.title",
+                },
+              ]}
             />
             {/* A roster file names one group per row, so it spans the whole
                 list rather than one group's detail page. */}

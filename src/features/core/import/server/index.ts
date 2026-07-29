@@ -1,3 +1,12 @@
+export {
+  CSV_CONTENT_TYPE,
+  type DownloadFormat,
+  fileResponse,
+  resolveDownloadFormat,
+  toLocalizedCsv,
+  UTF8_BYTE_ORDER_MARK,
+  XLSX_CONTENT_TYPE,
+} from "./download";
 export { importFileError, missingColumnsError } from "./errors";
 export {
   type ImportFileProblem,
@@ -11,6 +20,7 @@ export {
   reviewImportTable,
 } from "./review";
 export {
+  buildExportWorkbook,
   buildTemplateWorkbook,
   cellText,
   parseWorkbook,

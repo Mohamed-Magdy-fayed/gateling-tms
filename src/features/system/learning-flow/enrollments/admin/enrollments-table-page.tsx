@@ -27,7 +27,10 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
-import { EntityImportDialog } from "@/features/core/import/admin";
+import {
+  EntityExportButton,
+  EntityImportDialog,
+} from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import {
   buildEnrollmentColumns,
@@ -175,6 +178,11 @@ export function EnrollmentsTablePage() {
               table={table}
               getExportRow={(row) => row}
               exportFileName="enrollments.csv"
+            />
+            <EntityExportButton
+              entities={[
+                { entity: "enrollments", titleKey: "import.enrollments.title" },
+              ]}
             />
             <Button
               type="button"
