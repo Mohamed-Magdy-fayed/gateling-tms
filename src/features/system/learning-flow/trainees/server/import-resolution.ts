@@ -1,8 +1,8 @@
 import {
   type ResolvedImportRows,
   type ReviewedRows,
-  resolveEntityRows,
   type RowOutcome,
+  resolveEntityRows,
   type ValidImportRow,
 } from "@/features/core/import/lib";
 import type { TraineeImportRow } from "./schemas";
@@ -61,11 +61,10 @@ export function resolveRows(
   reviewed: ReviewedRows<TraineeImportRow>,
   existing: ExistingTrainees,
 ): ResolvedTraineeRows {
-  return resolveEntityRows(
-    reviewed,
-    (row) => resolveRow(row, existing),
-    { column: "", message: "import.validation.duplicateTrainee" },
-  );
+  return resolveEntityRows(reviewed, (row) => resolveRow(row, existing), {
+    column: "",
+    message: "import.validation.duplicateTrainee",
+  });
 }
 
 /** The distinct group names in the batch, keeping each one's first spelling. */

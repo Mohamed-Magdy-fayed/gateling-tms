@@ -1,12 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   ColumnPinningState,
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { PlusIcon } from "lucide-react";
+import { LayersIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Course } from "@/drizzle/schema";
@@ -23,6 +23,7 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import { EntityImportDialog } from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -56,6 +57,22 @@ export function CoursesTablePage() {
   );
   const [rowAction, setRowAction] = useState<RowAction>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [courseImportOpen, setCourseImportOpen] = useState(false);
+  const [levelImportOpen, setLevelImportOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const courseImportPreview = useMutation(
+    trpc.courses.importPreview.mutationOptions(),
+  );
+  const courseImportCommit = useMutation(
+    trpc.courses.importCommit.mutationOptions(),
+  );
+  const levelImportPreview = useMutation(
+    trpc.levels.importPreview.mutationOptions(),
+  );
+  const levelImportCommit = useMutation(
+    trpc.levels.importCommit.mutationOptions(),
+  );
 
   const listInput = useMemo(
     () => ({
@@ -157,6 +174,28 @@ export function CoursesTablePage() {
             <Button
               type="button"
               size="icon"
+              variant="outline"
+              className="size-8"
+              onClick={() => setCourseImportOpen(true)}
+              aria-label={t("import.courses.action")}
+            >
+              <UploadIcon className="size-3.5" />
+            </Button>
+            {/* A levels file names its parent course per row, so it spans the
+                whole list rather than one course's detail page. */}
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-8"
+              onClick={() => setLevelImportOpen(true)}
+              aria-label={t("import.levels.action")}
+            >
+              <LayersIcon className="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
               className="size-8"
               onClick={() => setCreateOpen(true)}
               aria-label={t("actions.create")}
@@ -167,6 +206,28 @@ export function CoursesTablePage() {
           </DataTableToolbar>
         }
         footer={<DataTablePagination table={table} />}
+      />
+
+      <EntityImportDialog
+        open={courseImportOpen}
+        onOpenChange={setCourseImportOpen}
+        entity="courses"
+        onPreview={(input) => courseImportPreview.mutateAsync(input)}
+        onCommit={(rows) => courseImportCommit.mutateAsync({ rows })}
+        onImported={() =>
+          queryClient.invalidateQueries({ queryKey: trpc.courses.pathKey() })
+        }
+      />
+
+      <EntityImportDialog
+        open={levelImportOpen}
+        onOpenChange={setLevelImportOpen}
+        entity="levels"
+        onPreview={(input) => levelImportPreview.mutateAsync(input)}
+        onCommit={(rows) => levelImportCommit.mutateAsync({ rows })}
+        onImported={() =>
+          queryClient.invalidateQueries({ queryKey: trpc.levels.pathKey() })
+        }
       />
 
       <CourseFormDialog open={createOpen} onOpenChange={setCreateOpen} />

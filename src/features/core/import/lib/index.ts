@@ -21,8 +21,8 @@ export type {
 } from "./preview";
 export {
   type ResolvedImportRows,
-  resolveEntityRows,
   type RowOutcome,
+  resolveEntityRows,
 } from "./resolve";
 export {
   flagDuplicateRows,

@@ -3,10 +3,13 @@ import {
   orgContentManagerProcedure,
   orgProcedure,
 } from "@/integrations/trpc/init";
+import { commitLevelImport, previewLevelImport } from "./import";
 import { createLevel, deleteLevel, moveLevel, updateLevel } from "./mutations";
 import { listLevels } from "./queries";
 import {
   levelDeleteSchema,
+  levelImportCommitInput,
+  levelImportPreviewInput,
   levelMoveSchema,
   levelMutationSchema,
   levelUpdateSchema,
@@ -29,4 +32,12 @@ export const levelsRouter = createTRPCRouter({
   move: orgContentManagerProcedure
     .input(levelMoveSchema)
     .mutation(async ({ ctx, input }) => moveLevel(ctx, input)),
+  // Mutations, not queries: both take a file body, and re-running a preview
+  // for the same file is the point rather than something to cache.
+  importPreview: orgContentManagerProcedure
+    .input(levelImportPreviewInput)
+    .mutation(async ({ ctx, input }) => previewLevelImport(ctx, input)),
+  importCommit: orgContentManagerProcedure
+    .input(levelImportCommitInput)
+    .mutation(async ({ ctx, input }) => commitLevelImport(ctx, input)),
 });

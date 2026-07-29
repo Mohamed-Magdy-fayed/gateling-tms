@@ -536,6 +536,49 @@ export default {
       duplicateId: "This id appears in an earlier row.",
       duplicateEmail: "This email appears in an earlier row.",
       duplicateTrainee: "An earlier row already updates this trainee.",
+      duplicateName: "This name appears in an earlier row.",
+      unknownCourseId: "No course in this organization has this id.",
+      duplicateCourse: "An earlier row already updates this course.",
+      unknownCourse: "No course in this organization has this name.",
+      unknownLevelId: "No level in this organization has this id.",
+      levelCourseMismatch:
+        "This level belongs to a different course. Leave the id blank to add a level to this course instead.",
+      duplicateLevel: "An earlier row already updates this level.",
+      duplicateLevelName:
+        "This level name appears in an earlier row for the same course.",
+      invalidOrder: "The position must be a whole number.",
+    },
+    courses: {
+      action: "Import courses",
+      title: "Courses",
+      columns: {
+        id: "Id",
+        name: "Name",
+        description: "Description",
+      },
+      hints: {
+        id: "Leave blank for a new course. Keep the value when re-importing an export to update that course instead of adding another.",
+        name: "Required. Also used to match an existing course when no id is given.",
+        description: "Optional. Up to 2000 characters.",
+      },
+    },
+    levels: {
+      action: "Import levels",
+      title: "Levels",
+      columns: {
+        id: "Id",
+        courseName: "Course",
+        name: "Name",
+        order: "Position",
+      },
+      hints: {
+        id: "Leave blank for a new level. Keep the value when re-importing an export to update that level instead of adding another.",
+        courseName:
+          "Required. The course this level belongs to. The course must already exist.",
+        name: "Required. Also used to match an existing level within the same course.",
+        order:
+          "Optional. A whole number — lower comes first. Leave blank to add the level at the end of the course.",
+      },
     },
     trainees: {
       title: "Trainees",
