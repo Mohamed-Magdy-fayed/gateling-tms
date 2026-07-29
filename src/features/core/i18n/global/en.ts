@@ -467,6 +467,96 @@ export default {
     groupsEmptyDescription:
       "Add this trainee to a group from the group's own roster.",
   },
+  import: {
+    action: "Import",
+    title: "Import from a spreadsheet",
+    description:
+      "Download the template, fill it in, then upload it. Nothing is saved until you confirm the review.",
+    downloadXlsx: "Download Excel template",
+    downloadCsv: "Download CSV template",
+    chooseFile: "Choose a file",
+    fileHint: "Excel (.xlsx) or CSV, up to {maxMb:number} MB.",
+    reviewTitle: "Review before importing",
+    reviewValid: dt("{count:plural} ready", {
+      plural: { count: { one: "{?} row ready", other: "{?} rows ready" } },
+    }),
+    reviewInvalid: dt("{count:plural} skipped", {
+      plural: {
+        count: { one: "{?} row skipped", other: "{?} rows skipped" },
+      },
+    }),
+    reviewCreates: dt("{count:number} new", {}),
+    reviewUpdates: dt("{count:number} updated", {}),
+    rowNumber: "Row",
+    problems: "Problems",
+    actionColumn: "Result",
+    actionCreate: "New",
+    actionUpdate: "Update",
+    unknownHeaders: dt(
+      "Columns we didn't recognize and ignored: {columns:list}",
+      {},
+    ),
+    limitWarning: dt(
+      "Your plan has room for {importable:number} of these rows. Import the first {importable:number} now, or upgrade for the rest.",
+      {},
+    ),
+    nothingImportable: "None of these rows can be imported.",
+    confirm: dt("Import {count:number} row(s)", {}),
+    imported: dt(
+      "Imported {created:number} new and updated {updated:number}.",
+      {},
+    ),
+    importFailed: "Could not import this file.",
+    previewFailed: "Could not read this file.",
+    template: {
+      referenceSheet: "Reference",
+      columnHeading: "Column",
+      requiredHeading: "Required",
+      notesHeading: "Notes",
+      requiredYes: "Yes",
+      requiredNo: "No",
+    },
+    errors: {
+      fileTooLarge: dt("This file is larger than {maxMb:number} MB.", {}),
+      unsupportedFormat: "Only .xlsx and .csv files can be imported.",
+      emptyFile: "This file has no data rows.",
+      tooManyRows: dt(
+        "This file has more than {maxRows:number} rows. Split it and import each part.",
+        {},
+      ),
+      missingColumns: dt(
+        "These required columns are missing: {columns:list}.",
+        {},
+      ),
+      invalidRows: "Some rows are no longer valid. Upload the file again.",
+    },
+    validation: {
+      invalidId: "This id isn't a valid identifier.",
+      unknownId: "No trainee in this organization has this id.",
+      duplicateId: "This id appears in an earlier row.",
+      duplicateEmail: "This email appears in an earlier row.",
+      duplicateTrainee: "An earlier row already updates this trainee.",
+    },
+    trainees: {
+      title: "Trainees",
+      columns: {
+        id: "Id",
+        name: "Name",
+        phone: "Phone",
+        email: "Email",
+        groupName: "Group",
+      },
+      hints: {
+        id: "Leave blank for a new trainee. Keep the value when re-importing an export to update that trainee instead of adding another.",
+        name: "Required. The trainee's full name.",
+        phone: "Optional. Any format, up to 32 characters.",
+        email:
+          "Optional. Used to match an existing trainee when no id is given.",
+        groupName:
+          "Optional. The trainee is added to this group; a group with this name is created if it doesn't exist yet.",
+      },
+    },
+  },
   groups: {
     title: "Groups",
     lead: "Your classes — set a weekly schedule and add students on the spot. No course required.",

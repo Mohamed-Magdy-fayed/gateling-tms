@@ -1,12 +1,17 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type {
   ColumnPinningState,
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Trainee } from "@/drizzle/schema";
@@ -23,6 +28,7 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import { EntityImportDialog } from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -56,6 +62,15 @@ export function TraineesTablePage() {
   );
   const [rowAction, setRowAction] = useState<RowAction>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const importPreview = useMutation(
+    trpc.trainees.importPreview.mutationOptions(),
+  );
+  const importCommit = useMutation(
+    trpc.trainees.importCommit.mutationOptions(),
+  );
 
   const listInput = useMemo(
     () => ({
@@ -158,6 +173,16 @@ export function TraineesTablePage() {
             <Button
               type="button"
               size="icon"
+              variant="outline"
+              className="size-8"
+              onClick={() => setImportOpen(true)}
+              aria-label={t("import.action")}
+            >
+              <UploadIcon className="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
               className="size-8"
               onClick={() => setCreateOpen(true)}
               aria-label={t("actions.create")}
@@ -168,6 +193,17 @@ export function TraineesTablePage() {
           </DataTableToolbar>
         }
         footer={<DataTablePagination table={table} />}
+      />
+
+      <EntityImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        entity="trainees"
+        onPreview={(input) => importPreview.mutateAsync(input)}
+        onCommit={(rows) => importCommit.mutateAsync({ rows })}
+        onImported={() =>
+          queryClient.invalidateQueries({ queryKey: trpc.trainees.pathKey() })
+        }
       />
 
       <TraineeFormDialog open={createOpen} onOpenChange={setCreateOpen} />
