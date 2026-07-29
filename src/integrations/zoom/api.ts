@@ -85,18 +85,34 @@ export function refreshAccessToken(
   });
 }
 
-/** Best-effort: disconnecting locally must succeed even if Zoom rejects this. */
+/**
+ * The token goes in the form body, not a query string: Zoom's revoke endpoint
+ * expects `application/x-www-form-urlencoded`, and a credential in a URL ends
+ * up in access logs and proxy history.
+ *
+ * Throws when Zoom refuses, so the caller (an Inngest job) retries and the
+ * failure stays visible — a silently ignored response would report a
+ * disconnect as complete while Zoom kept the grant alive.
+ */
 export async function revokeAccessToken(
   credentials: ZoomCredentials,
   accessToken: string,
 ): Promise<void> {
-  const url = new URL(ZOOM_OAUTH_REVOKE_URL);
-  url.searchParams.set("token", accessToken);
-
-  await fetchWithTimeout(url.toString(), {
+  const response = await fetchWithTimeout(ZOOM_OAUTH_REVOKE_URL, {
     method: "POST",
-    headers: { Authorization: basicAuthHeader(credentials) },
+    headers: {
+      Authorization: basicAuthHeader(credentials),
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ token: accessToken }),
   });
+
+  if (!response.ok) {
+    throw new ZoomApiError(
+      zoomErrorMessage(await readJson(response)),
+      response.status,
+    );
+  }
 }
 
 export async function fetchZoomAccount(

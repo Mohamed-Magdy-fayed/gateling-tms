@@ -753,7 +753,7 @@ export default {
   zoomClients: {
     title: "Zoom connections",
     subtitle:
-      "Connect the Zoom account your classes run on. Scheduling works without it — Zoom adds the meeting links.",
+      "Connect the Zoom account your classes run on. Scheduling works without it — automatic meeting links and attendance are coming next.",
     connect: "Connect Zoom",
     connectDescription:
       "Name this connection, then approve it on Zoom. You'll come straight back here.",
@@ -774,7 +774,7 @@ export default {
     loadFailed: "Couldn't load Zoom connections.",
     emptyTitle: "No Zoom account connected",
     emptyDescription:
-      "Connect Zoom to turn scheduled classes into real meetings with join links and attendance.",
+      "Connect an account now and your scheduled classes will start using it as soon as automatic meeting links land.",
     status: {
       pending: "Awaiting approval",
       active: "Connected",

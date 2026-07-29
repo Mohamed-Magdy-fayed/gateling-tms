@@ -62,7 +62,7 @@ organization reconnects once.
 
 ## 3. Connect flow
 
-```
+```text
 admin clicks "Connect Zoom"
   └─ tRPC zoomClients.create        creates a `pending` row, returns its id
   └─ GET /api/zoom/connect/[id]     admin check, sets the state cookie,

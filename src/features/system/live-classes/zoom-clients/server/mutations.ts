@@ -81,21 +81,37 @@ export async function disconnectZoomClient(
   ctx: OrgTRPCContext,
   input: ZoomClientIdInput,
 ) {
-  // UPDATE ... RETURNING hands back the *new* values, so the token has to be
-  // read before it is cleared or there would be nothing left to revoke.
+  // UPDATE ... RETURNING hands back the *new* values, so the token is read
+  // first — but with a plain SELECT, not a separate write. The delete and the
+  // credential-clear then happen in one statement: splitting them would leave
+  // a readable token behind for good if the second write failed.
+  const [existing] = await ctx.db
+    .select({ accessToken: ZoomClientsTable.accessToken })
+    .from(ZoomClientsTable)
+    .where(scopedTo(ctx, input.id));
+
+  if (!existing) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
   const [zoomClient] = await ctx.db
     .update(ZoomClientsTable)
     .set({
       deletedAt: new Date(),
       deletedBy: actorLabel(ctx),
       status: "pending",
+      accessToken: null,
+      refreshToken: null,
+      accessTokenExpiresAt: null,
     })
     .where(scopedTo(ctx, input.id))
-    .returning({
-      id: ZoomClientsTable.id,
-      accessToken: ZoomClientsTable.accessToken,
-    });
+    .returning({ id: ZoomClientsTable.id });
 
+  // Lost a race with a concurrent disconnect — the row this call read is
+  // already gone, and whoever won it owns the revoke.
   if (!zoomClient) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -103,23 +119,7 @@ export async function disconnectZoomClient(
     });
   }
 
-  // Cleared in a second write so no readable credential outlives the
-  // disconnect, even if the revoke below never reaches Zoom.
-  await ctx.db
-    .update(ZoomClientsTable)
-    .set({
-      accessToken: null,
-      refreshToken: null,
-      accessTokenExpiresAt: null,
-    })
-    .where(
-      and(
-        eq(ZoomClientsTable.id, zoomClient.id),
-        eq(ZoomClientsTable.organizationId, ctx.organizationId),
-      ),
-    );
-
-  await requestTokenRevocation(ctx, zoomClient.id, zoomClient.accessToken);
+  await requestTokenRevocation(ctx, zoomClient.id, existing.accessToken);
 
   return { id: zoomClient.id };
 }
@@ -140,9 +140,11 @@ export async function completeZoomConnection({
   code: string;
   actorEmail: string;
 }) {
-  const { credentials, encryptionKey } = getZoomConfig();
-
   try {
+    // Inside the try: a missing/!invalid Zoom configuration is exactly the
+    // kind of failure the row should carry a reason for, and reading it
+    // outside would skip recordZoomClientFailure entirely.
+    const { credentials, encryptionKey } = getZoomConfig();
     const tokens = await exchangeAuthorizationCode(credentials, code);
     const account = await fetchZoomAccount(tokens.accessToken);
 
@@ -173,7 +175,7 @@ export async function completeZoomConnection({
 
     return updated;
   } catch (error) {
-    await recordZoomConnectionFailure({
+    await recordZoomClientFailure({
       organizationId,
       zoomClientId,
       error,
@@ -183,11 +185,12 @@ export async function completeZoomConnection({
 }
 
 /**
- * A failed handshake leaves the row visible with the reason attached rather
- * than deleting it — the org needs to see *that* connecting failed, and can
- * retry the same row.
+ * Leaves the row visible with the reason attached rather than deleting it —
+ * the org needs to see *that* something failed, and can retry the same row.
+ * Used for both halves of a connection's life: the initial handshake and a
+ * later token refresh (tokens.ts).
  */
-export async function recordZoomConnectionFailure({
+export async function recordZoomClientFailure({
   organizationId,
   zoomClientId,
   error,

@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { ZoomClientsTable } from "@/drizzle/schema";
 import {
@@ -8,6 +8,7 @@ import {
   refreshAccessToken,
 } from "@/integrations/zoom";
 import { getZoomConfig } from "./config";
+import { recordZoomClientFailure } from "./mutations";
 
 export class ZoomClientNotConnectedError extends Error {
   constructor() {
@@ -22,12 +23,30 @@ export function readAccessToken(
   return decryptToken(encryptedAccessToken, encryptionKey);
 }
 
+type ConnectedZoomClient = {
+  id: string;
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt: Date | null;
+};
+
 /**
  * The single way the rest of the app gets a usable Zoom access token.
- * Refreshes and persists when the stored one is close to expiring — Zoom
- * rotates the refresh token on every refresh and invalidates the previous
- * one, so the new pair must be written back or the connection dies on the
- * next call.
+ *
+ * Refreshes when the stored one is close to expiring. Zoom rotates the
+ * refresh token on every refresh and invalidates the previous one, which
+ * makes an unsynchronized read → refresh → write sequence genuinely
+ * destructive: two concurrent callers would both send the same refresh token,
+ * the loser would be rejected by Zoom, and the connection would be dead until
+ * an admin reconnected by hand. The refresh is therefore serialized per
+ * client with an advisory lock, and the decision to refresh is re-taken
+ * *inside* the lock so the second caller uses what the first just wrote
+ * instead of refreshing again.
+ *
+ * The lock is held across the call to Zoom — deliberately. It only serializes
+ * one org's one Zoom account, the call is bounded by the API client's 10s
+ * timeout, and the alternative (concurrent rotation) breaks the connection
+ * permanently rather than briefly queueing it.
  */
 export async function getValidZoomAccessToken(
   organizationId: string,
@@ -36,7 +55,75 @@ export async function getValidZoomAccessToken(
 ): Promise<string> {
   const { credentials, encryptionKey } = getZoomConfig();
 
-  const zoomClient = await db.query.ZoomClientsTable.findFirst({
+  // Fast path, unlocked: the overwhelmingly common case is a token with
+  // plenty of life left, and that needs no coordination at all.
+  const current = await loadConnectedClient(db, organizationId, zoomClientId);
+  if (!needsRefresh(current.accessTokenExpiresAt, now)) {
+    return decryptToken(current.accessToken, encryptionKey);
+  }
+
+  try {
+    return await db.transaction(async (trx) => {
+      // Serializes per client; released at commit — same idiom as
+      // on-group-schedule-changed.ts.
+      await trx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtextextended(${zoomClientId}, 0))`,
+      );
+
+      // Re-read under the lock, never reuse the pre-lock snapshot: a
+      // concurrent caller may have refreshed while this one waited, and
+      // sending that superseded refresh token to Zoom is what kills the
+      // connection.
+      const locked = await loadConnectedClient(
+        trx,
+        organizationId,
+        zoomClientId,
+      );
+
+      if (!needsRefresh(locked.accessTokenExpiresAt, now)) {
+        return decryptToken(locked.accessToken, encryptionKey);
+      }
+
+      const tokens = await refreshAccessToken(
+        credentials,
+        decryptToken(locked.refreshToken, encryptionKey),
+      );
+
+      await trx
+        .update(ZoomClientsTable)
+        .set({
+          accessToken: encryptToken(tokens.accessToken, encryptionKey),
+          refreshToken: encryptToken(tokens.refreshToken, encryptionKey),
+          accessTokenExpiresAt: tokens.expiresAt,
+          status: "active",
+          lastError: null,
+        })
+        .where(
+          and(
+            eq(ZoomClientsTable.id, locked.id),
+            eq(ZoomClientsTable.organizationId, organizationId),
+          ),
+        );
+
+      return tokens.accessToken;
+    });
+  } catch (error) {
+    // Recorded after the transaction has rolled back, so the reason survives
+    // instead of being rolled back with it. A refused refresh means the
+    // connection needs an admin's attention, and the page reads `status` and
+    // `lastError` to say so — silently rethrowing would leave it showing
+    // "Connected".
+    await recordZoomClientFailure({ organizationId, zoomClientId, error });
+    throw error;
+  }
+}
+
+async function loadConnectedClient(
+  runner: Pick<typeof db, "query">,
+  organizationId: string,
+  zoomClientId: string,
+): Promise<ConnectedZoomClient> {
+  const zoomClient = await runner.query.ZoomClientsTable.findFirst({
     where: and(
       eq(ZoomClientsTable.id, zoomClientId),
       eq(ZoomClientsTable.organizationId, organizationId),
@@ -59,30 +146,10 @@ export async function getValidZoomAccessToken(
     throw new ZoomClientNotConnectedError();
   }
 
-  if (!needsRefresh(zoomClient.accessTokenExpiresAt, now)) {
-    return decryptToken(zoomClient.accessToken, encryptionKey);
-  }
-
-  const tokens = await refreshAccessToken(
-    credentials,
-    decryptToken(zoomClient.refreshToken, encryptionKey),
-  );
-
-  await db
-    .update(ZoomClientsTable)
-    .set({
-      accessToken: encryptToken(tokens.accessToken, encryptionKey),
-      refreshToken: encryptToken(tokens.refreshToken, encryptionKey),
-      accessTokenExpiresAt: tokens.expiresAt,
-      status: "active",
-      lastError: null,
-    })
-    .where(
-      and(
-        eq(ZoomClientsTable.id, zoomClient.id),
-        eq(ZoomClientsTable.organizationId, organizationId),
-      ),
-    );
-
-  return tokens.accessToken;
+  return {
+    id: zoomClient.id,
+    accessToken: zoomClient.accessToken,
+    refreshToken: zoomClient.refreshToken,
+    accessTokenExpiresAt: zoomClient.accessTokenExpiresAt,
+  };
 }
