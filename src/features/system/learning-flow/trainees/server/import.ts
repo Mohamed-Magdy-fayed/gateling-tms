@@ -3,7 +3,6 @@ import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { Transaction } from "@/drizzle";
 import {
   GroupStudentsTable,
-  GroupsTable,
   OrganizationsTable,
   TraineesTable,
 } from "@/drizzle/schema";
@@ -24,6 +23,7 @@ import {
   type WorkbookTable,
 } from "@/features/core/import/server";
 import { PLAN_LIMITS } from "@/features/core/organizations/server";
+import { resolveGroupIds } from "../../import-references";
 import {
   distinctGroupNames,
   type ExistingTrainees,
@@ -245,52 +245,6 @@ function validateCommitRows(
   }
 
   return deduplicated.valid;
-}
-
-/**
- * Resolves each distinct group name in the batch to a group id, creating the
- * ones that don't exist yet. An auto-created group carries no schedule, so it
- * generates no sessions until someone sets one — the roster is the point here,
- * not the calendar.
- */
-async function resolveGroupIds(
-  trx: Transaction,
-  organizationId: string,
-  names: string[],
-): Promise<Map<string, string>> {
-  const idByKey = new Map<string, string>();
-  if (names.length === 0) return idByKey;
-
-  const existing = await trx
-    .select({ id: GroupsTable.id, name: GroupsTable.name })
-    .from(GroupsTable)
-    .where(
-      and(
-        eq(GroupsTable.organizationId, organizationId),
-        inArray(
-          sql`lower(${GroupsTable.name})`,
-          names.map((name) => groupKey(name)),
-        ),
-      ),
-    )
-    .orderBy(GroupsTable.id);
-
-  for (const group of existing) {
-    const key = groupKey(group.name);
-    if (!idByKey.has(key)) idByKey.set(key, group.id);
-  }
-
-  const missing = names.filter((name) => !idByKey.has(groupKey(name)));
-  if (missing.length === 0) return idByKey;
-
-  const created = await trx
-    .insert(GroupsTable)
-    .values(missing.map((name) => ({ organizationId, name })))
-    .returning({ id: GroupsTable.id, name: GroupsTable.name });
-
-  for (const group of created) idByKey.set(groupKey(group.name), group.id);
-
-  return idByKey;
 }
 
 export async function commitTraineeImport(

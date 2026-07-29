@@ -1,5 +1,7 @@
 import { courseImportTemplate } from "@/features/system/content-library/courses/server/import-template";
 import { levelImportTemplate } from "@/features/system/content-library/levels/server/import-template";
+import { enrollmentImportTemplate } from "@/features/system/learning-flow/enrollments/server/import-template";
+import { groupStudentImportTemplate } from "@/features/system/learning-flow/groups/server/import-template";
 import { traineeImportTemplate } from "@/features/system/learning-flow/trainees/server/import-template";
 import type { ImportTemplate } from "../lib";
 
@@ -14,6 +16,8 @@ const IMPORT_TEMPLATES: Record<string, ImportTemplate> = {
   [traineeImportTemplate.entity]: traineeImportTemplate,
   [courseImportTemplate.entity]: courseImportTemplate,
   [levelImportTemplate.entity]: levelImportTemplate,
+  [enrollmentImportTemplate.entity]: enrollmentImportTemplate,
+  [groupStudentImportTemplate.entity]: groupStudentImportTemplate,
 };
 
 export function findImportTemplate(entity: string): ImportTemplate | undefined {

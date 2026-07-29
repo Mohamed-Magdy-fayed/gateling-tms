@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { groupStatusValues } from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
+import {
+  MAX_IMPORT_BASE64_LENGTH,
+  MAX_IMPORT_ROWS,
+} from "@/features/core/import/lib";
 import { MAX_GENERATED_SESSIONS, MAX_SCHEDULE_SLOTS } from "./schedule";
 
 export const listGroupsInput = z.object({
@@ -93,7 +97,48 @@ export const groupRemoveStudentSchema = z.object({
   traineeId: z.uuid(),
 });
 
+/**
+ * One row of an uploaded group-assignments template. No `id` column — a roster
+ * entry has no identity worth carrying in a spreadsheet.
+ */
+export const groupStudentImportRowSchema = z.object({
+  groupName: z
+    .string()
+    .trim()
+    .min(1, translationKey("forms.validation.required"))
+    .max(256, translationKey("forms.validation.max256")),
+  traineeEmail: z
+    .string()
+    .trim()
+    .pipe(
+      z.union([
+        z.email(translationKey("auth.validation.invalidEmail")),
+        z.literal(""),
+      ]),
+    ),
+  traineeName: z
+    .string()
+    .trim()
+    .max(256, translationKey("forms.validation.max256")),
+});
+
+export const groupStudentImportPreviewInput = z.object({
+  fileName: z.string().min(1).max(256),
+  base64: z.string().min(1).max(MAX_IMPORT_BASE64_LENGTH),
+});
+
+export const groupStudentImportCommitInput = z.object({
+  rows: z.array(z.record(z.string(), z.string())).min(1).max(MAX_IMPORT_ROWS),
+});
+
 export type ListGroupsInput = z.infer<typeof listGroupsInput>;
+export type GroupStudentImportRow = z.infer<typeof groupStudentImportRowSchema>;
+export type GroupStudentImportPreviewInput = z.infer<
+  typeof groupStudentImportPreviewInput
+>;
+export type GroupStudentImportCommitInput = z.infer<
+  typeof groupStudentImportCommitInput
+>;
 export type GroupMutationInput = z.infer<typeof groupMutationSchema>;
 export type GroupUpdateInput = z.infer<typeof groupUpdateSchema>;
 export type GroupDeleteInput = z.infer<typeof groupDeleteSchema>;

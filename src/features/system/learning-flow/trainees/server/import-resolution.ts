@@ -5,6 +5,11 @@ import {
   resolveEntityRows,
   type ValidImportRow,
 } from "@/features/core/import/lib";
+import {
+  distinctNames,
+  matchKey,
+  optionalMatchKey,
+} from "../../import-reference-keys";
 import type { TraineeImportRow } from "./schemas";
 
 /**
@@ -23,12 +28,11 @@ export type ExistingTrainees = {
 
 /** Case-insensitive, so "Sara@X.com" and "sara@x.com" are the same person. */
 export function emailKey(email: string): string | null {
-  const trimmed = email.trim().toLowerCase();
-  return trimmed === "" ? null : trimmed;
+  return optionalMatchKey(email);
 }
 
 export function groupKey(name: string): string {
-  return name.trim().toLowerCase();
+  return matchKey(name);
 }
 
 /**
@@ -69,12 +73,5 @@ export function resolveRows(
 
 /** The distinct group names in the batch, keeping each one's first spelling. */
 export function distinctGroupNames(rows: ImportedTraineeRow[]): string[] {
-  return [
-    ...new Map(
-      rows
-        .map((row) => row.parsed.groupName.trim())
-        .filter((name) => name !== "")
-        .map((name) => [groupKey(name), name] as const),
-    ).values(),
-  ];
+  return distinctNames(rows.map((row) => row.parsed.groupName));
 }

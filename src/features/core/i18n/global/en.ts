@@ -547,6 +547,20 @@ export default {
       duplicateLevelName:
         "This level name appears in an earlier row for the same course.",
       invalidOrder: "The position must be a whole number.",
+      traineeRequired: "Give the trainee's email or name.",
+      unknownTrainee: "No trainee in this organization matches this.",
+      ambiguousTrainee:
+        "More than one trainee has this name. Use their email instead.",
+      unknownEnrollmentId: "No enrollment in this organization has this id.",
+      enrollmentMismatch:
+        "This id belongs to a different trainee or course. Leave it blank to enrol them in this course.",
+      duplicateEnrollment:
+        "An earlier row already enrols this trainee in this course.",
+      invalidStatus: "This isn't one of the allowed statuses.",
+      invalidTransition:
+        "This enrollment can't move straight to that status. See the Reference sheet for the allowed steps.",
+      duplicateMembership:
+        "An earlier row already adds this trainee to this group.",
     },
     courses: {
       action: "Import courses",
@@ -578,6 +592,44 @@ export default {
         name: "Required. Also used to match an existing level within the same course.",
         order:
           "Optional. A whole number — lower comes first. Leave blank to add the level at the end of the course.",
+      },
+    },
+    enrollments: {
+      action: "Import enrollments",
+      title: "Enrollments",
+      columns: {
+        id: "Id",
+        traineeEmail: "Trainee email",
+        traineeName: "Trainee name",
+        courseName: "Course",
+        status: "Status",
+      },
+      hints: {
+        id: "Leave blank for a new enrollment. Keep the value when re-importing an export to update that enrollment instead of adding another.",
+        traineeEmail:
+          "The trainee's email. Used first when both columns are filled — it's the only one that identifies a person unambiguously.",
+        traineeName:
+          "Used only when no email is given. Refused if two trainees share the name.",
+        courseName: "Required. The course must already exist.",
+        status:
+          "Optional. One of: placementTest, waiting, ongoing, completed, cancelled, postponed. Blank means waiting for a new enrollment, and leaves an existing one unchanged.",
+      },
+    },
+    groupStudents: {
+      action: "Import group assignments",
+      title: "Group assignments",
+      columns: {
+        groupName: "Group",
+        traineeEmail: "Trainee email",
+        traineeName: "Trainee name",
+      },
+      hints: {
+        groupName:
+          "Required. A group with this name is created if it doesn't exist yet — with no schedule, so no sessions are generated.",
+        traineeEmail:
+          "The trainee's email. Used first when both columns are filled.",
+        traineeName:
+          "Used only when no email is given. Refused if two trainees share the name.",
       },
     },
     trainees: {
