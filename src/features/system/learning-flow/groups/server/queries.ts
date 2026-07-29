@@ -153,4 +153,3 @@ export async function listGroupStudents(ctx: OrgTRPCContext, groupId: string) {
     )
     .orderBy(asc(TraineesTable.name), asc(TraineesTable.id));
 }
-

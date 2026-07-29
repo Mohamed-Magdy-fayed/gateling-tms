@@ -710,7 +710,7 @@ export default {
     searchHint: "Search by certificate or trainee",
     certificateTitle: "Certificate title",
     titleDescription:
-      "What the certificate says, e.g. \"Certificate of Completion — English B1\".",
+      'What the certificate says, e.g. "Certificate of Completion — English B1".',
     course: "Course",
     courseDescription: "Only courses this trainee has completed can be chosen.",
     noCourse: "No course",
@@ -730,7 +730,7 @@ export default {
     revoke: "Revoke",
     revokeTitle: "Revoke certificate?",
     revokeDescription:
-      "Revoke \"{name}\". The record is removed for good — the trainee's enrollment history is untouched.",
+      'Revoke "{name}". The record is removed for good — the trainee\'s enrollment history is untouched.',
     revoked: "Certificate revoked.",
     revokeFailed: "Could not revoke the certificate.",
     emptyTitle: "No certificates yet",
@@ -738,8 +738,7 @@ export default {
       "Once a trainee completes a course or a class, issue their certificate here.",
     loadFailedTitle: "Couldn't load certificates",
     notFoundTitle: "Certificate not found",
-    notFoundDescription:
-      "This certificate doesn't exist, or it was revoked.",
+    notFoundDescription: "This certificate doesn't exist, or it was revoked.",
     groupNotFound: "That class doesn't exist in this organization.",
     notEnrolled: "This trainee isn't enrolled in that course.",
     courseNotCompleted:
@@ -784,15 +783,14 @@ export default {
       "Name this connection, then approve it on Zoom. You'll come straight back here.",
     continueToZoom: "Continue to Zoom",
     name: "Connection name",
-    nameDescription:
-      "For your team, e.g. \"Main licence\" or \"Evening classes\".",
+    nameDescription: 'For your team, e.g. "Main licence" or "Evening classes".',
     notLinkedYet: "Not linked to a Zoom account yet",
     finishConnecting: "Finish connecting",
     reconnect: "Reconnect",
     disconnect: "Disconnect",
     disconnectTitle: "Disconnect this Zoom account?",
     disconnectDescription:
-      "Disconnect \"{name}\". Scheduled classes stay, but new sessions won't get Zoom meeting links from this account.",
+      'Disconnect "{name}". Scheduled classes stay, but new sessions won\'t get Zoom meeting links from this account.',
     disconnected: "Zoom account disconnected.",
     disconnectFailed: "Could not disconnect the Zoom account.",
     connectFailed: "Could not start the Zoom connection.",
@@ -811,8 +809,7 @@ export default {
       invalid_state:
         "That connection link expired. Start the connection again.",
       connect_failed: "Zoom couldn't complete the connection. Try again.",
-      not_configured:
-        "Zoom isn't configured on this deployment yet.",
+      not_configured: "Zoom isn't configured on this deployment yet.",
       forbidden: "Only an organization admin can connect Zoom.",
     },
     errors: {

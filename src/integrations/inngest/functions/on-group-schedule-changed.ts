@@ -232,4 +232,3 @@ export const onGroupScheduleChanged = inngest.createFunction(
     };
   },
 );
-

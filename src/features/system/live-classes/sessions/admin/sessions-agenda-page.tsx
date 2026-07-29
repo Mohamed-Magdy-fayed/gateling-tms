@@ -1,24 +1,26 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { H2, Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
-import { type SessionScope, sessionScopeValues } from "@/features/system/live-classes/sessions/server";
+import {
+  type SessionScope,
+  sessionScopeValues,
+} from "@/features/system/live-classes/sessions/server";
 import { useTRPC } from "@/integrations/trpc/client";
 import { SessionList } from "./components";
 

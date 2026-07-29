@@ -1,14 +1,4 @@
-import {
-  and,
-  asc,
-  eq,
-  gt,
-  isNotNull,
-  isNull,
-  lt,
-  ne,
-  sql,
-} from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
   CoursesTable,

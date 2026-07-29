@@ -224,9 +224,7 @@ async function requestMeetingCancellations(
   meetings: { zoomClientId: string | null; zoomMeetingId: string | null }[],
 ) {
   const cancellable = meetings.filter(
-    (
-      meeting,
-    ): meeting is { zoomClientId: string; zoomMeetingId: string } =>
+    (meeting): meeting is { zoomClientId: string; zoomMeetingId: string } =>
       Boolean(meeting.zoomClientId && meeting.zoomMeetingId),
   );
 
