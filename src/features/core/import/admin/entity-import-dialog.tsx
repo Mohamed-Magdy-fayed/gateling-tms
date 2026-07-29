@@ -161,19 +161,15 @@ export function EntityImportDialog({
             </div>
 
             <div className="space-y-2">
-              {/* A label rather than a button so the hidden file input keeps
-                  its native picker and its own keyboard focus. */}
-              <label
-                className={buttonVariants({ className: "cursor-pointer" })}
-                htmlFor={fileInputId}
-              >
-                <UploadIcon className="size-3.5" />
-                {t("import.chooseFile")}
-              </label>
+              {/* A label driving a visually-hidden input, rather than a button
+                  that fakes a click: the native picker and its keyboard
+                  behaviour stay intact. The input comes first in the DOM so
+                  the label can mirror its focus ring — otherwise a sighted
+                  keyboard user tabs onto something with no visible state. */}
               <input
                 id={fileInputId}
                 type="file"
-                className="sr-only"
+                className="peer sr-only"
                 accept={IMPORT_FILE_ACCEPT}
                 disabled={pending}
                 onChange={(event) => {
@@ -182,6 +178,16 @@ export function EntityImportDialog({
                   event.target.value = "";
                 }}
               />
+              <label
+                className={buttonVariants({
+                  className:
+                    "cursor-pointer peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50",
+                })}
+                htmlFor={fileInputId}
+              >
+                <UploadIcon className="size-3.5" />
+                {t("import.chooseFile")}
+              </label>
               <Muted>
                 {t("import.fileHint", {
                   maxMb: MAX_IMPORT_FILE_BYTES / BYTES_PER_MB,
