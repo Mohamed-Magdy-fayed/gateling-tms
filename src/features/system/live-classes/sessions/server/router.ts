@@ -4,9 +4,12 @@ import { listSessionsInput, sessionsByGroupSchema } from "./schemas";
 
 /**
  * Readable by every member, students included: knowing when your class is and
- * how to join it is the whole point of the agenda. The host `start_url` is the
- * one thing not everyone gets — `queries.ts` hands it out per row, only to the
- * assigned teacher and to admins.
+ * how to join it is the whole point of the agenda.
+ *
+ * Two things are scoped rather than shared, both inside `queries.ts` because
+ * they vary per row: a `student` sees only the classes their own trainee
+ * record is on, and the host `start_url` goes only to the session's assigned
+ * teacher and to admins.
  */
 export const sessionsRouter = createTRPCRouter({
   list: orgProcedure

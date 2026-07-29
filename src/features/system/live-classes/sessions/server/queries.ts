@@ -6,14 +6,17 @@ import {
   eq,
   gt,
   gte,
+  inArray,
   isNull,
   lt,
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
+  GroupStudentsTable,
   GroupsTable,
   SessionsTable,
+  TraineesTable,
   UsersTable,
   ZoomClientsTable,
 } from "@/drizzle/schema";
@@ -64,6 +67,7 @@ export async function listSessions(
   const now = new Date();
   const whereClause = and(
     eq(SessionsTable.organizationId, ctx.organizationId),
+    ownClassesOnlyForStudents(ctx),
     input.groupId ? eq(SessionsTable.groupId, input.groupId) : undefined,
     input.scope === "upcoming"
       ? gte(SessionsTable.scheduledAt, now)
@@ -107,6 +111,7 @@ export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
     and(
       eq(SessionsTable.organizationId, ctx.organizationId),
       eq(SessionsTable.groupId, groupId),
+      ownClassesOnlyForStudents(ctx),
     ),
     true,
   );
@@ -141,6 +146,35 @@ export async function listSessionIdsAwaitingMeetings(
     .orderBy(asc(SessionsTable.scheduledAt), asc(SessionsTable.id));
 
   return rows.map((row) => row.id);
+}
+
+/**
+ * A member with the `student` role sees only the classes they are actually in.
+ *
+ * Everything else in the org agenda — every group's schedule, its teacher, and
+ * a link that joins the meeting — is staff information. Admins and teachers
+ * see all of it (a teacher may be covering someone else's class); a student is
+ * restricted to the groups their own trainee record is on, via the
+ * `trainees.userId` bridge. A student with no trainee record matches nothing,
+ * which is the correct answer rather than an error.
+ */
+function ownClassesOnlyForStudents(ctx: OrgTRPCContext) {
+  if (ctx.role !== "student") return undefined;
+
+  const ownGroupIds = ctx.db
+    .select({ groupId: GroupStudentsTable.groupId })
+    .from(GroupStudentsTable)
+    .innerJoin(
+      TraineesTable,
+      and(
+        eq(TraineesTable.id, GroupStudentsTable.traineeId),
+        eq(TraineesTable.userId, ctx.session.user.id),
+        isNull(TraineesTable.deletedAt),
+      ),
+    )
+    .where(eq(GroupStudentsTable.organizationId, ctx.organizationId));
+
+  return inArray(SessionsTable.groupId, ownGroupIds);
 }
 
 // `id` tiebreaks every order so ties don't leave offset pagination
