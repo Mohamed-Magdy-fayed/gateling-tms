@@ -5,7 +5,6 @@ import {
   CoursesTable,
   GroupStudentsTable,
   GroupsTable,
-  SessionsTable,
   TraineesTable,
   UsersTable,
 } from "@/drizzle/schema";
@@ -155,21 +154,3 @@ export async function listGroupStudents(ctx: OrgTRPCContext, groupId: string) {
     .orderBy(asc(TraineesTable.name), asc(TraineesTable.id));
 }
 
-/** Generated sessions for one group, soonest first. */
-export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
-  return ctx.db
-    .select({
-      id: SessionsTable.id,
-      scheduledAt: SessionsTable.scheduledAt,
-      durationMinutes: SessionsTable.durationMinutes,
-      status: SessionsTable.status,
-    })
-    .from(SessionsTable)
-    .where(
-      and(
-        eq(SessionsTable.groupId, groupId),
-        eq(SessionsTable.organizationId, ctx.organizationId),
-      ),
-    )
-    .orderBy(asc(SessionsTable.scheduledAt), asc(SessionsTable.id));
-}
