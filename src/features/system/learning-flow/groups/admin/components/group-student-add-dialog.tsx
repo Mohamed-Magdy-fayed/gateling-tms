@@ -123,8 +123,11 @@ export function GroupStudentAddDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
+          {/* The body is itself a flex column so the search row stays put and
+              only the trainee list scrolls — hence the ScrollArea below flexes
+              to the leftover height instead of being pinned to `h-64`. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex shrink-0 items-center gap-2">
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -155,7 +158,7 @@ export function GroupStudentAddDialog({
                 description={t("groups.students.addDescription")}
               />
             ) : (
-              <ScrollArea className="h-64 rounded-lg border border-border">
+              <ScrollArea className="min-h-32 flex-1 rounded-lg border border-border">
                 <ul className="divide-y divide-border">
                   {available.map((trainee) => {
                     const isSelected = selectedIds.includes(trainee.id);

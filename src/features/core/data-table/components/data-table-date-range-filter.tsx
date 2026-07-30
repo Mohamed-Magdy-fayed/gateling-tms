@@ -236,9 +236,12 @@ export function DataTableDateRangeFilter<TData, TValue>({
     return (
       <Dialog>
         <DialogTrigger render={trigger} />
+        {/* Opts out of the standard header/body/footer flex column: there is
+            no footer and the calendar must not be flex-shrunk, so `grid`
+            restores intrinsic sizing and the whole popup scrolls as one. */}
         <DialogContent
           showCloseButton
-          className="max-h-[min(90dvh,40rem)] w-auto max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-md"
+          className="grid max-h-[min(90dvh,40rem)] w-auto max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-md"
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {presetsRow}

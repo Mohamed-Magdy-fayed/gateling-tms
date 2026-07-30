@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -111,7 +112,7 @@ export function PlacementTestRunnerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto">
+        <DialogBody>
           {isLoading ? (
             <div className="flex justify-center py-10">
               <Spinner />
@@ -130,7 +131,7 @@ export function PlacementTestRunnerDialog({
               description={t("responses.previewEmptyDescription")}
             />
           )}
-        </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button

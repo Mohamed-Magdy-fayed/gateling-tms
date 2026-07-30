@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -137,65 +138,67 @@ export function EntityImportDialog({
           <DialogDescription>{t("import.description")}</DialogDescription>
         </DialogHeader>
 
-        {preview ? (
-          <ImportReview preview={preview} />
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <a
-                className={buttonVariants({ variant: "outline" })}
-                href={`/api/import/templates/${entity}?format=xlsx`}
-                download
-              >
-                <DownloadIcon className="size-3.5" />
-                {t("import.downloadXlsx")}
-              </a>
-              <a
-                className={buttonVariants({ variant: "outline" })}
-                href={`/api/import/templates/${entity}?format=csv`}
-                download
-              >
-                <DownloadIcon className="size-3.5" />
-                {t("import.downloadCsv")}
-              </a>
-            </div>
+        <DialogBody>
+          {preview ? (
+            <ImportReview preview={preview} />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <a
+                  className={buttonVariants({ variant: "outline" })}
+                  href={`/api/import/templates/${entity}?format=xlsx`}
+                  download
+                >
+                  <DownloadIcon className="size-3.5" />
+                  {t("import.downloadXlsx")}
+                </a>
+                <a
+                  className={buttonVariants({ variant: "outline" })}
+                  href={`/api/import/templates/${entity}?format=csv`}
+                  download
+                >
+                  <DownloadIcon className="size-3.5" />
+                  {t("import.downloadCsv")}
+                </a>
+              </div>
 
-            <div className="space-y-2">
-              {/* A label driving a visually-hidden input, rather than a button
+              <div className="space-y-2">
+                {/* A label driving a visually-hidden input, rather than a button
                   that fakes a click: the native picker and its keyboard
                   behaviour stay intact. The input comes first in the DOM so
                   the label can mirror its focus ring — otherwise a sighted
                   keyboard user tabs onto something with no visible state. */}
-              <input
-                id={fileInputId}
-                type="file"
-                className="peer sr-only"
-                accept={IMPORT_FILE_ACCEPT}
-                disabled={pending}
-                onChange={(event) => {
-                  void handleFile(event.target.files?.[0]);
-                  // Lets the same file be picked again after a failed parse.
-                  event.target.value = "";
-                }}
-              />
-              <label
-                className={buttonVariants({
-                  className:
-                    "cursor-pointer peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50",
-                })}
-                htmlFor={fileInputId}
-              >
-                <UploadIcon className="size-3.5" />
-                {t("import.chooseFile")}
-              </label>
-              <Muted>
-                {t("import.fileHint", {
-                  maxMb: MAX_IMPORT_FILE_BYTES / BYTES_PER_MB,
-                })}
-              </Muted>
+                <input
+                  id={fileInputId}
+                  type="file"
+                  className="peer sr-only"
+                  accept={IMPORT_FILE_ACCEPT}
+                  disabled={pending}
+                  onChange={(event) => {
+                    void handleFile(event.target.files?.[0]);
+                    // Lets the same file be picked again after a failed parse.
+                    event.target.value = "";
+                  }}
+                />
+                <label
+                  className={buttonVariants({
+                    className:
+                      "cursor-pointer peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50",
+                  })}
+                  htmlFor={fileInputId}
+                >
+                  <UploadIcon className="size-3.5" />
+                  {t("import.chooseFile")}
+                </label>
+                <Muted>
+                  {t("import.fileHint", {
+                    maxMb: MAX_IMPORT_FILE_BYTES / BYTES_PER_MB,
+                  })}
+                </Muted>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </DialogBody>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>

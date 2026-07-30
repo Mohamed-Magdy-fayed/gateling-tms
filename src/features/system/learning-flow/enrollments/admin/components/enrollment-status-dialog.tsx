@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -102,26 +103,28 @@ export function EnrollmentStatusDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {options.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            {t("enrollments.noTransitions")}
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {options.map((status) => (
-              <Button
-                key={status}
-                type="button"
-                variant={selected === status ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelected(status)}
-                disabled={updateMut.isPending}
-              >
-                <EnrollmentStatusTag status={status} />
-              </Button>
-            ))}
-          </div>
-        )}
+        <DialogBody>
+          {options.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {t("enrollments.noTransitions")}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {options.map((status) => (
+                <Button
+                  key={status}
+                  type="button"
+                  variant={selected === status ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelected(status)}
+                  disabled={updateMut.isPending}
+                >
+                  <EnrollmentStatusTag status={status} />
+                </Button>
+              ))}
+            </div>
+          )}
+        </DialogBody>
 
         <DialogFooter>
           <Button
