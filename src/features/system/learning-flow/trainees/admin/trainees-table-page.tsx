@@ -212,9 +212,15 @@ export function TraineesTablePage() {
         entity="trainees"
         onPreview={(input) => importPreview.mutateAsync(input)}
         onCommit={(rows) => importCommit.mutateAsync({ rows })}
-        onImported={() =>
-          queryClient.invalidateQueries({ queryKey: trpc.trainees.pathKey() })
-        }
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: trpc.trainees.pathKey() });
+          // A batch can move the student counter by a lot at once, so the
+          // limit notice above has to be re-read, not left at its pre-import
+          // number.
+          queryClient.invalidateQueries({
+            queryKey: trpc.organizations.usage.queryKey(),
+          });
+        }}
       />
 
       <TraineeFormDialog open={createOpen} onOpenChange={setCreateOpen} />

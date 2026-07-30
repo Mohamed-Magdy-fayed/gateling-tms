@@ -228,9 +228,14 @@ export function CoursesTablePage() {
         entity="courses"
         onPreview={(input) => courseImportPreview.mutateAsync(input)}
         onCommit={(rows) => courseImportCommit.mutateAsync({ rows })}
-        onImported={() =>
-          queryClient.invalidateQueries({ queryKey: trpc.courses.pathKey() })
-        }
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: trpc.courses.pathKey() });
+          // A batch can move the course counter by a lot at once, so the limit
+          // notice above has to be re-read, not left at its pre-import number.
+          queryClient.invalidateQueries({
+            queryKey: trpc.organizations.usage.queryKey(),
+          });
+        }}
       />
 
       <EntityImportDialog

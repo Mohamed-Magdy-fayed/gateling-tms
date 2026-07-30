@@ -53,6 +53,9 @@ export function CourseDeleteDialog({
       await queryClient.invalidateQueries({
         queryKey: trpc.courses.pathKey(),
       });
+      await queryClient.invalidateQueries({
+        queryKey: trpc.organizations.usage.queryKey(),
+      });
       onDeleted?.();
       onOpenChange(false);
     } catch {

@@ -53,6 +53,9 @@ export function TraineeDeleteDialog({
       await queryClient.invalidateQueries({
         queryKey: trpc.trainees.pathKey(),
       });
+      await queryClient.invalidateQueries({
+        queryKey: trpc.organizations.usage.queryKey(),
+      });
       onDeleted?.();
       onOpenChange(false);
     } catch {
