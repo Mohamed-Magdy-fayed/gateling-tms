@@ -1076,9 +1076,66 @@ export default {
       missing_scope:
         "The connection was approved without access to your forms. Connect again and leave the Google Forms permission ticked.",
     },
+    importTitle: "Import a form",
+    importDescription:
+      "Paste the link to a Google Form owned by the connected account. Nothing is created until you confirm.",
+    formLink: "Google Form link",
+    formLinkPlaceholder: "https://docs.google.com/forms/d/…/edit",
+    preview: "Preview",
+    previewAgain: "Preview another form",
+    import: "Import as draft",
+    importing: "Importing…",
+    imported: "Assessment imported as a draft.",
+    importFailed: "Could not import this form.",
+    previewFailed: "Could not read this form.",
+    previewTitle: "What will be imported",
+    sectionsCount: "{count} sections",
+    questionsCount: "{count} questions",
+    quizDetected:
+      "This is a Google quiz — point values and correct answers come across too.",
+    notImportedTitle: "Not imported as-is",
+    notImportedDescription:
+      "Everything else on the form comes across. These items either changed shape or were left out — you can add them by hand in the builder.",
+    nothingToImport:
+      "This form has no questions Gateling can import. Nothing was created.",
+    targetTitle: "Where it goes",
+    targetDescription:
+      "Imported assessments are always drafts. Publish from the builder once you've checked them.",
+    titleOverride: "Title (optional)",
+    titleOverrideDescription: "Leave empty to keep the form's own title.",
+    note: {
+      convertedDropdown:
+        "Dropdown — imported as a single-choice question: {title}",
+      convertedScale: "Linear scale — imported as one choice per step: {title}",
+      convertedParagraph: "Long answer — imported as a short answer: {title}",
+      skippedUnsupported:
+        "Date, time, file upload and rating questions aren't supported: {title}",
+      skippedGrid: "Grid questions can't be imported: {title}",
+      skippedContent:
+        "Text, images and videos aren't questions, so they're left out: {title}",
+      skippedEmptyChoice: "No answer options to import: {title}",
+      droppedOtherOption: 'The "Other" free-text option is left out: {title}',
+      unmatchedCorrectAnswer:
+        "A correct answer matches none of the options, so it isn't marked: {title}",
+      truncatedTitle: "Title shortened to fit: {title}",
+    },
     errors: {
       notConfigured:
         "Google isn't configured on this deployment yet. Ask your operator to add the Google credentials.",
+      notConnected: "Connect a Google account before importing a form.",
+      reconnect:
+        "The Google connection stopped working. Reconnect the account and try again.",
+      invalidLink:
+        "That doesn't look like a Google Form link. Open the form in Google, then copy the address from your browser.",
+      responseLink:
+        "That's the link people use to fill the form in. Open the form for editing in Google and copy that address instead.",
+      formNotFound:
+        "The connected Google account can't find that form. Check the link, or connect the account that owns it.",
+      formForbidden:
+        "The connected Google account isn't allowed to read that form. Connect the account that owns it, or ask its owner to share it.",
+      fetchFailed: "Google couldn't be reached. Try again in a moment.",
+      nothingToImport:
+        "This form has no questions Gateling can import. Nothing was created.",
     },
   },
   assessments: {

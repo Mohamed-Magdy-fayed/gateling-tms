@@ -1030,9 +1030,64 @@ export default {
       missing_scope:
         "تمت الموافقة على الربط دون السماح بالوصول إلى نماذجك. أعد الربط مع ترك إذن Google Forms مفعّلًا.",
     },
+    importTitle: "استيراد نموذج",
+    importDescription:
+      "الصق رابط نموذج Google يملكه الحساب المرتبط. لا يتم إنشاء أي شيء قبل تأكيدك.",
+    formLink: "رابط نموذج Google",
+    formLinkPlaceholder: "https://docs.google.com/forms/d/…/edit",
+    preview: "معاينة",
+    previewAgain: "معاينة نموذج آخر",
+    import: "الاستيراد كمسودة",
+    importing: "جارٍ الاستيراد…",
+    imported: "تم استيراد التقييم كمسودة.",
+    importFailed: "تعذّر استيراد هذا النموذج.",
+    previewFailed: "تعذّرت قراءة هذا النموذج.",
+    previewTitle: "ما الذي سيتم استيراده",
+    sectionsCount: "{count} أقسام",
+    questionsCount: "{count} أسئلة",
+    quizDetected:
+      "هذا اختبار Google — سيتم استيراد الدرجات والإجابات الصحيحة أيضًا.",
+    notImportedTitle: "لم يُستورد كما هو",
+    notImportedDescription:
+      "بقية النموذج تُستورد كما هي. هذه العناصر إمّا تغيّر شكلها أو استُبعدت — يمكنك إضافتها يدويًا في المُنشئ.",
+    nothingToImport:
+      "لا يحتوي هذا النموذج على أسئلة يمكن لـ Gateling استيرادها. لم يتم إنشاء أي شيء.",
+    targetTitle: "وجهة التقييم",
+    targetDescription:
+      "التقييمات المستوردة تكون دائمًا مسودات. انشرها من المُنشئ بعد مراجعتها.",
+    titleOverride: "العنوان (اختياري)",
+    titleOverrideDescription: "اتركه فارغًا للإبقاء على عنوان النموذج نفسه.",
+    note: {
+      convertedDropdown: "قائمة منسدلة — استُوردت كسؤال اختيار واحد: {title}",
+      convertedScale: "مقياس خطي — استُورد كخيار لكل درجة: {title}",
+      convertedParagraph: "إجابة طويلة — استُوردت كإجابة قصيرة: {title}",
+      skippedUnsupported:
+        "أسئلة التاريخ والوقت ورفع الملفات والتقييم غير مدعومة: {title}",
+      skippedGrid: "لا يمكن استيراد أسئلة الشبكة: {title}",
+      skippedContent:
+        "النصوص والصور والفيديوهات ليست أسئلة، لذا استُبعدت: {title}",
+      skippedEmptyChoice: "لا توجد خيارات إجابة لاستيرادها: {title}",
+      droppedOtherOption: "خيار «أخرى» النصي الحر مستبعد: {title}",
+      unmatchedCorrectAnswer:
+        "إجابة صحيحة لا تطابق أيًا من الخيارات، لذا لم تُعلَّم: {title}",
+      truncatedTitle: "تم اختصار العنوان ليناسب الحد المسموح: {title}",
+    },
     errors: {
       notConfigured:
         "لم يتم إعداد Google على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Google.",
+      notConnected: "اربط حساب Google قبل استيراد أي نموذج.",
+      reconnect: "توقّف اتصال Google عن العمل. أعد ربط الحساب ثم حاول مرة أخرى.",
+      invalidLink:
+        "لا يبدو هذا رابط نموذج Google. افتح النموذج في Google وانسخ العنوان من المتصفح.",
+      responseLink:
+        "هذا هو الرابط الذي يستخدمه الآخرون لتعبئة النموذج. افتح النموذج للتحرير في Google وانسخ ذلك العنوان بدلًا منه.",
+      formNotFound:
+        "لا يجد حساب Google المرتبط هذا النموذج. تأكد من الرابط، أو اربط الحساب الذي يملكه.",
+      formForbidden:
+        "حساب Google المرتبط غير مسموح له بقراءة هذا النموذج. اربط الحساب الذي يملكه أو اطلب من مالكه مشاركته.",
+      fetchFailed: "تعذّر الوصول إلى Google. حاول بعد قليل.",
+      nothingToImport:
+        "لا يحتوي هذا النموذج على أسئلة يمكن لـ Gateling استيرادها. لم يتم إنشاء أي شيء.",
     },
   },
   assessments: {

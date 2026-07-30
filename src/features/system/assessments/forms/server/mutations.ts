@@ -20,7 +20,7 @@ import type { OrgTRPCContext } from "./types";
  * belongs to *some* row in the caller's org, not that they belong to *each
  * other*, so that chain has to be verified here.
  */
-async function assertAttachmentChain(
+export async function assertAttachmentChain(
   ctx: OrgTRPCContext,
   input: Pick<FormMutationInput, "courseId" | "levelId" | "lectureId">,
 ) {

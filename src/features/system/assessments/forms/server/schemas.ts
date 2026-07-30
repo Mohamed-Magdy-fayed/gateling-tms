@@ -44,7 +44,7 @@ const formFields = {
 // level is — mirrors the cascading selects in the create/edit dialog so a
 // client that bypasses the UI (or a stale form) can't submit a lecture
 // attached to no level, etc.
-function refineAttachmentChain<T extends z.ZodTypeAny>(schema: T) {
+export function refineAttachmentChain<T extends z.ZodTypeAny>(schema: T) {
   return schema.superRefine((val, ctx) => {
     const { courseId, levelId, lectureId } = val as {
       courseId: string | null;

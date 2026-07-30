@@ -4,8 +4,10 @@ import {
   orgContentManagerProcedure,
 } from "@/integrations/trpc/init";
 import { isGoogleImportConfigured } from "./config";
+import { importGoogleForm, previewGoogleForm } from "./import";
 import { disconnectGoogleIntegration } from "./mutations";
 import { getGoogleIntegration } from "./queries";
+import { googleFormImportSchema, googleFormPreviewSchema } from "./schemas";
 
 export const googleImportRouter = createTRPCRouter({
   // Readable by whoever can author assessments, since the import belongs to
@@ -27,4 +29,13 @@ export const googleImportRouter = createTRPCRouter({
   disconnect: orgAdminProcedure.mutation(async ({ ctx }) =>
     disconnectGoogleIntegration(ctx),
   ),
+  // A mutation rather than a query even though it writes nothing: it is a
+  // deliberate action against a rate-limited third party, not something to
+  // re-run on every window focus the way a query would be.
+  preview: orgContentManagerProcedure
+    .input(googleFormPreviewSchema)
+    .mutation(async ({ ctx, input }) => previewGoogleForm(ctx, input)),
+  import: orgContentManagerProcedure
+    .input(googleFormImportSchema)
+    .mutation(async ({ ctx, input }) => importGoogleForm(ctx, input)),
 });
