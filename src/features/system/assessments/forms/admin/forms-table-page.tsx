@@ -6,9 +6,10 @@ import type {
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { PlusIcon } from "lucide-react";
+import { FileSpreadsheetIcon, PlusIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { Form } from "@/drizzle/schema";
 import {
   DataTable,
@@ -23,6 +24,7 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import { GOOGLE_IMPORT_PATH } from "@/features/system/assessments/google-import/lib/redirect-codes";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -138,10 +140,21 @@ export function FormsTablePage() {
         isFetching ? "space-y-4 opacity-80 transition-opacity" : "space-y-4"
       }
     >
-      <EntityPageHeader
-        title={t("assessments.title")}
-        lead={t("assessments.lead")}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <EntityPageHeader
+          title={t("assessments.title")}
+          lead={t("assessments.lead")}
+        />
+        {/* The Google connection and the import live on their own page — this
+            is the only way in, so the sidebar keeps one Assessments entry. */}
+        <Link
+          href={GOOGLE_IMPORT_PATH}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <FileSpreadsheetIcon className="size-3.5" />
+          {t("assessments.importFromGoogle")}
+        </Link>
+      </div>
 
       <DataTable
         table={table}
