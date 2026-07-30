@@ -1,5 +1,6 @@
 import { processTask } from "./example";
 import { onContactMessageSubmitted } from "./on-contact-message-submitted";
+import { onGoogleIntegrationDisconnected } from "./on-google-integration-disconnected";
 import { onGroupScheduleChanged } from "./on-group-schedule-changed";
 import { onOrganizationMemberInvited } from "./on-organization-member-invited";
 import { onOrganizationZoomConnected } from "./on-organization-zoom-connected";
@@ -15,6 +16,7 @@ export const functions = [
   onOrganizationMemberInvited,
   onContactMessageSubmitted,
   onGroupScheduleChanged,
+  onGoogleIntegrationDisconnected,
   onZoomClientDisconnected,
   onOrganizationZoomConnected,
   onSessionMeetingSyncRequested,

@@ -152,7 +152,10 @@ export async function fetchGoogleAccount(
 
   const user = userInfoSchema.safeParse(payload);
   if (!user.success) {
-    throw new GoogleApiError("Unexpected Google user payload.", response.status);
+    throw new GoogleApiError(
+      "Unexpected Google user payload.",
+      response.status,
+    );
   }
 
   return { userId: user.data.sub, email: user.data.email };
@@ -175,7 +178,10 @@ export async function fetchGoogleForm(
 
   const form = googleFormSchema.safeParse(payload);
   if (!form.success) {
-    throw new GoogleApiError("Unexpected Google form payload.", response.status);
+    throw new GoogleApiError(
+      "Unexpected Google form payload.",
+      response.status,
+    );
   }
 
   return form.data;

@@ -29,8 +29,15 @@ export const env = createEnv({
     OAUTH_REDIRECT_URL_BASE: z.url().optional(),
 
     // Dormant until Mohamed provides Google OAuth credentials (Phase 2).
+    // The same pair also authorizes the per-organization Google Forms grant
+    // (Phase 7) — one Cloud project, two redirect URIs, one extra scope.
+    // GOOGLE_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
+    // (`openssl rand -base64 32`); it encrypts those per-org OAuth tokens at
+    // rest, and is separate from the Zoom key so rotating one provider's key
+    // never touches the other's stored tokens — see docs/integrations-google.md.
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 
     // Dormant until Mohamed provides SMTP credentials (Phase 2) — sendMail
     // logs a warning and no-ops instead of throwing when unset (dev-safe).
