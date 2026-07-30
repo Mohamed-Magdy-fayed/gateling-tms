@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup, FieldSet } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -239,14 +240,20 @@ export function FormFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <span className="font-medium text-foreground text-sm">
+                <Label
+                  htmlFor="form-form-attach-course"
+                  className="font-medium text-foreground text-sm"
+                >
                   {t("assessments.attachToCourse")}
-                </span>
+                </Label>
                 <Select
                   value={courseId || NONE}
                   onValueChange={(value) => handleCourseChange(value as string)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    id="form-form-attach-course"
+                    className="w-full"
+                  >
                     <SelectValue placeholder={t("assessments.notAttached")}>
                       {(val) =>
                         val === NONE
@@ -271,16 +278,22 @@ export function FormFormDialog({
 
               {courseId ? (
                 <div className="space-y-1.5">
-                  <span className="font-medium text-foreground text-sm">
+                  <Label
+                    htmlFor="form-form-attach-level"
+                    className="font-medium text-foreground text-sm"
+                  >
                     {t("assessments.attachToLevel")}
-                  </span>
+                  </Label>
                   <Select
                     value={levelId || NONE}
                     onValueChange={(value) =>
                       handleLevelChange(value as string)
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger
+                      id="form-form-attach-level"
+                      className="w-full"
+                    >
                       <SelectValue placeholder={t("assessments.notAttached")}>
                         {(val) =>
                           val === NONE
@@ -306,16 +319,22 @@ export function FormFormDialog({
 
               {levelId ? (
                 <div className="space-y-1.5">
-                  <span className="font-medium text-foreground text-sm">
+                  <Label
+                    htmlFor="form-form-attach-lecture"
+                    className="font-medium text-foreground text-sm"
+                  >
                     {t("assessments.attachToLecture")}
-                  </span>
+                  </Label>
                   <Select
                     value={lectureId || NONE}
                     onValueChange={(value) =>
                       handleLectureChange(value as string)
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger
+                      id="form-form-attach-lecture"
+                      className="w-full"
+                    >
                       <SelectValue placeholder={t("assessments.notAttached")}>
                         {(val) =>
                           val === NONE
