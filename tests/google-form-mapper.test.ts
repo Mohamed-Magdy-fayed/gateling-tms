@@ -176,7 +176,10 @@ describe("mapGoogleForm — question types", () => {
     const mapped = mapGoogleForm(
       form({
         items: [
-          { title: "Your name", questionItem: { question: { textQuestion: {} } } },
+          {
+            title: "Your name",
+            questionItem: { question: { textQuestion: {} } },
+          },
         ],
       }),
     );
@@ -246,7 +249,7 @@ describe("mapGoogleForm — question types", () => {
 
     expect(mapped.questionCount).toBe(0);
     expect(mapped.notes).toEqual([
-      { code: "skippedUnsupported", title: "Unsupported" },
+      { id: 0, code: "skippedUnsupported", title: "Unsupported" },
     ]);
   });
 
@@ -368,6 +371,27 @@ describe("mapGoogleForm — quiz grading", () => {
     );
 
     expect(noteCodes(mapped)).toEqual(["unmatchedCorrectAnswer"]);
+  });
+
+  test("gives repeated notes distinct ids", () => {
+    // Two unmatched answers on one question produce the same code and title
+    // twice — the pair is not a usable key, which is why `id` exists.
+    const mapped = mapGoogleForm(
+      form({
+        settings: { quizSettings: { isQuiz: true } },
+        items: [
+          choiceItem("Capital?", "RADIO", ["Cairo"], {
+            correct: ["Luxor", "Aswan"],
+          }),
+        ],
+      }),
+    );
+
+    expect(noteCodes(mapped)).toEqual([
+      "unmatchedCorrectAnswer",
+      "unmatchedCorrectAnswer",
+    ]);
+    expect(new Set(mapped.notes.map((note) => note.id)).size).toBe(2);
   });
 
   test("defaults to one point when a quiz question carries no point value", () => {

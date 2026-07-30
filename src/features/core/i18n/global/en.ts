@@ -1403,7 +1403,7 @@ export default {
       excelFirst: {
         title: "Excel-first",
         description:
-          "Import students and content from the spreadsheets you already use, with templates for every major list.",
+          "Import students and content from the spreadsheets you already use, with templates for every major list — and bring your quizzes over from Google Forms.",
       },
       freeForever: {
         title: "Free means free",
@@ -1539,7 +1539,7 @@ export default {
         bullets: {
           courseStructure: "Course Structure Design",
           progressTracking: "Progress Tracking",
-          assessments: "Built-in Assessments",
+          assessments: "Built-in Assessments (or imported from Google Forms)",
           certificates: "Certificate Generation",
         },
       },

@@ -1352,7 +1352,7 @@ export default {
       excelFirst: {
         title: "يبدأ بملفات إكسل",
         description:
-          "استورد الطلاب والمحتوى من ملفات إكسل التي تستخدمها بالفعل، مع قوالب جاهزة لكل قائمة رئيسية.",
+          "استورد الطلاب والمحتوى من ملفات إكسل التي تستخدمها بالفعل، مع قوالب جاهزة لكل قائمة رئيسية — وانقل اختباراتك من Google Forms.",
       },
       freeForever: {
         title: "مجاني يعني مجاني فعلاً",
@@ -1485,7 +1485,7 @@ export default {
         bullets: {
           courseStructure: "تصميم هيكل الدورة",
           progressTracking: "تتبع التقدم",
-          assessments: "تقييمات مدمجة",
+          assessments: "تقييمات مدمجة (أو مستوردة من Google Forms)",
           certificates: "إصدار الشهادات",
         },
       },

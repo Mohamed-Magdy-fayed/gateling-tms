@@ -37,7 +37,29 @@ export type MappedNoteCode =
   /** A title longer than the column allows. */
   | "truncatedTitle";
 
-export type MappedNote = { code: MappedNoteCode; title: string };
+/**
+ * `id` exists because two notes can be genuinely identical — a question with
+ * two unmatched correct answers produces the same code and title twice — so
+ * the pair is not a usable React key and neither is the array index.
+ */
+export type MappedNote = {
+  id: number;
+  code: MappedNoteCode;
+  title: string;
+};
+
+type NoteCollector = {
+  list: MappedNote[];
+  add: (code: MappedNoteCode, title: string) => void;
+};
+
+function createNoteCollector(): NoteCollector {
+  const list: MappedNote[] = [];
+  return {
+    list,
+    add: (code, title) => list.push({ id: list.length, code, title }),
+  };
+}
 
 export type MappedAnswer = {
   text: string;
@@ -83,7 +105,7 @@ export type MappedForm = {
  * dropped" requirement.
  */
 export function mapGoogleForm(form: GoogleForm): MappedForm {
-  const notes: MappedNote[] = [];
+  const notes = createNoteCollector();
   const isQuiz = form.settings?.quizSettings?.isQuiz ?? false;
   const formTitle = truncateTitle(
     form.info.title || UNTITLED_FALLBACK,
@@ -132,7 +154,7 @@ export function mapGoogleForm(form: GoogleForm): MappedForm {
     description: form.info.description?.trim() || null,
     isQuiz,
     sections,
-    notes,
+    notes: notes.list,
     questionCount: sections.reduce(
       (total, section) => total + section.questions.length,
       0,
@@ -144,12 +166,12 @@ function mapItem(
   item: GoogleFormItem,
   isQuiz: boolean,
   order: number,
-  notes: MappedNote[],
+  notes: NoteCollector,
 ): MappedQuestion | null {
   const title = item.title?.trim() || UNTITLED_FALLBACK;
 
   if (item.questionGroupItem) {
-    notes.push({ code: "skippedGrid", title });
+    notes.add("skippedGrid", title);
     return null;
   }
 
@@ -158,7 +180,7 @@ function mapItem(
     // Text, image and video items carry no question — they are layout, and
     // this app's builder has nothing to put them in.
     if (item.textItem || item.imageItem || item.videoItem) {
-      notes.push({ code: "skippedContent", title });
+      notes.add("skippedContent", title);
     }
     return null;
   }
@@ -170,7 +192,7 @@ function mapItem(
   }
 
   if (question.scaleQuestion) {
-    notes.push({ code: "convertedScale", title });
+    notes.add("convertedScale", title);
     return {
       text: title,
       type: "single_choice",
@@ -182,12 +204,12 @@ function mapItem(
 
   if (question.textQuestion) {
     if (question.textQuestion.paragraph) {
-      notes.push({ code: "convertedParagraph", title });
+      notes.add("convertedParagraph", title);
     }
     return { text: title, type: "short_answer", points, order, answers: [] };
   }
 
-  notes.push({ code: "skippedUnsupported", title });
+  notes.add("skippedUnsupported", title);
   return null;
 }
 
@@ -196,19 +218,19 @@ function mapChoiceQuestion(
   title: string,
   points: number,
   order: number,
-  notes: MappedNote[],
+  notes: NoteCollector,
 ): MappedQuestion | null {
   const choice = question.choiceQuestion;
   if (!choice) return null;
 
   if (choice.type === "DROP_DOWN") {
-    notes.push({ code: "convertedDropdown", title });
+    notes.add("convertedDropdown", title);
   }
 
   const hasOtherOption = (choice.options ?? []).some(
     (option) => option.isOther,
   );
-  if (hasOtherOption) notes.push({ code: "droppedOtherOption", title });
+  if (hasOtherOption) notes.add("droppedOtherOption", title);
 
   const correctValues = new Set(
     (question.grading?.correctAnswers?.answers ?? [])
@@ -232,14 +254,14 @@ function mapChoiceQuestion(
   }
 
   if (answers.length === 0) {
-    notes.push({ code: "skippedEmptyChoice", title });
+    notes.add("skippedEmptyChoice", title);
     return null;
   }
 
   // Whatever is left in the set matched no option — a correct answer the
   // imported question would silently lose.
   for (const _unmatched of correctValues) {
-    notes.push({ code: "unmatchedCorrectAnswer", title });
+    notes.add("unmatchedCorrectAnswer", title);
   }
 
   return {
@@ -288,14 +310,11 @@ function resolvePoints(question: GoogleFormQuestion, isQuiz: boolean): number {
 
 function truncateTitle(
   value: string,
-  notes: MappedNote[],
+  notes: NoteCollector,
   originalTitle: string | undefined,
 ): string {
   if (value.length <= MAX_TITLE_LENGTH) return value;
 
-  notes.push({
-    code: "truncatedTitle",
-    title: (originalTitle ?? value).slice(0, 80),
-  });
+  notes.add("truncatedTitle", (originalTitle ?? value).slice(0, 80));
   return value.slice(0, MAX_TITLE_LENGTH);
 }

@@ -13,7 +13,11 @@ import {
   parseGoogleConnectResultCode,
 } from "@/features/system/assessments/google-import/lib/redirect-codes";
 import { useTRPC } from "@/integrations/trpc/client";
-import { GoogleConnectionCard, GoogleDisconnectDialog } from "./components";
+import {
+  GoogleConnectionCard,
+  GoogleDisconnectDialog,
+  GoogleImportPanel,
+} from "./components";
 
 /**
  * The organization's Google connection, and — once the import lands — the
@@ -97,6 +101,9 @@ export function GoogleImportPage() {
             isConfigured={isConfigured}
             onDisconnect={() => setDisconnectOpen(true)}
           />
+          {/* Importing needs a working connection — an errored one can't read
+              a form, so the panel stays out of the way until it's fixed. */}
+          {integrationQuery.data?.status === "active" && <GoogleImportPanel />}
         </>
       )}
 
