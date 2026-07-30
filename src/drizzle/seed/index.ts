@@ -7,12 +7,16 @@ import {
   type SeedProfileName,
 } from "./constants";
 import { seedBaselineProfile } from "./profiles/baseline";
+import { seedDemoProfile } from "./profiles/demo";
+import { seedPerformanceProfile } from "./profiles/performance";
 
 const profileRunners: Record<
   SeedProfileName,
   () => Promise<{ profile: SeedProfileName }>
 > = {
   baseline: seedBaselineProfile,
+  demo: seedDemoProfile,
+  performance: seedPerformanceProfile,
 };
 
 export {
