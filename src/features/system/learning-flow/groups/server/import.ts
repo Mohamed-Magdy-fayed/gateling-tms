@@ -249,10 +249,26 @@ export async function commitGroupStudentImport(
     let updated = 0;
 
     for (let index = 0; index < resolved.valid.length; index++) {
-      const target = resolved.rowTargets.get(resolved.valid[index].rowNumber);
-      if (!target) continue;
+      const row = resolved.valid[index];
+      // Both lookups are invariants, not user-facing conditions: resolution
+      // records a target for every valid row, and resolveGroupIds resolves
+      // every distinct group name the batch carries (creating the missing
+      // ones). A miss means the two normalized the same name differently — a
+      // regression to surface, not a row to silently drop and miscount.
+      const target = resolved.rowTargets.get(row.rowNumber);
+      if (!target) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: ctx.t("errors.generic"),
+        });
+      }
       const groupId = groupIdByKey.get(target.groupNameKey);
-      if (!groupId) continue;
+      if (!groupId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: ctx.t("errors.generic"),
+        });
+      }
 
       rosterRows.push({
         organizationId: ctx.organizationId,

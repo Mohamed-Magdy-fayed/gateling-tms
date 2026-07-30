@@ -593,7 +593,7 @@ export default {
           "يُستخدم فقط عند عدم إدخال بريد إلكتروني. يُرفض إذا تشارك متدربان الاسم نفسه.",
         courseName: "مطلوب. يجب أن تكون الدورة موجودة بالفعل.",
         status:
-          "اختياري. إحدى القيم: placementTest أو waiting أو ongoing أو completed أو cancelled أو postponed. الفراغ يعني waiting للتسجيل الجديد، ولا يغيّر التسجيل الموجود.",
+          "اختياري. إحدى القيم: placementTest أو waiting أو ongoing أو completed أو cancelled أو postponed. الفراغ يعني waiting للتسجيل الجديد، ولا يغيّر التسجيل الموجود. تغيير تسجيل موجود يتّبع هذه الخطوات فقط: placementTest ← waiting أو cancelled؛ waiting ← ongoing أو postponed أو cancelled؛ ongoing ← completed أو postponed أو cancelled؛ postponed ← ongoing أو cancelled. الحالتان completed وcancelled نهائيتان.",
       },
     },
     groupStudents: {

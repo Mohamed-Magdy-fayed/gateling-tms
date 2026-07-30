@@ -612,7 +612,7 @@ export default {
           "Used only when no email is given. Refused if two trainees share the name.",
         courseName: "Required. The course must already exist.",
         status:
-          "Optional. One of: placementTest, waiting, ongoing, completed, cancelled, postponed. Blank means waiting for a new enrollment, and leaves an existing one unchanged.",
+          "Optional. One of: placementTest, waiting, ongoing, completed, cancelled, postponed. Blank means waiting for a new enrollment, and leaves an existing one unchanged. Changing an existing enrollment can only follow these steps: placementTest → waiting or cancelled; waiting → ongoing, postponed or cancelled; ongoing → completed, postponed or cancelled; postponed → ongoing or cancelled. Completed and cancelled are final.",
       },
     },
     groupStudents: {

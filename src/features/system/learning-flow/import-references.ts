@@ -7,6 +7,13 @@ import { matchKey, type TraineeDirectory } from "./import-reference-keys";
 export type Reader = typeof database | Transaction;
 
 /**
+ * Advisory-lock seed for group creation, distinct from the group-schedule
+ * lock's seed 0 (`on-group-schedule-changed.ts`) so the two never contend on
+ * the same key even if a group id and an organization id ever hashed alike.
+ */
+const GROUP_CREATE_LOCK_SEED = 1;
+
+/**
  * The trainees a file refers to, looked up by the two columns an enrollment or
  * roster row can name one with. Soft-deleted trainees are excluded — an import
  * must not attach an enrollment to someone who was removed.
@@ -78,6 +85,17 @@ export async function resolveGroupIds(
 ): Promise<Map<string, string>> {
   const idByKey = new Map<string, string>();
   if (names.length === 0) return idByKey;
+
+  // Serialize group creation per organization for the rest of this
+  // transaction. This is a read-then-insert with no unique constraint behind
+  // it — two groups may legitimately share a name (lowest id wins), so the
+  // constraint that would otherwise catch a concurrent duplicate can't exist.
+  // Without the lock, two overlapping imports each read "this name is missing"
+  // and each insert it. Held until commit — same xact-lock idiom as
+  // on-group-schedule-changed.ts.
+  await trx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtextextended(${organizationId}, ${GROUP_CREATE_LOCK_SEED}))`,
+  );
 
   const existing = await trx
     .select({ id: GroupsTable.id, name: GroupsTable.name })
