@@ -21,7 +21,17 @@ export const SEED_ORG_ID = "00000000-0000-0000-0000-0000000000a1";
 export const SEED_ORG_SHORT_CODE = "DEV1";
 export const SEED_ORG_NAME = "Gateling-TMS Dev Academy";
 
-export const SEED_PROFILE_NAMES = ["baseline"] as const;
+// `performance` gets its own organization rather than piling onto the
+// baseline/demo one — it exists to show the near-cap limit UI, and stacking
+// its 50 trainees/5 courses on top of demo's own 25/2 would blow past the
+// Free-plan caps in a way that no longer demonstrates "just under the limit."
+export const SEED_PERFORMANCE_ORG_ID = "00000000-0000-0000-0000-0000000000b1";
+export const SEED_PERFORMANCE_ORG_SHORT_CODE = "PERF";
+export const SEED_PERFORMANCE_ORG_NAME = "Gateling-TMS Performance Org";
+export const SEED_PERFORMANCE_ADMIN_EMAIL = "perf-admin@gateling-tms.dev";
+export const SEED_PERFORMANCE_ADMIN_ID = "00000000-0000-0000-0000-0000000000b2";
+
+export const SEED_PROFILE_NAMES = ["baseline", "demo", "performance"] as const;
 export type SeedProfileName = (typeof SEED_PROFILE_NAMES)[number];
 
 export const DEFAULT_SEED_PROFILE: SeedProfileName = "baseline";

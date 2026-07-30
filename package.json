@@ -18,6 +18,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/drizzle/seed/cli.ts",
+    "db:seed:demo": "tsx src/drizzle/seed/cli.ts demo",
+    "db:seed:performance": "tsx src/drizzle/seed/cli.ts performance",
     "db:seed:clear": "tsx src/drizzle/seed/cli.ts clear",
     "inngest": "npx inngest-cli@latest dev"
   },

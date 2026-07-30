@@ -125,7 +125,9 @@ export function PlacementTestReviewDialog({
 
         <DialogBody className="space-y-4">
           <div className="space-y-1.5">
-            <Label>{t("enrollments.course")}</Label>
+            <Label htmlFor="placement-review-course">
+              {t("enrollments.course")}
+            </Label>
             <Select
               value={courseId}
               disabled={reviewMut.isPending}
@@ -135,7 +137,7 @@ export function PlacementTestReviewDialog({
                 setLevelId("");
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="placement-review-course" className="w-full">
                 <SelectValue>
                   {(selected) =>
                     courseRows.find((course) => course.id === selected)?.name ??
@@ -154,13 +156,15 @@ export function PlacementTestReviewDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("placementTests.level")}</Label>
+            <Label htmlFor="placement-review-level">
+              {t("placementTests.level")}
+            </Label>
             <Select
               value={levelId}
               disabled={reviewMut.isPending || courseId === ""}
               onValueChange={(next) => setLevelId(next ?? "")}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="placement-review-level" className="w-full">
                 <SelectValue>
                   {(selected) =>
                     levelRows.find((level) => level.id === selected)?.name ?? ""

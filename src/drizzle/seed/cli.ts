@@ -15,6 +15,22 @@ const commands = {
       await runSeedProfile("baseline");
     },
   },
+  demo: {
+    description:
+      "Seed the realistic-academy screenshot/demo dataset on top of baseline: 2 courses w/ levels+lectures+quiz, 3 groups w/ schedules+sessions (one Zoom-fixture-connected), 25 students w/ enrollments/attendance/certificates.",
+    action: async () => {
+      const { runSeedProfile } = await import("@/drizzle/seed");
+      await runSeedProfile("demo");
+    },
+  },
+  performance: {
+    description:
+      "Seed a second organization at the Free-plan caps (50 students / 5 courses) so the usage-limit UI renders in its at-cap state.",
+    action: async () => {
+      const { runSeedProfile } = await import("@/drizzle/seed");
+      await runSeedProfile("performance");
+    },
+  },
   clear: {
     description: "Clear all data from the database tables.",
     action: async () => {
