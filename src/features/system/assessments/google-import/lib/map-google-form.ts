@@ -197,14 +197,16 @@ function mapItem(
   }
 
   if (question.scaleQuestion) {
+    const answers = scaleAnswers(question.scaleQuestion);
+    // A scale with no bounds (or an inverted one) has no steps to turn into
+    // options — nothing to import, so it is listed rather than added empty.
+    if (answers.length === 0) {
+      notes.add("skippedUnsupported", title);
+      return null;
+    }
+
     notes.add("convertedScale", title);
-    return {
-      text: title,
-      type: "single_choice",
-      points,
-      order,
-      answers: scaleAnswers(question.scaleQuestion),
-    };
+    return { text: title, type: "single_choice", points, order, answers };
   }
 
   if (question.textQuestion) {
@@ -281,6 +283,8 @@ function mapChoiceQuestion(
 function scaleAnswers(
   scale: NonNullable<GoogleFormQuestion["scaleQuestion"]>,
 ): MappedAnswer[] {
+  if (scale.low == null || scale.high == null) return [];
+
   const answers: MappedAnswer[] = [];
   const low = Math.round(scale.low);
   const high = Math.round(scale.high);

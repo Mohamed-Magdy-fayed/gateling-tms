@@ -288,6 +288,25 @@ describe("mapGoogleForm — question types", () => {
     ]);
   });
 
+  test("skips a scale with no bounds rather than failing the whole form", () => {
+    // The payload schema keeps `low`/`high` optional so one odd question
+    // can't cost the entire parse — this is where that degrades.
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          choiceItem("Q1", "RADIO", ["A"]),
+          {
+            title: "Rate us",
+            questionItem: { question: { scaleQuestion: { lowLabel: "Poor" } } },
+          },
+        ],
+      }),
+    );
+
+    expect(mapped.questionCount).toBe(1);
+    expect(noteCodes(mapped)).toEqual(["skippedUnsupported"]);
+  });
+
   test("lists an item kind it doesn't recognize rather than dropping it", () => {
     // Google adds item kinds over time. "Nothing is dropped silently" has to
     // hold for the shapes this schema hasn't seen yet, not only the known ones.
