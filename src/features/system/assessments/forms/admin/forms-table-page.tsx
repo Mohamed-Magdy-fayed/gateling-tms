@@ -145,14 +145,14 @@ export function FormsTablePage() {
           title={t("assessments.title")}
           lead={t("assessments.lead")}
         />
-        {/* The Google connection and the import live on their own page — this
-            is the only way in, so the sidebar keeps one Assessments entry. */}
+        {/* The Google connection lives on its own page — this is the only way
+            in, so the sidebar keeps one Assessments entry. */}
         <Link
           href={GOOGLE_IMPORT_PATH}
           className={buttonVariants({ variant: "outline" })}
         >
           <FileSpreadsheetIcon className="size-3.5" />
-          {t("assessments.importFromGoogle")}
+          {t("assessments.googleConnection")}
         </Link>
       </div>
 

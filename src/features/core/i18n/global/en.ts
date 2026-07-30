@@ -1038,9 +1038,9 @@ export default {
     },
   },
   googleImport: {
-    title: "Google Forms import",
+    title: "Google connection",
     subtitle:
-      "Connect a Google account and turn its forms into assignments, quizzes, final exams, or placement tests.",
+      "Connect the Google account that owns the forms you want Gateling to read.",
     connectTitle: "Google account",
     connectDescription:
       "Gateling reads the structure of the forms you choose — questions and answer options only. It never reads responses, and never sees anything else in your Google Drive.",
@@ -1084,7 +1084,7 @@ export default {
   assessments: {
     title: "Assessments",
     lead: "Build assignments, quizzes, final exams, and placement tests, then track responses.",
-    importFromGoogle: "Import from Google Forms",
+    googleConnection: "Google connection",
     formTitle: "Title",
     description: "Description",
     type: "Type",

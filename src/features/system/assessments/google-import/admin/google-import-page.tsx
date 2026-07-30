@@ -16,10 +16,9 @@ import { useTRPC } from "@/integrations/trpc/client";
 import { GoogleConnectionCard, GoogleDisconnectDialog } from "./components";
 
 /**
- * Home of the Google Forms import: the organization's Google connection, and
- * (from the next segment) the import itself. Reached from the Assessments
- * page rather than the sidebar — it belongs to building assessments, not to
- * a section of its own.
+ * The organization's Google connection, and — once the import lands — the
+ * import itself. Reached from the Assessments page rather than the sidebar:
+ * it belongs to building assessments, not to a section of its own.
  */
 export function GoogleImportPage() {
   const { t } = useTranslation();

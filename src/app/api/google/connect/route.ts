@@ -19,8 +19,10 @@ import { buildAuthorizeUrl } from "@/integrations/google";
  * active organization, and admin role.
  *
  * No row is created up front (unlike Zoom's connect route): an org has exactly
- * one Google grant, so there is nothing to identify — the callback writes the
- * row for whichever org the session is active in.
+ * one Google grant, so there is nothing to identify — but the organization the
+ * handshake started for still travels in the state cookie, so the callback
+ * writes the grant where it was asked for even if another tab has switched the
+ * active organization in the meantime.
  */
 export async function GET() {
   if (!isGoogleImportConfigured()) {
@@ -34,7 +36,7 @@ export async function GET() {
   }
 
   const { credentials } = getGoogleImportConfig();
-  const state = createGoogleConnectState(cookieJar);
+  const state = createGoogleConnectState(cookieJar, access.organizationId);
 
   redirect(buildAuthorizeUrl(credentials, state));
 }

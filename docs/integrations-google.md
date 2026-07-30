@@ -80,7 +80,7 @@ organization reconnects once.
 One grant per organization — `google_integrations` has a unique index on
 `organizationId`, and reconnecting upserts that row.
 
-```
+```text
 /assessments/google  ──"Connect Google"──▶  GET /api/google/connect
                                               │ admin check
                                               │ sets googleConnectState cookie

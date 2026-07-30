@@ -40,15 +40,19 @@ export async function GET(request: NextRequest) {
     redirect(buildGoogleImportUrl("not_configured"));
   }
 
-  if (!consumeGoogleConnectState(cookieJar, state)) {
+  const organizationId = consumeGoogleConnectState(cookieJar, state);
+  if (!organizationId) {
     redirect(buildGoogleImportUrl("invalid_state"));
   }
 
-  // The state cookie proves this browser started the handshake; the session
-  // still has to prove the caller is an admin of the org the grant will be
-  // written to — the two are checked independently on purpose.
+  // The state cookie proves this browser started the handshake and says which
+  // organization it started for; the session still has to prove the caller
+  // administers *that* organization — the two are checked independently on
+  // purpose. Switching the active organization in another tab mid-consent
+  // therefore refuses the callback rather than writing the grant to the wrong
+  // organization.
   const access = await resolveOrgAccessFromSession(cookieJar);
-  if (access?.role !== "admin") {
+  if (access?.role !== "admin" || access.organizationId !== organizationId) {
     redirect(buildGoogleImportUrl("forbidden"));
   }
 
@@ -56,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await completeGoogleConnection({
-      organizationId: access.organizationId,
+      organizationId,
       code,
       actorEmail: access.userEmail ?? access.userId,
     });

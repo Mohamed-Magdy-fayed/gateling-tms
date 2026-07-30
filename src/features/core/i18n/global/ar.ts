@@ -994,9 +994,8 @@ export default {
     },
   },
   googleImport: {
-    title: "الاستيراد من Google Forms",
-    subtitle:
-      "اربط حساب Google وحوّل نماذجه إلى واجبات أو اختبارات أو امتحانات نهائية أو اختبارات تحديد مستوى.",
+    title: "اتصال Google",
+    subtitle: "اربط حساب Google صاحب النماذج التي تريد أن يقرأها Gateling.",
     connectTitle: "حساب Google",
     connectDescription:
       "يقرأ Gateling بنية النماذج التي تختارها — الأسئلة وخيارات الإجابة فقط. لا يقرأ الردود ولا يطّلع على أي شيء آخر في Google Drive.",
@@ -1039,7 +1038,7 @@ export default {
   assessments: {
     title: "التقييمات",
     lead: "أنشئ الواجبات والاختبارات والامتحانات النهائية واختبارات تحديد المستوى، وتابع الردود.",
-    importFromGoogle: "الاستيراد من Google Forms",
+    googleConnection: "اتصال Google",
     formTitle: "العنوان",
     description: "الوصف",
     type: "النوع",

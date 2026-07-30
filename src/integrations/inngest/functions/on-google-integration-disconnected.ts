@@ -49,9 +49,24 @@ export const onGoogleIntegrationDisconnected = inngest.createFunction(
         throw error;
       }
 
-      await revokeToken(
-        decryptToken(event.data.encryptedAccessToken, config.encryptionKey),
-      );
+      let accessToken: string;
+      try {
+        accessToken = decryptToken(
+          event.data.encryptedAccessToken,
+          config.encryptionKey,
+        );
+      } catch (error) {
+        // Ciphertext this key can't open — a rotated key, or a tampered
+        // payload. Neither improves on a retry, and the row is already gone,
+        // so there is nothing left to fix by trying again. (The grant itself
+        // survives at Google until its own expiry; rotating the key is
+        // documented as forcing every org to reconnect.)
+        throw new NonRetriableError(
+          error instanceof Error ? error.message : "Token decryption failed.",
+        );
+      }
+
+      await revokeToken(accessToken);
 
       return { revoked: true, organizationId: event.data.organizationId };
     });

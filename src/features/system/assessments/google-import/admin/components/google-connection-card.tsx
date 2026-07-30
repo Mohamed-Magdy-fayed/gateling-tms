@@ -62,8 +62,13 @@ export function GoogleConnectionCard({
     );
   }
 
+  // An explicit time zone, because this client component still renders once on
+  // the server: without one, a connection made near midnight formats to the
+  // server's calendar date first and the browser's afterwards, which React
+  // reports as a hydration mismatch.
   const connectedOn = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     dateStyle: "medium",
+    timeZone: "UTC",
   }).format(new Date(integration.createdAt));
 
   return (
