@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { FormResponsesTable } from "@/drizzle/schema";
+import { gradeFormResponse } from "./grading";
 import { assertFormInOrg, getScorableQuestions } from "./queries";
 import type { SubmitResponseInput } from "./schemas";
-import { scoreFormResponse } from "./scoring";
 import type { OrgTRPCContext } from "./types";
 
 // No "already submitted" guard (unlike SOURCE's allowMultipleResponses
@@ -27,7 +27,7 @@ export async function submitResponse(
   }
 
   const questions = await getScorableQuestions(ctx, input.formId);
-  const score = scoreFormResponse(questions, input.answers);
+  const score = await gradeFormResponse(questions, input.answers);
 
   const [response] = await ctx.db
     .insert(FormResponsesTable)

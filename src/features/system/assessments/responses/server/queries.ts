@@ -52,7 +52,10 @@ export async function getScorableQuestions(
     with: {
       questions: {
         with: {
-          answers: { columns: { id: true, isCorrect: true } },
+          // `text` is needed as well as `isCorrect`: for a short answer the
+          // accepted wordings are what the grader compares against, and the
+          // question text is the context the model needs to judge a paraphrase.
+          answers: { columns: { id: true, text: true, isCorrect: true } },
         },
       },
     },
@@ -61,6 +64,7 @@ export async function getScorableQuestions(
   return sections.flatMap((section) =>
     section.questions.map((question) => ({
       id: question.id,
+      text: question.text,
       type: question.type,
       points: question.points,
       answers: question.answers,
