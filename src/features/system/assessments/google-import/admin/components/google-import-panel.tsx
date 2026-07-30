@@ -241,12 +241,14 @@ export function GoogleImportPanel() {
             <FieldSet disabled={importMut.isPending}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel>{t("assessments.type")}</FieldLabel>
+                  <FieldLabel htmlFor="google-import-type">
+                    {t("assessments.type")}
+                  </FieldLabel>
                   <Select
                     value={type}
                     onValueChange={(value) => setType(value as FormType)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="google-import-type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -273,14 +275,16 @@ export function GoogleImportPanel() {
                 </Field>
 
                 <Field>
-                  <FieldLabel>{t("assessments.attachToCourse")}</FieldLabel>
+                  <FieldLabel htmlFor="google-import-attach-course">
+                    {t("assessments.attachToCourse")}
+                  </FieldLabel>
                   <Select
                     value={courseId || NONE}
                     onValueChange={(value) =>
                       handleCourseChange(value as string)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="google-import-attach-course">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -298,14 +302,16 @@ export function GoogleImportPanel() {
 
                 {courseId !== "" && (
                   <Field>
-                    <FieldLabel>{t("assessments.attachToLevel")}</FieldLabel>
+                    <FieldLabel htmlFor="google-import-attach-level">
+                      {t("assessments.attachToLevel")}
+                    </FieldLabel>
                     <Select
                       value={levelId || NONE}
                       onValueChange={(value) =>
                         handleLevelChange(value as string)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="google-import-attach-level">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -324,14 +330,16 @@ export function GoogleImportPanel() {
 
                 {levelId !== "" && (
                   <Field>
-                    <FieldLabel>{t("assessments.attachToLecture")}</FieldLabel>
+                    <FieldLabel htmlFor="google-import-attach-lecture">
+                      {t("assessments.attachToLecture")}
+                    </FieldLabel>
                     <Select
                       value={lectureId || NONE}
                       onValueChange={(value) =>
                         setLectureId(value === NONE || !value ? "" : value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="google-import-attach-lecture">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

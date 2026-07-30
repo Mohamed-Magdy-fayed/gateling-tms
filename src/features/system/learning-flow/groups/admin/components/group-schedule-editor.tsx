@@ -96,7 +96,12 @@ export function GroupScheduleEditor({
               className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-muted/40 p-3"
             >
               <div className="min-w-36 flex-1 space-y-1">
-                <Label className="text-xs">{t("groups.slots.day")}</Label>
+                <Label
+                  htmlFor={`group-schedule-slot-${index}-day`}
+                  className="text-xs"
+                >
+                  {t("groups.slots.day")}
+                </Label>
                 <Select
                   value={String(slot.day)}
                   onValueChange={(next) =>
@@ -104,7 +109,10 @@ export function GroupScheduleEditor({
                   }
                   disabled={disabled}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    id={`group-schedule-slot-${index}-day`}
+                    className="w-full"
+                  >
                     {/* Base-UI's SelectValue renders the raw value, not the
                         matching item's children — without this mapper the
                         trigger would show "1" instead of "Monday". */}
@@ -127,8 +135,14 @@ export function GroupScheduleEditor({
               </div>
 
               <div className="w-28 space-y-1">
-                <Label className="text-xs">{t("groups.slots.startTime")}</Label>
+                <Label
+                  htmlFor={`group-schedule-slot-${index}-start-time`}
+                  className="text-xs"
+                >
+                  {t("groups.slots.startTime")}
+                </Label>
                 <Input
+                  id={`group-schedule-slot-${index}-start-time`}
                   type="time"
                   value={slot.startTime}
                   disabled={disabled}
@@ -139,8 +153,14 @@ export function GroupScheduleEditor({
               </div>
 
               <div className="w-28 space-y-1">
-                <Label className="text-xs">{t("groups.slots.endTime")}</Label>
+                <Label
+                  htmlFor={`group-schedule-slot-${index}-end-time`}
+                  className="text-xs"
+                >
+                  {t("groups.slots.endTime")}
+                </Label>
                 <Input
+                  id={`group-schedule-slot-${index}-end-time`}
                   type="time"
                   value={slot.endTime}
                   disabled={disabled}
