@@ -6,6 +6,8 @@ import { onOrganizationMemberInvited } from "./on-organization-member-invited";
 import { onOrganizationZoomConnected } from "./on-organization-zoom-connected";
 import { onSessionMeetingCancelled } from "./on-session-meeting-cancelled";
 import { onSessionMeetingSyncRequested } from "./on-session-meeting-sync-requested";
+import { onUsageReconciliationRequested } from "./on-usage-reconciliation-requested";
+import { onUsageReconciliationScheduled } from "./on-usage-reconciliation-scheduled";
 import { onUserRegistered } from "./on-user-registered";
 import { onZoomClientDisconnected } from "./on-zoom-client-disconnected";
 import { onZoomWebhookReceived } from "./on-zoom-webhook-received";
@@ -22,4 +24,6 @@ export const functions = [
   onSessionMeetingSyncRequested,
   onSessionMeetingCancelled,
   onZoomWebhookReceived,
+  onUsageReconciliationScheduled,
+  onUsageReconciliationRequested,
 ];

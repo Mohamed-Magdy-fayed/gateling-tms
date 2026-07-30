@@ -97,6 +97,30 @@ export async function uploadImage(
 }
 
 /**
+ * Total bytes stored under one organization's prefix — the truth
+ * `organizations.storageBytes` is supposed to track. Used only by the nightly
+ * usage reconciliation, never on a request path: it lists every object the
+ * org owns, which is cheap at the 1 GB free cap but is not a per-request cost
+ * anyone should pay.
+ *
+ * Auto-paginates (the client walks every page before resolving), so the
+ * returned total covers the whole prefix rather than the first page.
+ */
+export async function sumOrgStorageBytes(
+  organizationId: string,
+): Promise<number> {
+  const bucket = getStorageBucket();
+  const [files] = await bucket.getFiles({
+    prefix: `orgs/${organizationId}/`,
+  });
+
+  return files.reduce((total, file) => {
+    const size = Number(file.metadata.size ?? 0);
+    return total + (Number.isFinite(size) ? size : 0);
+  }, 0);
+}
+
+/**
  * Delete an image from Firebase Storage given its public URL. Never throws —
  * callers can fire-and-forget — but only a confirmed "already gone" (404) is
  * treated as success; permission, config, and network failures are logged

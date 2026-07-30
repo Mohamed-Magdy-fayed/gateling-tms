@@ -33,3 +33,17 @@ function getFirebaseAdmin(): App {
 export function getStorageBucket() {
   return getStorage(getFirebaseAdmin()).bucket();
 }
+
+/**
+ * All four credentials present. Every Firebase env var is optional (uploads
+ * are dormant until a bucket exists), so background work that walks the
+ * bucket has to ask before assuming it can — see the reconciliation function.
+ */
+export function isFirebaseConfigured(): boolean {
+  return Boolean(
+    env.FIREBASE_PROJECT_ID &&
+      env.FIREBASE_CLIENT_EMAIL &&
+      env.FIREBASE_PRIVATE_KEY &&
+      env.FIREBASE_STORAGE_BUCKET,
+  );
+}
