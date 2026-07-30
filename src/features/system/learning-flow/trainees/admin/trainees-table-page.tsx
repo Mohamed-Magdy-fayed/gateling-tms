@@ -28,7 +28,10 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
-import { EntityImportDialog } from "@/features/core/import/admin";
+import {
+  EntityExportButton,
+  EntityImportDialog,
+} from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -169,6 +172,11 @@ export function TraineesTablePage() {
               table={table}
               getExportRow={(row) => row}
               exportFileName="trainees.csv"
+            />
+            <EntityExportButton
+              entities={[
+                { entity: "trainees", titleKey: "import.trainees.title" },
+              ]}
             />
             <Button
               type="button"

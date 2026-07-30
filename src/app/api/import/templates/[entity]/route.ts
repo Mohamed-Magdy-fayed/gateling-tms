@@ -1,34 +1,18 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-import { rowsToCsv } from "@/features/core/data-table/lib/csv";
 import { getLocaleCookie, getT } from "@/features/core/i18n/server";
 import type { MessageKey } from "@/features/core/import/lib";
 import {
   buildTemplateWorkbook,
+  CSV_CONTENT_TYPE,
+  fileResponse,
+  resolveDownloadFormat,
   type TemplateColumnDoc,
+  toLocalizedCsv,
+  XLSX_CONTENT_TYPE,
 } from "@/features/core/import/server";
 import { findImportTemplate } from "@/features/core/import/server/registry";
 import { resolveOrgAccessFromSession } from "@/features/core/organizations/server";
-
-const XLSX_CONTENT_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-/** Makes Excel open a UTF-8 CSV as UTF-8 instead of the local code page. */
-const UTF8_BYTE_ORDER_MARK = "﻿";
-
-function fileResponse(
-  body: string | ArrayBuffer,
-  contentType: string,
-  fileName: string,
-): Response {
-  return new Response(body, {
-    headers: {
-      "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="${fileName}"`,
-      "Cache-Control": "no-store",
-    },
-  });
-}
 
 /**
  * Serves the per-entity import template as XLSX (default) or CSV, with the
@@ -55,17 +39,19 @@ export async function GET(
 
   const { t } = await getT();
   const translate = (key: MessageKey) => t(key, {});
-  const format =
-    request.nextUrl.searchParams.get("format") === "csv" ? "csv" : "xlsx";
+  const format = resolveDownloadFormat(
+    request.nextUrl.searchParams.get("format"),
+  );
   const fileName = `${template.entity}-template.${format}`;
   const headers = template.columns.map((column) => translate(column.labelKey));
 
   if (format === "csv") {
-    const exampleRow = Object.fromEntries(
-      template.columns.map((column, index) => [headers[index], column.example]),
+    const exampleRow = template.columns.map((column) => column.example);
+    return fileResponse(
+      toLocalizedCsv(headers, [exampleRow]),
+      CSV_CONTENT_TYPE,
+      fileName,
     );
-    const csv = UTF8_BYTE_ORDER_MARK + rowsToCsv(headers, [exampleRow]);
-    return fileResponse(csv, "text/csv; charset=utf-8", fileName);
   }
 
   const workbook = await buildTemplateWorkbook(

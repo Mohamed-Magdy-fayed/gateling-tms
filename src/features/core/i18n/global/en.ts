@@ -508,6 +508,9 @@ export default {
     ),
     importFailed: "Could not import this file.",
     previewFailed: "Could not read this file.",
+    exportTitle: "Export for re-import",
+    exportXlsx: "Export as Excel",
+    exportCsv: "Export as CSV",
     template: {
       referenceSheet: "Reference",
       columnHeading: "Column",

@@ -493,6 +493,9 @@ export default {
     ),
     importFailed: "تعذر استيراد هذا الملف.",
     previewFailed: "تعذرت قراءة هذا الملف.",
+    exportTitle: "تصدير لإعادة الاستيراد",
+    exportXlsx: "تصدير كملف Excel",
+    exportCsv: "تصدير كملف CSV",
     template: {
       referenceSheet: "المرجع",
       columnHeading: "العمود",

@@ -23,7 +23,10 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
-import { EntityImportDialog } from "@/features/core/import/admin";
+import {
+  EntityExportButton,
+  EntityImportDialog,
+} from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -170,6 +173,14 @@ export function CoursesTablePage() {
               table={table}
               getExportRow={(row) => row}
               exportFileName="courses.csv"
+            />
+            {/* Levels ride along here for the same reason their import does:
+                a levels file names its parent course per row. */}
+            <EntityExportButton
+              entities={[
+                { entity: "courses", titleKey: "import.courses.title" },
+                { entity: "levels", titleKey: "import.levels.title" },
+              ]}
             />
             <Button
               type="button"
