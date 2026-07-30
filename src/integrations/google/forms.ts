@@ -45,10 +45,14 @@ const questionSchema = z.object({
   grading: gradingSchema.optional(),
   choiceQuestion: choiceQuestionSchema.optional(),
   textQuestion: z.object({ paragraph: z.boolean().optional() }).optional(),
+  // `low`/`high` are optional like everything else here, even though Google
+  // always sends them: one unexpectedly absent field must cost that one
+  // question, not the whole form's parse. The mapper treats a scale with
+  // either missing as a question it can't import, and says so.
   scaleQuestion: z
     .object({
-      low: z.number(),
-      high: z.number(),
+      low: z.number().optional(),
+      high: z.number().optional(),
       lowLabel: z.string().optional(),
       highLabel: z.string().optional(),
     })
