@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DownloadIcon, Loader2Icon, SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useCallback, useId, useState } from "react";
+import { type FormEvent, useCallback, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +61,7 @@ export function GoogleImportPanel() {
   const [courseId, setCourseId] = useState("");
   const [levelId, setLevelId] = useState("");
   const [lectureId, setLectureId] = useState("");
+  const isImportingRef = useRef(false);
 
   const previewMut = useMutation(trpc.googleImport.preview.mutationOptions());
   const importMut = useMutation(trpc.googleImport.import.mutationOptions());
@@ -109,6 +110,12 @@ export function GoogleImportPanel() {
   );
 
   const handleImport = useCallback(async () => {
+    // `importMut.isPending` only disables the button on the *next* render, so
+    // a fast double-click can fire this twice and create the assessment twice.
+    // The ref flips synchronously, before either dispatch settles.
+    if (isImportingRef.current) return;
+    isImportingRef.current = true;
+
     try {
       const created = await toast
         .promise(
@@ -137,6 +144,8 @@ export function GoogleImportPanel() {
       router.push(`/assessments/${created.id}`);
     } catch {
       // toast.promise already surfaced the failure.
+    } finally {
+      isImportingRef.current = false;
     }
   }, [
     courseId,

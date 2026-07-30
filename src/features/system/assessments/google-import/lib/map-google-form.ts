@@ -181,6 +181,11 @@ function mapItem(
     // this app's builder has nothing to put them in.
     if (item.textItem || item.imageItem || item.videoItem) {
       notes.add("skippedContent", title);
+    } else {
+      // An item kind this schema doesn't know — Google adds them over time.
+      // It still gets a note: "nothing is dropped silently" has to hold for
+      // the shapes we didn't anticipate too, not just the ones we did.
+      notes.add("skippedUnsupported", title);
     }
     return null;
   }

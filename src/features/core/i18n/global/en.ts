@@ -1089,8 +1089,12 @@ export default {
     importFailed: "Could not import this form.",
     previewFailed: "Could not read this form.",
     previewTitle: "What will be imported",
-    sectionsCount: "{count} sections",
-    questionsCount: "{count} questions",
+    sectionsCount: dt("{count:plural}", {
+      plural: { count: { one: "{?} section", other: "{?} sections" } },
+    }),
+    questionsCount: dt("{count:plural}", {
+      plural: { count: { one: "{?} question", other: "{?} questions" } },
+    }),
     quizDetected:
       "This is a Google quiz — point values and correct answers come across too.",
     notImportedTitle: "Not imported as-is",
@@ -1108,8 +1112,7 @@ export default {
         "Dropdown — imported as a single-choice question: {title}",
       convertedScale: "Linear scale — imported as one choice per step: {title}",
       convertedParagraph: "Long answer — imported as a short answer: {title}",
-      skippedUnsupported:
-        "Date, time, file upload and rating questions aren't supported: {title}",
+      skippedUnsupported: "This question type can't be imported: {title}",
       skippedGrid: "Grid questions can't be imported: {title}",
       skippedContent:
         "Text, images and videos aren't questions, so they're left out: {title}",

@@ -288,6 +288,19 @@ describe("mapGoogleForm — question types", () => {
     ]);
   });
 
+  test("lists an item kind it doesn't recognize rather than dropping it", () => {
+    // Google adds item kinds over time. "Nothing is dropped silently" has to
+    // hold for the shapes this schema hasn't seen yet, not only the known ones.
+    const mapped = mapGoogleForm(
+      form({ items: [{ itemId: "x", title: "Something new" }] }),
+    );
+
+    expect(mapped.questionCount).toBe(0);
+    expect(mapped.notes).toEqual([
+      { id: 0, code: "skippedUnsupported", title: "Something new" },
+    ]);
+  });
+
   test("skips a choice question that has no usable options", () => {
     const mapped = mapGoogleForm(
       form({ items: [choiceItem("Pick one", "RADIO", [])] }),

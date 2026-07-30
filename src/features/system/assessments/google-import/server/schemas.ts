@@ -11,8 +11,9 @@ const formLinkField = z
   .trim()
   .min(1, translationKey("forms.validation.required"))
   // Long enough for any Google URL, short enough that nothing pathological
-  // reaches the id parser.
-  .max(2048, translationKey("forms.validation.max2000"));
+  // reaches the id parser. 2000 rather than a rounder 2048 so the limit and
+  // the message the user sees agree.
+  .max(2000, translationKey("forms.validation.max2000"));
 
 export const googleFormPreviewSchema = z.object({ formLink: formLinkField });
 

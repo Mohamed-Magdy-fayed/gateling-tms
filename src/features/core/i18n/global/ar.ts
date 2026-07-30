@@ -1044,8 +1044,30 @@ export default {
     importFailed: "تعذّر استيراد هذا النموذج.",
     previewFailed: "تعذّرت قراءة هذا النموذج.",
     previewTitle: "ما الذي سيتم استيراده",
-    sectionsCount: "{count} أقسام",
-    questionsCount: "{count} أسئلة",
+    sectionsCount: dt("{count:plural}", {
+      plural: {
+        count: {
+          zero: "لا أقسام",
+          one: "قسم واحد",
+          two: "قسمان",
+          few: "{?} أقسام",
+          many: "{?} قسمًا",
+          other: "{?} قسم",
+        },
+      },
+    }),
+    questionsCount: dt("{count:plural}", {
+      plural: {
+        count: {
+          zero: "لا أسئلة",
+          one: "سؤال واحد",
+          two: "سؤالان",
+          few: "{?} أسئلة",
+          many: "{?} سؤالًا",
+          other: "{?} سؤال",
+        },
+      },
+    }),
     quizDetected:
       "هذا اختبار Google — سيتم استيراد الدرجات والإجابات الصحيحة أيضًا.",
     notImportedTitle: "لم يُستورد كما هو",
@@ -1062,8 +1084,7 @@ export default {
       convertedDropdown: "قائمة منسدلة — استُوردت كسؤال اختيار واحد: {title}",
       convertedScale: "مقياس خطي — استُورد كخيار لكل درجة: {title}",
       convertedParagraph: "إجابة طويلة — استُوردت كإجابة قصيرة: {title}",
-      skippedUnsupported:
-        "أسئلة التاريخ والوقت ورفع الملفات والتقييم غير مدعومة: {title}",
+      skippedUnsupported: "لا يمكن استيراد هذا النوع من الأسئلة: {title}",
       skippedGrid: "لا يمكن استيراد أسئلة الشبكة: {title}",
       skippedContent:
         "النصوص والصور والفيديوهات ليست أسئلة، لذا استُبعدت: {title}",

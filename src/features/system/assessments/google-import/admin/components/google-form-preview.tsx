@@ -34,12 +34,12 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
         <div className="flex flex-wrap gap-2">
           <Tag color="violet">
             {t("googleImport.sectionsCount", {
-              count: String(preview.sections.length),
+              count: preview.sections.length,
             })}
           </Tag>
           <Tag color="green">
             {t("googleImport.questionsCount", {
-              count: String(preview.questionCount),
+              count: preview.questionCount,
             })}
           </Tag>
         </div>
@@ -70,7 +70,7 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
                 </p>
                 <Muted className="ms-6 text-xs">
                   {t("googleImport.questionsCount", {
-                    count: String(section.questions.length),
+                    count: section.questions.length,
                   })}
                 </Muted>
               </li>
