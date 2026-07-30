@@ -356,6 +356,28 @@ export default {
         {},
       ),
     },
+    usage: {
+      title: "الخطة والاستخدام",
+      description: "ما تستخدمه هذه المؤسسة ضمن خطتها الحالية.",
+      students: "الطلاب",
+      courses: "الدورات",
+      storage: "التخزين",
+      countOf: dt("{used:number} من {limit:number}", {}),
+      countUnlimited: dt("{used:number} مستخدم · بلا حد", {}),
+      storageOf: "{used} من {limit}",
+      megabytes: dt("{amount:number} ميجابايت", {}),
+      gigabytes: dt("{amount:number} جيجابايت", {}),
+      comingSoon: "خطط مدفوعة بحدود أعلى قريبًا.",
+      seePlans: "عرض الخطط",
+      studentsReached: dt(
+        "لقد وصلت إلى حد هذه الخطة وهو {limit:number} طالب.",
+        {},
+      ),
+      studentsApproaching: dt("تستخدم {used:number} من {limit:number} طالب.", {}),
+      coursesReached: dt("لقد وصلت إلى حد هذه الخطة وهو {limit:number} دورة.", {}),
+      coursesApproaching: dt("تستخدم {used:number} من {limit:number} دورة.", {}),
+      reachedHint: "احذف عنصرًا لإتاحة مساحة ضمن هذه الخطة.",
+    },
     emails: {
       invite: {
         subject: "تمت دعوتك للانضمام إلى {organizationName}",

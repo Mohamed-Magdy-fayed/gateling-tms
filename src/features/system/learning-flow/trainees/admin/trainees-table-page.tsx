@@ -32,6 +32,7 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
+import { PlanLimitNotice } from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -158,6 +159,8 @@ export function TraineesTablePage() {
       }
     >
       <EntityPageHeader title={t("trainees.title")} lead={t("trainees.lead")} />
+
+      <PlanLimitNotice resource="students" />
 
       <DataTable
         table={table}

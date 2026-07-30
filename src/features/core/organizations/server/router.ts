@@ -16,6 +16,7 @@ import {
 } from "./mutations";
 import {
   getActiveOrganization,
+  getOrganizationUsage,
   listMembers,
   listMyOrganizations,
   previewInvite,
@@ -35,6 +36,9 @@ export const organizationsRouter = createTRPCRouter({
     .input(organizationProfileSchema)
     .mutation(async ({ ctx, input }) => createOrganization(ctx, input)),
   getActive: orgProcedure.query(async ({ ctx }) => getActiveOrganization(ctx)),
+  // Readable by any member: usage against the plan is not sensitive, and the
+  // limit notices on the trainees/courses pages are shown to teachers too.
+  usage: orgProcedure.query(async ({ ctx }) => getOrganizationUsage(ctx)),
   update: orgAdminProcedure
     .input(organizationProfileSchema)
     .mutation(async ({ ctx, input }) => updateOrganization(ctx, input)),

@@ -36,6 +36,7 @@ import {
   MemberRemoveDialog,
   OrganizationProfileFormDialog,
   OrganizationSwitcher,
+  PlanUsageCard,
 } from "./components";
 import { buildMemberColumns } from "./components/members-table-columns";
 
@@ -179,6 +180,8 @@ export function OrganizationsSettingsPage() {
           </CardHeader>
         </Card>
       ) : null}
+
+      <PlanUsageCard />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
