@@ -5,8 +5,18 @@ import { CoursesTable, TraineesTable } from "@/drizzle/schema";
 /** Reads run either on the request connection or inside a transaction. */
 type Reader = typeof db | Transaction;
 
-/** The three maintained counters the plan limits are enforced against. */
-export type UsageCounterName = "studentCount" | "courseCount" | "storageBytes";
+/**
+ * The maintained counters the plan limits are enforced against. The type is
+ * derived from this list, not declared beside it, so a counter can never be
+ * added to one and forgotten in the comparison below.
+ */
+export const USAGE_COUNTERS = [
+  "studentCount",
+  "courseCount",
+  "storageBytes",
+] as const;
+
+export type UsageCounterName = (typeof USAGE_COUNTERS)[number];
 
 export type StoredUsage = Record<UsageCounterName, number>;
 
@@ -78,11 +88,7 @@ export function computeUsageDrift(
 ): UsageDiscrepancy[] {
   const discrepancies: UsageDiscrepancy[] = [];
 
-  for (const counter of [
-    "studentCount",
-    "courseCount",
-    "storageBytes",
-  ] as const) {
+  for (const counter of USAGE_COUNTERS) {
     const actual = measured[counter];
     if (actual == null || !Number.isFinite(actual)) continue;
     if (actual === stored[counter]) continue;
