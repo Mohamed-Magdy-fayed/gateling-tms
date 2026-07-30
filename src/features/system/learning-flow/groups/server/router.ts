@@ -4,6 +4,10 @@ import {
   orgProcedure,
 } from "@/integrations/trpc/init";
 import {
+  commitGroupStudentImport,
+  previewGroupStudentImport,
+} from "./import";
+import {
   addGroupStudents,
   createGroup,
   deleteGroup,
@@ -16,6 +20,8 @@ import {
   groupDeleteSchema,
   groupMutationSchema,
   groupRemoveStudentSchema,
+  groupStudentImportCommitInput,
+  groupStudentImportPreviewInput,
   groupUpdateSchema,
   listGroupsInput,
 } from "./schemas";
@@ -55,4 +61,13 @@ export const groupsRouter = createTRPCRouter({
   removeStudent: orgContentManagerProcedure
     .input(groupRemoveStudentSchema)
     .mutation(async ({ ctx, input }) => removeGroupStudent(ctx, input)),
+  // Bulk roster assignment from a spreadsheet. Mutations, not queries: both
+  // take a file body, and re-running a preview for the same file is the point
+  // rather than something to cache.
+  importStudentsPreview: orgContentManagerProcedure
+    .input(groupStudentImportPreviewInput)
+    .mutation(async ({ ctx, input }) => previewGroupStudentImport(ctx, input)),
+  importStudentsCommit: orgContentManagerProcedure
+    .input(groupStudentImportCommitInput)
+    .mutation(async ({ ctx, input }) => commitGroupStudentImport(ctx, input)),
 });

@@ -3,6 +3,10 @@ import {
   orgContentManagerProcedure,
 } from "@/integrations/trpc/init";
 import {
+  commitEnrollmentImport,
+  previewEnrollmentImport,
+} from "./import";
+import {
   createEnrollment,
   deleteEnrollment,
   setEnrollmentLevelStatus,
@@ -15,6 +19,8 @@ import {
 } from "./queries";
 import {
   enrollmentDeleteSchema,
+  enrollmentImportCommitInput,
+  enrollmentImportPreviewInput,
   enrollmentLevelStatusSchema,
   enrollmentMutationSchema,
   enrollmentStatusSchema,
@@ -54,4 +60,12 @@ export const enrollmentsRouter = createTRPCRouter({
   delete: orgContentManagerProcedure
     .input(enrollmentDeleteSchema)
     .mutation(async ({ ctx, input }) => deleteEnrollment(ctx, input)),
+  // Mutations, not queries: both take a file body, and re-running a preview
+  // for the same file is the point rather than something to cache.
+  importPreview: orgContentManagerProcedure
+    .input(enrollmentImportPreviewInput)
+    .mutation(async ({ ctx, input }) => previewEnrollmentImport(ctx, input)),
+  importCommit: orgContentManagerProcedure
+    .input(enrollmentImportCommitInput)
+    .mutation(async ({ ctx, input }) => commitEnrollmentImport(ctx, input)),
 });

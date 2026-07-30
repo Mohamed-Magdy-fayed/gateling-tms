@@ -1,12 +1,17 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type {
   ColumnPinningState,
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +27,7 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import { EntityImportDialog } from "@/features/core/import/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -56,6 +62,15 @@ export function GroupsTablePage() {
   );
   const [rowAction, setRowAction] = useState<RowAction>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const importPreview = useMutation(
+    trpc.groups.importStudentsPreview.mutationOptions(),
+  );
+  const importCommit = useMutation(
+    trpc.groups.importStudentsCommit.mutationOptions(),
+  );
 
   const listInput = useMemo(
     () => ({
@@ -155,6 +170,18 @@ export function GroupsTablePage() {
               getExportRow={(row) => row}
               exportFileName="groups.csv"
             />
+            {/* A roster file names one group per row, so it spans the whole
+                list rather than one group's detail page. */}
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-8"
+              onClick={() => setImportOpen(true)}
+              aria-label={t("import.groupStudents.action")}
+            >
+              <UploadIcon className="size-3.5" />
+            </Button>
             <Button
               type="button"
               size="icon"
@@ -168,6 +195,17 @@ export function GroupsTablePage() {
           </DataTableToolbar>
         }
         footer={<DataTablePagination table={table} />}
+      />
+
+      <EntityImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        entity="group-students"
+        onPreview={(input) => importPreview.mutateAsync(input)}
+        onCommit={(rows) => importCommit.mutateAsync({ rows })}
+        onImported={() =>
+          queryClient.invalidateQueries({ queryKey: trpc.groups.pathKey() })
+        }
       />
 
       <GroupFormDialog open={createOpen} onOpenChange={setCreateOpen} />
