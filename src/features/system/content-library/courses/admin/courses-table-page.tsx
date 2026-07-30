@@ -27,6 +27,7 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
+import { PlanLimitNotice } from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -160,6 +161,8 @@ export function CoursesTablePage() {
     >
       <EntityPageHeader title={t("courses.title")} lead={t("courses.lead")} />
 
+      <PlanLimitNotice resource="courses" />
+
       <DataTable
         table={table}
         toolbar={
@@ -225,9 +228,14 @@ export function CoursesTablePage() {
         entity="courses"
         onPreview={(input) => courseImportPreview.mutateAsync(input)}
         onCommit={(rows) => courseImportCommit.mutateAsync({ rows })}
-        onImported={() =>
-          queryClient.invalidateQueries({ queryKey: trpc.courses.pathKey() })
-        }
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: trpc.courses.pathKey() });
+          // A batch can move the course counter by a lot at once, so the limit
+          // notice above has to be re-read, not left at its pre-import number.
+          queryClient.invalidateQueries({
+            queryKey: trpc.organizations.usage.queryKey(),
+          });
+        }}
       />
 
       <EntityImportDialog

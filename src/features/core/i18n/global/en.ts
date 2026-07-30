@@ -362,6 +362,37 @@ export default {
         {},
       ),
     },
+    usage: {
+      title: "Plan and usage",
+      description: "What this organization is using on its current plan.",
+      students: "Students",
+      courses: "Courses",
+      storage: "Storage",
+      countOf: dt("{used:number} of {limit:number}", {}),
+      countUnlimited: dt("{used:number} used · no limit", {}),
+      storageOf: "{used} of {limit}",
+      megabytes: dt("{amount:number} MB", {}),
+      gigabytes: dt("{amount:number} GB", {}),
+      comingSoon: "Paid plans with higher limits are coming soon.",
+      seePlans: "See plans",
+      studentsReached: dt(
+        "You've reached this plan's limit of {limit:number} students.",
+        {},
+      ),
+      studentsApproaching: dt(
+        "You're using {used:number} of {limit:number} students.",
+        {},
+      ),
+      coursesReached: dt(
+        "You've reached this plan's limit of {limit:number} courses.",
+        {},
+      ),
+      coursesApproaching: dt(
+        "You're using {used:number} of {limit:number} courses.",
+        {},
+      ),
+      reachedHint: "Remove one to free up room on this plan.",
+    },
     emails: {
       invite: {
         subject: "You've been invited to join {organizationName}",

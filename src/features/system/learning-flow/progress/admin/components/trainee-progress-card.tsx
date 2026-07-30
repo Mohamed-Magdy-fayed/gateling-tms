@@ -10,12 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ProgressMeter } from "@/components/ui/progress-meter";
 import { Spinner } from "@/components/ui/spinner";
 import type { EnrollmentStatus } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { EnrollmentStatusTag } from "@/features/system/learning-flow/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
-import { ProgressMeter } from "./progress-meter";
 import { useOrgDateTimeFormat } from "./use-org-date-time-format";
 
 // Only the statuses worth a tile on a summary card — `cancelled` and

@@ -10,6 +10,7 @@ import {
 } from "@/drizzle/schema";
 import { hashTokenValue } from "@/features/core/auth/core/token";
 import type { TRPCContext } from "@/integrations/trpc/init";
+import { PLAN_LIMITS } from "./limits";
 import type { InviteMemberInput, ListMembersInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -26,6 +27,51 @@ export async function getActiveOrganization(ctx: OrgTRPCContext) {
   }
 
   return { ...organization, role: ctx.role };
+}
+
+/**
+ * Plan usage for the settings page's usage meters (phase-08.md step 2).
+ *
+ * The three values come off the organization row, not from fresh counts —
+ * they are the same maintained counters `assertCanAddStudent` and friends are
+ * enforced against, so showing anything else would let the meter disagree
+ * with the error a user hits on create. Drift between the counters and the
+ * rows is the reconciliation job's problem, not this query's (see
+ * `usage.ts`).
+ */
+export async function getOrganizationUsage(ctx: OrgTRPCContext) {
+  const organization = await ctx.db.query.OrganizationsTable.findFirst({
+    where: eq(OrganizationsTable.id, ctx.organizationId),
+    columns: {
+      plan: true,
+      studentCount: true,
+      courseCount: true,
+      storageBytes: true,
+    },
+  });
+
+  if (!organization) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.noActiveOrganization"),
+    });
+  }
+
+  const limits = PLAN_LIMITS[organization.plan];
+
+  return {
+    plan: organization.plan,
+    usage: {
+      students: organization.studentCount,
+      courses: organization.courseCount,
+      storageBytes: organization.storageBytes,
+    },
+    limits: {
+      students: limits.maxStudents,
+      courses: limits.maxCourses,
+      storageBytes: limits.maxStorageBytes,
+    },
+  };
 }
 
 export async function listMyOrganizations(ctx: TRPCContext) {

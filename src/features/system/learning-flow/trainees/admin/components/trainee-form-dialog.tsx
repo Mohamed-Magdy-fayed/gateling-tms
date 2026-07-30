@@ -78,6 +78,11 @@ export function TraineeFormDialog({
         await queryClient.invalidateQueries({
           queryKey: trpc.trainees.pathKey(),
         });
+        // The student counter moved, so the plan meters and the limit notice
+        // are now describing the wrong number.
+        await queryClient.invalidateQueries({
+          queryKey: trpc.organizations.usage.queryKey(),
+        });
         onOpenChange(false);
       } catch {
         // toast.promise already surfaced the failure.
