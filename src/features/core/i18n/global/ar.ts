@@ -373,9 +373,18 @@ export default {
         "لقد وصلت إلى حد هذه الخطة وهو {limit:number} طالب.",
         {},
       ),
-      studentsApproaching: dt("تستخدم {used:number} من {limit:number} طالب.", {}),
-      coursesReached: dt("لقد وصلت إلى حد هذه الخطة وهو {limit:number} دورة.", {}),
-      coursesApproaching: dt("تستخدم {used:number} من {limit:number} دورة.", {}),
+      studentsApproaching: dt(
+        "تستخدم {used:number} من {limit:number} طالب.",
+        {},
+      ),
+      coursesReached: dt(
+        "لقد وصلت إلى حد هذه الخطة وهو {limit:number} دورة.",
+        {},
+      ),
+      coursesApproaching: dt(
+        "تستخدم {used:number} من {limit:number} دورة.",
+        {},
+      ),
       reachedHint: "احذف عنصرًا لإتاحة مساحة ضمن هذه الخطة.",
     },
     emails: {
@@ -1249,6 +1258,22 @@ export default {
     emptyDescription: "أضف خيارَي إجابة على الأقل لهذا السؤال.",
     moveUp: "تحريك لأعلى",
     moveDown: "تحريك لأسفل",
+    // أسئلة الإجابة القصيرة تستخدم نفس صفوف الإجابات، لكن كل صف هنا صيغة
+    // يجب أن يقبلها التصحيح بدلًا من خيار يُختار منه — لذا تتغير الصياغة
+    // وحدها دون بنية البيانات.
+    shortAnswer: {
+      title: "الإجابات المقبولة",
+      isCorrect: "اعتبار هذه الإجابة صحيحة",
+      add: "إضافة إجابة مقبولة",
+      edit: "تعديل إجابة مقبولة",
+      addDescription: "أضف صيغة يجب اعتبارها صحيحة لهذا السؤال.",
+      editDescription: "تحديث هذه الإجابة المقبولة.",
+      deleteTitle: "حذف الإجابة المقبولة؟",
+      deleteDescription: "إزالة هذه الإجابة المقبولة. لا يمكن التراجع عن هذا.",
+      emptyTitle: "لا توجد إجابات مقبولة بعد",
+      emptyDescription:
+        "أضف إجابة مقبولة واحدة على الأقل حتى يمكن تصحيح هذا السؤال تلقائيًا.",
+    },
   },
   responses: {
     title: "الردود",

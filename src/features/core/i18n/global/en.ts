@@ -1288,6 +1288,23 @@ export default {
     emptyDescription: "Add at least two answer choices for this question.",
     moveUp: "Move up",
     moveDown: "Move down",
+    // Short-answer questions reuse the same answer rows, but each one is a
+    // phrasing the grader should *accept* rather than a choice to pick from —
+    // so the wording changes even though the data model doesn't.
+    shortAnswer: {
+      title: "Accepted answers",
+      isCorrect: "Accept this answer",
+      add: "Add accepted answer",
+      edit: "Edit accepted answer",
+      addDescription:
+        "Add wording that should be marked correct for this question.",
+      editDescription: "Update this accepted answer.",
+      deleteTitle: "Delete accepted answer?",
+      deleteDescription: "Remove this accepted answer. This can't be undone.",
+      emptyTitle: "No accepted answers yet",
+      emptyDescription:
+        "Add at least one accepted answer so this question can be graded automatically.",
+    },
   },
   responses: {
     title: "Responses",

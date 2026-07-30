@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { Answer } from "@/drizzle/schema";
+import type { Answer, QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -30,10 +30,33 @@ import { AnswerDeleteDialog, AnswerFormDialog } from "./components";
 
 type RowAction = { answer: Answer; variant: "edit" | "delete" } | null;
 
-export function AnswersSection({ questionId }: { questionId: string }) {
+export function AnswersSection({
+  questionId,
+  questionType,
+}: {
+  questionId: string;
+  questionType: QuestionType;
+}) {
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  // Same rows either way; for a short answer they're the wordings the grader
+  // accepts rather than choices the student picks from, so only copy differs.
+  const isShortAnswer = questionType === "short_answer";
+  const copy = isShortAnswer
+    ? {
+        title: t("answers.shortAnswer.title"),
+        add: t("answers.shortAnswer.add"),
+        emptyTitle: t("answers.shortAnswer.emptyTitle"),
+        emptyDescription: t("answers.shortAnswer.emptyDescription"),
+      }
+    : {
+        title: t("answers.title"),
+        add: t("answers.add"),
+        emptyTitle: t("answers.emptyTitle"),
+        emptyDescription: t("answers.emptyDescription"),
+      };
 
   const { data: answers, isFetching } = useQuery(
     trpc.answers.list.queryOptions({ questionId }),
@@ -56,7 +79,7 @@ export function AnswersSection({ questionId }: { questionId: string }) {
     <div className="space-y-2 border-border border-s-2 ps-4">
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-          {t("answers.title")}
+          {copy.title}
         </h4>
         <Button
           type="button"
@@ -65,7 +88,7 @@ export function AnswersSection({ questionId }: { questionId: string }) {
           onClick={() => setCreateOpen(true)}
         >
           <PlusIcon className="size-3.5" />
-          {t("answers.add")}
+          {copy.add}
         </Button>
       </div>
 
@@ -73,8 +96,8 @@ export function AnswersSection({ questionId }: { questionId: string }) {
         <EmptyState
           compact
           icon={<ListChecksIcon />}
-          title={t("answers.emptyTitle")}
-          description={t("answers.emptyDescription")}
+          title={copy.emptyTitle}
+          description={copy.emptyDescription}
         />
       ) : (
         <div
@@ -160,11 +183,13 @@ export function AnswersSection({ questionId }: { questionId: string }) {
 
       <AnswerFormDialog
         questionId={questionId}
+        questionType={questionType}
         open={createOpen}
         onOpenChange={setCreateOpen}
       />
       <AnswerFormDialog
         questionId={questionId}
+        questionType={questionType}
         open={rowAction?.variant === "edit"}
         onOpenChange={(open) => {
           if (!open) setRowAction(null);
@@ -172,6 +197,7 @@ export function AnswersSection({ questionId }: { questionId: string }) {
         answer={rowAction?.variant === "edit" ? rowAction.answer : null}
       />
       <AnswerDeleteDialog
+        questionType={questionType}
         open={rowAction?.variant === "delete"}
         onOpenChange={(open) => {
           if (!open) setRowAction(null);

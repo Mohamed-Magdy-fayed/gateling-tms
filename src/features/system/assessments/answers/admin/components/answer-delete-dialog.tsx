@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Answer } from "@/drizzle/schema";
+import type { Answer, QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -23,6 +23,7 @@ type AnswerDeleteDialogProps = {
   onDeleted?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  questionType: QuestionType;
 };
 
 export function AnswerDeleteDialog({
@@ -30,7 +31,9 @@ export function AnswerDeleteDialog({
   onDeleted,
   onOpenChange,
   open,
+  questionType,
 }: AnswerDeleteDialogProps) {
+  const isShortAnswer = questionType === "short_answer";
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -64,9 +67,21 @@ export function AnswerDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("answers.deleteTitle")}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t(
+              isShortAnswer
+                ? "answers.shortAnswer.deleteTitle"
+                : "answers.deleteTitle",
+            )}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            {answer ? t("answers.deleteDescription") : ""}
+            {answer
+              ? t(
+                  isShortAnswer
+                    ? "answers.shortAnswer.deleteDescription"
+                    : "answers.deleteDescription",
+                )
+              : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
