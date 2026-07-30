@@ -65,6 +65,19 @@ export const contactFormIpRatelimit = new Ratelimit({
 });
 
 /**
+ * The Google Forms import calls Google's API on demand, and that quota belongs
+ * to the whole deployment's Cloud project rather than to one organization — so
+ * one org looping the preview button would exhaust it for every other tenant.
+ * Keyed per organization, and generous enough that importing a batch of forms
+ * in one sitting never hits it.
+ */
+export const googleFormReadRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(60, "10 m"),
+  prefix: "ratelimit:google-form-read",
+});
+
+/**
  * Trusts `x-forwarded-for`/`x-real-ip` as set by the platform's own edge
  * network (per `06-workflow.md` §5, this app deploys on Vercel) — Vercel's
  * routing layer overwrites these headers with the real client IP before a

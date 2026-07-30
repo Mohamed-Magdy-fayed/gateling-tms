@@ -1134,6 +1134,8 @@ export default {
       formForbidden:
         "The connected Google account isn't allowed to read that form. Connect the account that owns it, or ask its owner to share it.",
       fetchFailed: "Google couldn't be reached. Try again in a moment.",
+      rateLimited:
+        "Too many Google Forms read in a short time. Wait a few minutes and try again.",
       nothingToImport:
         "This form has no questions Gateling can import. Nothing was created.",
     },

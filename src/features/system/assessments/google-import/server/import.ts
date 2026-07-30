@@ -14,6 +14,10 @@ import {
   mapGoogleForm,
 } from "@/features/system/assessments/google-import/lib";
 import { fetchGoogleForm, GoogleApiError } from "@/integrations/google";
+import {
+  googleFormReadRatelimit,
+  isRateLimited,
+} from "@/integrations/ratelimit";
 import { GoogleNotConfiguredError } from "./config";
 import { recordGoogleIntegrationFailure } from "./mutations";
 import type { GoogleFormImportInput, GoogleFormPreviewInput } from "./schemas";
@@ -143,6 +147,15 @@ async function loadForm(ctx: OrgTRPCContext, formLink: string) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: ctx.t(FORM_ID_ERROR_KEY[parsed.reason]),
+    });
+  }
+
+  // Checked after the link is understood, so a typo doesn't spend budget —
+  // and before the token work, so a rate-limited caller never reaches Google.
+  if (await isRateLimited(googleFormReadRatelimit, ctx.organizationId)) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: ctx.t("googleImport.errors.rateLimited"),
     });
   }
 

@@ -75,6 +75,16 @@ export function GoogleImportPanel() {
     trpc.lectures.list.queryOptions({ levelId }, { enabled: levelId !== "" }),
   );
 
+  /**
+   * Editing the link drops the preview with it. The import sends the link,
+   * not the previewed structure, so leaving a preview on screen after the
+   * field changed would let someone import a form they never looked at.
+   */
+  const handleLinkChange = useCallback((value: string) => {
+    setFormLink(value);
+    setPreview(null);
+  }, []);
+
   const handlePreview = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -180,7 +190,7 @@ export function GoogleImportPanel() {
                   dir="ltr"
                   placeholder={t("googleImport.formLinkPlaceholder")}
                   value={formLink}
-                  onChange={(event) => setFormLink(event.target.value)}
+                  onChange={(event) => handleLinkChange(event.target.value)}
                 />
                 <FieldDescription>
                   {t("googleImport.importDescription")}
