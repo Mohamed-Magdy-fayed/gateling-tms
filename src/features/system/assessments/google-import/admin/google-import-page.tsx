@@ -20,9 +20,9 @@ import {
 } from "./components";
 
 /**
- * The organization's Google connection, and — once the import lands — the
- * import itself. Reached from the Assessments page rather than the sidebar:
- * it belongs to building assessments, not to a section of its own.
+ * The organization's Google connection and the form import that uses it.
+ * Reached from the Assessments page rather than the sidebar: it belongs to
+ * building assessments, not to a section of its own.
  */
 export function GoogleImportPage() {
   const { t } = useTranslation();
