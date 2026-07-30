@@ -4,6 +4,7 @@ export {
   getGoogleImportConfig,
   isGoogleImportConfigured,
 } from "./config";
+export { importGoogleForm, previewGoogleForm } from "./import";
 export {
   completeGoogleConnection,
   GoogleFormsScopeMissingError,
@@ -12,4 +13,10 @@ export {
 } from "./mutations";
 export type { GoogleIntegrationRow } from "./queries";
 export { googleImportRouter } from "./router";
+export {
+  type GoogleFormImportInput,
+  type GoogleFormPreviewInput,
+  googleFormImportSchema,
+  googleFormPreviewSchema,
+} from "./schemas";
 export { GoogleNotConnectedError, getValidGoogleAccessToken } from "./tokens";

@@ -34,7 +34,12 @@ export async function GET(request: NextRequest) {
     redirect(buildGoogleImportUrl("denied"));
   }
 
-  if (!code || !state) redirect(buildGoogleImportUrl("invalid_state"));
+  // Every early exit clears the cookie: a state left behind is a nonce this
+  // browser could still present on a later, unrelated callback.
+  if (!code || !state) {
+    clearGoogleConnectState(cookieJar);
+    redirect(buildGoogleImportUrl("invalid_state"));
+  }
   if (!isGoogleImportConfigured()) {
     clearGoogleConnectState(cookieJar);
     redirect(buildGoogleImportUrl("not_configured"));

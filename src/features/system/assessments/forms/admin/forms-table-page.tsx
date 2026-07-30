@@ -152,7 +152,7 @@ export function FormsTablePage() {
           className={buttonVariants({ variant: "outline" })}
         >
           <FileSpreadsheetIcon className="size-3.5" />
-          {t("assessments.googleConnection")}
+          {t("assessments.importFromGoogle")}
         </Link>
       </div>
 

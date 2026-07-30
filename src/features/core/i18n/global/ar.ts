@@ -994,8 +994,9 @@ export default {
     },
   },
   googleImport: {
-    title: "اتصال Google",
-    subtitle: "اربط حساب Google صاحب النماذج التي تريد أن يقرأها Gateling.",
+    title: "الاستيراد من Google Forms",
+    subtitle:
+      "اربط حساب Google وحوّل نماذجه إلى واجبات أو اختبارات أو امتحانات نهائية أو اختبارات تحديد مستوى.",
     connectTitle: "حساب Google",
     connectDescription:
       "يقرأ Gateling بنية النماذج التي تختارها — الأسئلة وخيارات الإجابة فقط. لا يقرأ الردود ولا يطّلع على أي شيء آخر في Google Drive.",
@@ -1030,15 +1031,93 @@ export default {
       missing_scope:
         "تمت الموافقة على الربط دون السماح بالوصول إلى نماذجك. أعد الربط مع ترك إذن Google Forms مفعّلًا.",
     },
+    importTitle: "استيراد نموذج",
+    importDescription:
+      "الصق رابط نموذج Google يملكه الحساب المرتبط. لا يتم إنشاء أي شيء قبل تأكيدك.",
+    formLink: "رابط نموذج Google",
+    formLinkPlaceholder: "https://docs.google.com/forms/d/…/edit",
+    preview: "معاينة",
+    previewAgain: "معاينة نموذج آخر",
+    import: "الاستيراد كمسودة",
+    importing: "جارٍ الاستيراد…",
+    imported: "تم استيراد التقييم كمسودة.",
+    importFailed: "تعذّر استيراد هذا النموذج.",
+    previewFailed: "تعذّرت قراءة هذا النموذج.",
+    previewTitle: "ما الذي سيتم استيراده",
+    sectionsCount: dt("{count:plural}", {
+      plural: {
+        count: {
+          zero: "لا أقسام",
+          one: "قسم واحد",
+          two: "قسمان",
+          few: "{?} أقسام",
+          many: "{?} قسمًا",
+          other: "{?} قسم",
+        },
+      },
+    }),
+    questionsCount: dt("{count:plural}", {
+      plural: {
+        count: {
+          zero: "لا أسئلة",
+          one: "سؤال واحد",
+          two: "سؤالان",
+          few: "{?} أسئلة",
+          many: "{?} سؤالًا",
+          other: "{?} سؤال",
+        },
+      },
+    }),
+    quizDetected:
+      "هذا اختبار Google — سيتم استيراد الدرجات والإجابات الصحيحة أيضًا.",
+    notImportedTitle: "لم يُستورد كما هو",
+    notImportedDescription:
+      "بقية النموذج تُستورد كما هي. هذه العناصر إمّا تغيّر شكلها أو استُبعدت — يمكنك إضافتها يدويًا في المُنشئ.",
+    nothingToImport:
+      "لا يحتوي هذا النموذج على أسئلة يمكن لـ Gateling استيرادها. لم يتم إنشاء أي شيء.",
+    targetTitle: "وجهة التقييم",
+    targetDescription:
+      "التقييمات المستوردة تكون دائمًا مسودات. انشرها من المُنشئ بعد مراجعتها.",
+    titleOverride: "العنوان (اختياري)",
+    titleOverrideDescription: "اتركه فارغًا للإبقاء على عنوان النموذج نفسه.",
+    note: {
+      convertedDropdown: "قائمة منسدلة — استُوردت كسؤال اختيار واحد: {title}",
+      convertedScale: "مقياس خطي — استُورد كخيار لكل درجة: {title}",
+      convertedParagraph: "إجابة طويلة — استُوردت كإجابة قصيرة: {title}",
+      skippedUnsupported: "لا يمكن استيراد هذا النوع من الأسئلة: {title}",
+      skippedGrid: "لا يمكن استيراد أسئلة الشبكة: {title}",
+      skippedContent:
+        "النصوص والصور والفيديوهات ليست أسئلة، لذا استُبعدت: {title}",
+      skippedEmptyChoice: "لا توجد خيارات إجابة لاستيرادها: {title}",
+      droppedOtherOption: "خيار «أخرى» النصي الحر مستبعد: {title}",
+      unmatchedCorrectAnswer:
+        "إجابة صحيحة لا تطابق أيًا من الخيارات، لذا لم تُعلَّم: {title}",
+      truncatedTitle: "تم اختصار العنوان ليناسب الحد المسموح: {title}",
+    },
     errors: {
       notConfigured:
         "لم يتم إعداد Google على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Google.",
+      notConnected: "اربط حساب Google قبل استيراد أي نموذج.",
+      reconnect: "توقّف اتصال Google عن العمل. أعد ربط الحساب ثم حاول مرة أخرى.",
+      invalidLink:
+        "لا يبدو هذا رابط نموذج Google. افتح النموذج في Google وانسخ العنوان من المتصفح.",
+      responseLink:
+        "هذا هو الرابط الذي يستخدمه الآخرون لتعبئة النموذج. افتح النموذج للتحرير في Google وانسخ ذلك العنوان بدلًا منه.",
+      formNotFound:
+        "لا يجد حساب Google المرتبط هذا النموذج. تأكد من الرابط، أو اربط الحساب الذي يملكه.",
+      formForbidden:
+        "حساب Google المرتبط غير مسموح له بقراءة هذا النموذج. اربط الحساب الذي يملكه أو اطلب من مالكه مشاركته.",
+      fetchFailed: "تعذّر الوصول إلى Google. حاول بعد قليل.",
+      rateLimited:
+        "تمت قراءة عدد كبير من نماذج Google خلال وقت قصير. انتظر بضع دقائق ثم حاول مرة أخرى.",
+      nothingToImport:
+        "لا يحتوي هذا النموذج على أسئلة يمكن لـ Gateling استيرادها. لم يتم إنشاء أي شيء.",
     },
   },
   assessments: {
     title: "التقييمات",
     lead: "أنشئ الواجبات والاختبارات والامتحانات النهائية واختبارات تحديد المستوى، وتابع الردود.",
-    googleConnection: "اتصال Google",
+    importFromGoogle: "الاستيراد من Google Forms",
     formTitle: "العنوان",
     description: "الوصف",
     type: "النوع",
@@ -1297,7 +1376,7 @@ export default {
       excelFirst: {
         title: "يبدأ بملفات إكسل",
         description:
-          "استورد الطلاب والمحتوى من ملفات إكسل التي تستخدمها بالفعل، مع قوالب جاهزة لكل قائمة رئيسية.",
+          "استورد الطلاب والمحتوى من ملفات إكسل التي تستخدمها بالفعل، مع قوالب جاهزة لكل قائمة رئيسية — وانقل اختباراتك من Google Forms.",
       },
       freeForever: {
         title: "مجاني يعني مجاني فعلاً",
@@ -1430,7 +1509,7 @@ export default {
         bullets: {
           courseStructure: "تصميم هيكل الدورة",
           progressTracking: "تتبع التقدم",
-          assessments: "تقييمات مدمجة",
+          assessments: "تقييمات مدمجة (أو مستوردة من Google Forms)",
           certificates: "إصدار الشهادات",
         },
       },
