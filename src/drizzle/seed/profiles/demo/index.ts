@@ -109,6 +109,11 @@ export async function seedDemoProfile() {
     ...Array(8).fill({ group: groupB, course: english }),
     ...Array(8).fill({ group: groupC, course: business }),
   ];
+  if (groupAssignments.length !== DEMO_TRAINEES.length) {
+    throw new Error(
+      `groupAssignments (${groupAssignments.length}) and DEMO_TRAINEES (${DEMO_TRAINEES.length}) must stay in sync.`,
+    );
+  }
 
   const trainees = [];
   for (const [index, traineeSeed] of DEMO_TRAINEES.entries()) {

@@ -49,6 +49,16 @@ export async function seedPerformanceProfile() {
           eq(OrganizationsTable.shortCode, SEED_PERFORMANCE_ORG_SHORT_CODE),
         )
         .limit(1);
+
+      // The short code alone isn't proof this is *our* row — reject a
+      // collision with an unrelated organization rather than silently
+      // attaching this profile's admin/courses/trainees to it.
+      if (row && row.id !== SEED_PERFORMANCE_ORG_ID) {
+        throw new Error(
+          `Performance seed short code "${SEED_PERFORMANCE_ORG_SHORT_CODE}" is owned by organization ${row.id}, not ${SEED_PERFORMANCE_ORG_ID}.`,
+        );
+      }
+
       return row;
     },
     insert: async () => {
