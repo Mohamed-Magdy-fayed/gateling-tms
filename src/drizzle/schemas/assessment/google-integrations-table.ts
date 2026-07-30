@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -8,21 +9,40 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { OrganizationsTable } from "@/drizzle/schemas/auth";
-import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
+import {
+  createdAt,
+  createdBy,
+  id,
+  updatedAt,
+  updatedBy,
+} from "@/drizzle/schemas/helpers";
+
+export const googleIntegrationStatusValues = [
+  "active",
+  // The last token refresh (or an API call using it) was refused — the org's
+  // admins have to reconnect, and `lastError` says why.
+  "error",
+] as const;
+export type GoogleIntegrationStatus =
+  (typeof googleIntegrationStatusValues)[number];
+export const googleIntegrationStatusEnum = pgEnum(
+  "google_integration_status",
+  googleIntegrationStatusValues,
+);
 
 /**
- * Table only for now — one Google OAuth grant per org, for importing Google
- * Forms as assessments. No logic reads/writes this until Phase 7; added here
- * because it's part of the Phase 4 assessment schema slice per
- * docs/rebuild/03-data-model.md.
+ * One Google account granted to one organization, used to read that account's
+ * Google Forms and import them as assessments (Phase 7 segment ③).
  *
- * accessToken/refreshToken are plain text here, matching
- * user_oauth_accounts' existing precedent (same gap there) — this is a real
- * gap for reusable bearer credentials, not a new one this table introduces.
- * Encrypting them needs a real key-management decision (which KMS, key
- * rotation, where the key itself lives) that shouldn't be improvised
- * mid-schema; tracked as a blocker to resolve before the Phase 7 writer that
- * actually populates this table ships (see STATE.md D64/Blockers).
+ * A row exists only once a grant has actually succeeded — there is no
+ * "pending" state, because the connect handshake keeps its only mutable state
+ * in a short-lived cookie (google-import/server/connect-state.ts) rather than
+ * in a half-written row. That is what lets the token columns stay `NOT NULL`.
+ *
+ * `accessToken`/`refreshToken` hold AES-256-GCM ciphertext, never the raw
+ * credential — see integrations/oauth/token-crypto.ts. This closes the
+ * plaintext gap STATE.md D64 recorded against this table when it was added
+ * dormant in Phase 4.
  */
 export const GoogleIntegrationsTable = pgTable(
   "google_integrations",
@@ -35,8 +55,16 @@ export const GoogleIntegrationsTable = pgTable(
     refreshToken: text().notNull(),
     scope: varchar({ length: 512 }).notNull(),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
+    status: googleIntegrationStatusEnum().notNull().default("active"),
+    // Identifies the Google account that authorized, so the page can name it
+    // and a reconnect against a different account is recognizable.
+    googleEmail: varchar({ length: 256 }),
+    googleUserId: varchar({ length: 256 }),
+    lastError: varchar({ length: 512 }),
     createdAt,
+    createdBy,
     updatedAt,
+    updatedBy,
   },
   (table) => [
     uniqueIndex("google_integrations_organization_id_idx").on(

@@ -1,11 +1,9 @@
 import { relations } from "drizzle-orm";
 import {
-  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -18,6 +16,20 @@ export const oAuthProviderValues = ["google"] as const;
 export type OAuthProvider = (typeof oAuthProviderValues)[number];
 export const oAuthProviderEnum = pgEnum("oauth_provider", oAuthProviderValues);
 
+/**
+ * Links a user to the Google account they sign in with. Deliberately holds no
+ * credentials: the sign-in callback (app/api/oauth/[provider]/route.ts) only
+ * ever needs the provider account id to recognize a returning user, and the
+ * app makes no Google API calls on a *user's* behalf — the Forms import uses a
+ * separate per-organization grant (google_integrations).
+ *
+ * The `accessToken`/`refreshToken`/`expiresAt`/`scopes` columns this table
+ * carried until Phase 7 were never written by any code path, so they were
+ * dropped rather than encrypted — storage nothing populates is a trap for a
+ * future writer, not a safeguard (STATE.md D124, closing the second half of
+ * D64). Anything that later needs per-user Google access should add an
+ * encrypted column deliberately, the way google_integrations does.
+ */
 export const UserOAuthAccountsTable = pgTable(
   "user_oauth_accounts",
   {
@@ -31,10 +43,6 @@ export const UserOAuthAccountsTable = pgTable(
     providerAccountId: text().notNull(),
     displayName: text(),
     profileUrl: text(),
-    accessToken: text(),
-    refreshToken: text(),
-    scopes: jsonb().$type<string[]>(),
-    expiresAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     primaryKey({ columns: [t.providerAccountId, t.provider] }),

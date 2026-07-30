@@ -7,7 +7,7 @@ import {
   zoomClientMutationSchema,
   zoomClientUpdateSchema,
 } from "../src/features/system/live-classes/zoom-clients/server/schemas";
-import { needsRefresh } from "../src/integrations/zoom/expiry";
+import { needsRefresh } from "../src/integrations/oauth/expiry";
 
 const now = new Date("2026-07-29T12:00:00.000Z");
 

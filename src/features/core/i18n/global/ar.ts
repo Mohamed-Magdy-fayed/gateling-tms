@@ -993,9 +993,52 @@ export default {
         "لم يتم إعداد Zoom على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Zoom.",
     },
   },
+  googleImport: {
+    title: "اتصال Google",
+    subtitle: "اربط حساب Google صاحب النماذج التي تريد أن يقرأها Gateling.",
+    connectTitle: "حساب Google",
+    connectDescription:
+      "يقرأ Gateling بنية النماذج التي تختارها — الأسئلة وخيارات الإجابة فقط. لا يقرأ الردود ولا يطّلع على أي شيء آخر في Google Drive.",
+    connect: "ربط Google",
+    reconnect: "إعادة الربط",
+    disconnect: "فصل",
+    connectedAs: "مرتبط باسم {email}",
+    connectedOn: "تم الربط في {date}",
+    notConnectedTitle: "لا يوجد حساب Google مرتبط",
+    notConnectedDescription:
+      "اربط حساب Google صاحب النماذج لتتمكن من استيرادها هنا.",
+    disconnectTitle: "فصل حساب Google هذا؟",
+    disconnectDescription:
+      "تبقى التقييمات التي استوردتها كما هي تمامًا، لكن عليك إعادة الربط قبل استيراد أي نماذج أخرى.",
+    disconnected: "تم فصل حساب Google.",
+    disconnectFailed: "تعذّر فصل حساب Google.",
+    loadFailed: "تعذّر تحميل اتصال Google.",
+    adminOnly: "يمكن لمدير المؤسسة فقط ربط Google أو فصله.",
+    status: {
+      active: "مرتبط",
+      error: "يحتاج إلى مراجعة",
+    },
+    result: {
+      connected: "تم ربط حساب Google.",
+      denied: "تم إلغاء الربط مع Google.",
+      invalid_state: "انتهت صلاحية رابط الربط. ابدأ العملية من جديد.",
+      connect_failed: "تعذّر على Google إكمال الربط. حاول مرة أخرى.",
+      not_configured: "لم يتم إعداد Google على هذا النظام بعد.",
+      forbidden: "يمكن لمدير المؤسسة فقط ربط Google.",
+      no_refresh_token:
+        "لم يمنح Google صلاحية دائمة. احذف Gateling من التطبيقات المرتبطة بحساب Google ثم أعد الربط.",
+      missing_scope:
+        "تمت الموافقة على الربط دون السماح بالوصول إلى نماذجك. أعد الربط مع ترك إذن Google Forms مفعّلًا.",
+    },
+    errors: {
+      notConfigured:
+        "لم يتم إعداد Google على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Google.",
+    },
+  },
   assessments: {
     title: "التقييمات",
     lead: "أنشئ الواجبات والاختبارات والامتحانات النهائية واختبارات تحديد المستوى، وتابع الردود.",
+    googleConnection: "اتصال Google",
     formTitle: "العنوان",
     description: "الوصف",
     type: "النوع",

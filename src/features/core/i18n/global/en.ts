@@ -1037,9 +1037,54 @@ export default {
         "Zoom isn't configured on this deployment yet. Ask your operator to add the Zoom credentials.",
     },
   },
+  googleImport: {
+    title: "Google connection",
+    subtitle:
+      "Connect the Google account that owns the forms you want Gateling to read.",
+    connectTitle: "Google account",
+    connectDescription:
+      "Gateling reads the structure of the forms you choose — questions and answer options only. It never reads responses, and never sees anything else in your Google Drive.",
+    connect: "Connect Google",
+    reconnect: "Reconnect",
+    disconnect: "Disconnect",
+    connectedAs: "Connected as {email}",
+    connectedOn: "Connected {date}",
+    notConnectedTitle: "No Google account connected",
+    notConnectedDescription:
+      "Connect the Google account that owns your forms to import them here.",
+    disconnectTitle: "Disconnect this Google account?",
+    disconnectDescription:
+      "Assessments you already imported stay exactly as they are. You'll need to reconnect before importing any more.",
+    disconnected: "Google account disconnected.",
+    disconnectFailed: "Could not disconnect the Google account.",
+    loadFailed: "Couldn't load the Google connection.",
+    adminOnly: "Only an organization admin can connect or disconnect Google.",
+    status: {
+      active: "Connected",
+      error: "Needs attention",
+    },
+    result: {
+      connected: "Google account connected.",
+      denied: "The Google connection was cancelled.",
+      invalid_state:
+        "That connection link expired. Start the connection again.",
+      connect_failed: "Google couldn't complete the connection. Try again.",
+      not_configured: "Google isn't configured on this deployment yet.",
+      forbidden: "Only an organization admin can connect Google.",
+      no_refresh_token:
+        "Google didn't issue a lasting permission. Remove Gateling from your Google account's third-party access, then connect again.",
+      missing_scope:
+        "The connection was approved without access to your forms. Connect again and leave the Google Forms permission ticked.",
+    },
+    errors: {
+      notConfigured:
+        "Google isn't configured on this deployment yet. Ask your operator to add the Google credentials.",
+    },
+  },
   assessments: {
     title: "Assessments",
     lead: "Build assignments, quizzes, final exams, and placement tests, then track responses.",
+    googleConnection: "Google connection",
     formTitle: "Title",
     description: "Description",
     type: "Type",

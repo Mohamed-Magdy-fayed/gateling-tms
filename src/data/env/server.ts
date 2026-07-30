@@ -29,8 +29,27 @@ export const env = createEnv({
     OAUTH_REDIRECT_URL_BASE: z.url().optional(),
 
     // Dormant until Mohamed provides Google OAuth credentials (Phase 2).
+    // The same pair also authorizes the per-organization Google Forms grant
+    // (Phase 7) — one Cloud project, two redirect URIs, one extra scope.
+    // GOOGLE_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
+    // (`openssl rand -base64 32`); it encrypts those per-org OAuth tokens at
+    // rest, and is separate from the Zoom key so rotating one provider's key
+    // never touches the other's stored tokens — see docs/integrations-google.md.
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    // Validated here rather than only where it is used: a mistyped key would
+    // otherwise report Google as configured, offer the Connect button, and
+    // fail after the admin had already approved the grant on Google's side.
+    // (ZOOM_TOKEN_ENCRYPTION_KEY is deliberately left as-is — it is already
+    // set in a live environment, and tightening its schema would turn a
+    // hypothetical bad value into a failed boot for the whole app rather than
+    // one unavailable integration.)
+    GOOGLE_TOKEN_ENCRYPTION_KEY: z
+      .string()
+      .refine((value) => Buffer.from(value, "base64").length === 32, {
+        error: "GOOGLE_TOKEN_ENCRYPTION_KEY must be 32 base64-encoded bytes.",
+      })
+      .optional(),
 
     // Dormant until Mohamed provides SMTP credentials (Phase 2) — sendMail
     // logs a warning and no-ops instead of throwing when unset (dev-safe).

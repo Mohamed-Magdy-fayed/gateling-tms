@@ -3,6 +3,7 @@ import { uploadsRouter } from "@/features/core/uploads/server";
 import { contactRouter } from "@/features/marketing/server/router";
 import { answersRouter } from "@/features/system/assessments/answers/server";
 import { formsRouter } from "@/features/system/assessments/forms/server";
+import { googleImportRouter } from "@/features/system/assessments/google-import/server";
 import { questionsRouter } from "@/features/system/assessments/questions/server";
 import { responsesRouter } from "@/features/system/assessments/responses/server";
 import { sectionsRouter } from "@/features/system/assessments/sections/server";
@@ -35,6 +36,7 @@ export const appRouter = createTRPCRouter({
   questions: questionsRouter,
   answers: answersRouter,
   responses: responsesRouter,
+  googleImport: googleImportRouter,
   trainees: traineesRouter,
   groups: groupsRouter,
   enrollments: enrollmentsRouter,
