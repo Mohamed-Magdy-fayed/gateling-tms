@@ -14,7 +14,10 @@ export {
   type ZoomMeetingRequest,
   type ZoomTokens,
 } from "./api";
-export { ACCESS_TOKEN_EXPIRY_SKEW_MS, needsRefresh } from "./expiry";
+export {
+  ACCESS_TOKEN_EXPIRY_SKEW_MS,
+  needsRefresh,
+} from "@/integrations/oauth/expiry";
 export {
   decryptToken,
   encryptToken,

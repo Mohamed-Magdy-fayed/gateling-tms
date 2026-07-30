@@ -40,7 +40,7 @@ export const googleIntegrationStatusEnum = pgEnum(
  * in a half-written row. That is what lets the token columns stay `NOT NULL`.
  *
  * `accessToken`/`refreshToken` hold AES-256-GCM ciphertext, never the raw
- * credential — see integrations/crypto/token-crypto.ts. This closes the
+ * credential — see integrations/oauth/token-crypto.ts. This closes the
  * plaintext gap STATE.md D64 recorded against this table when it was added
  * dormant in Phase 4.
  */
