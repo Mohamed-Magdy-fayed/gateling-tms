@@ -5,8 +5,11 @@ import { OrganizationsTable } from "@/drizzle/schema";
 import { inngest } from "../client";
 import { usageReconciliationRequestedEvent } from "./on-usage-reconciliation-requested";
 
-/** Organizations fanned out per round trip. */
+/** Organizations read per database round trip while listing. */
 const PAGE_SIZE = 500;
+
+/** Events per `sendEvent` call — Inngest accepts at most 5,000. */
+const EVENTS_PER_SEND = 1_000;
 
 /**
  * Nightly sweep: fan one reconciliation event out per organization
@@ -23,48 +26,48 @@ export const onUsageReconciliationScheduled = inngest.createFunction(
     triggers: [{ cron: "17 3 * * *" }],
   },
   async ({ step }) => {
-    let cursor: string | null = null;
-    let pageIndex = 0;
-    let organizationCount = 0;
+    // The whole listing is one step, not one step per page: every step counts
+    // against Inngest's 1,000-step-per-run cap, so paging at the step level
+    // would put a hard ceiling on how many organizations the sweep can ever
+    // reach. The remaining bound is the 4 MiB step-output limit, which these
+    // ids don't approach until roughly a hundred thousand organizations — at
+    // which point a nightly full sweep is the wrong shape anyway.
+    const organizationIds = await step.run("list-organizations", async () => {
+      const ids: string[] = [];
+      let cursor: string | null = null;
 
-    while (true) {
-      // Keyset pagination on the primary key: offset pagination would skip or
-      // repeat organizations if one is created while the sweep is running.
-      const currentCursor: string | null = cursor;
-      const organizationIds: string[] = await step.run(
-        `list-organizations-page-${pageIndex}`,
-        async () => {
-          const rows = await db
-            .select({ id: OrganizationsTable.id })
-            .from(OrganizationsTable)
-            .where(
-              currentCursor
-                ? gt(OrganizationsTable.id, currentCursor)
-                : undefined,
-            )
-            .orderBy(asc(OrganizationsTable.id))
-            .limit(PAGE_SIZE);
+      while (true) {
+        // Keyset pagination on the primary key: offset pagination would skip
+        // or repeat organizations if one is created while the sweep runs.
+        const rows = await db
+          .select({ id: OrganizationsTable.id })
+          .from(OrganizationsTable)
+          .where(cursor ? gt(OrganizationsTable.id, cursor) : undefined)
+          .orderBy(asc(OrganizationsTable.id))
+          .limit(PAGE_SIZE);
 
-          return rows.map((row) => row.id);
-        },
-      );
+        if (rows.length === 0) break;
 
-      if (organizationIds.length === 0) break;
+        for (const row of rows) ids.push(row.id);
 
+        if (rows.length < PAGE_SIZE) break;
+        cursor = rows[rows.length - 1].id;
+      }
+
+      return ids;
+    });
+
+    for (let sent = 0; sent < organizationIds.length; sent += EVENTS_PER_SEND) {
       await step.sendEvent(
-        `reconcile-organizations-page-${pageIndex}`,
-        organizationIds.map((organizationId) =>
-          usageReconciliationRequestedEvent.create({ organizationId }),
-        ),
+        `reconcile-organizations-${sent / EVENTS_PER_SEND}`,
+        organizationIds
+          .slice(sent, sent + EVENTS_PER_SEND)
+          .map((organizationId) =>
+            usageReconciliationRequestedEvent.create({ organizationId }),
+          ),
       );
-
-      organizationCount += organizationIds.length;
-      cursor = organizationIds[organizationIds.length - 1];
-      pageIndex++;
-
-      if (organizationIds.length < PAGE_SIZE) break;
     }
 
-    return { organizations: organizationCount };
+    return { organizations: organizationIds.length };
   },
 );

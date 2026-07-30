@@ -363,7 +363,7 @@ export default {
       courses: "الدورات",
       storage: "التخزين",
       countOf: dt("{used:number} من {limit:number}", {}),
-      countUnlimited: dt("{used:number} مستخدم · بلا حد", {}),
+      countUnlimited: dt("{used:number} قيد الاستخدام · بلا حد", {}),
       storageOf: "{used} من {limit}",
       megabytes: dt("{amount:number} ميجابايت", {}),
       gigabytes: dt("{amount:number} جيجابايت", {}),
