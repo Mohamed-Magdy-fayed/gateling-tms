@@ -14,7 +14,6 @@ export default {
     enrollments: "Enrollments",
     certificates: "Certificates",
     liveClasses: "Live Classes",
-    zoomConnections: "Zoom connections",
     meetingRooms: "Meeting rooms",
     settings: "Settings",
     assessments: "Assessments",
@@ -923,7 +922,7 @@ export default {
     attendance: "Attendance",
     attendanceDetail: dt("{attended:number} of {recorded:number} attended", {}),
     attendanceNone:
-      "No attendance recorded yet — it fills in as classes run on Zoom, or when a teacher marks the register.",
+      "No attendance recorded yet — it fills in when a teacher marks the register.",
     emptyTitle: "Nothing to measure yet",
     traineeEmptyDescription:
       "Enroll this trainee in a course or add them to a class, and their progress shows up here.",
@@ -972,7 +971,7 @@ export default {
   },
   sessions: {
     title: "Live classes",
-    lead: "Every scheduled class in one place. Connect a Zoom account and each class gets its meeting link here — the class itself runs in Zoom.",
+    lead: "Every scheduled class in one place. Connect an onMeeting room and you can start each class from here — the class itself runs in onMeeting.",
     scopeOptions: {
       upcoming: "Upcoming",
       past: "Past",
@@ -984,14 +983,17 @@ export default {
       cancelled: "Cancelled",
     },
     start: "Start class",
+    starting: "Starting…",
     join: "Join",
-    // Two different reasons a row has no link, and they mean very different
+    // Three different reasons a row has no link, and they mean very different
     // things to whoever is looking at it.
-    offline: "No Zoom link",
-    preparing: "Link on the way",
-    noZoomAccount:
-      "No Zoom account is connected, so classes are scheduled without meeting links.",
-    connectZoom: "Connect Zoom",
+    offline: "No room connected",
+    notStarted: "Not started yet",
+    waitingForHost: "Waiting for the teacher to start",
+    noMeetingAccount:
+      "No onMeeting room is connected, so classes are scheduled but can't be started here.",
+    connectMeetingAccount: "Connect onMeeting",
+    started: "Class started.",
     emptyTitle: "Nothing scheduled",
     emptyUpcoming:
       "Give a class a weekly schedule and its sessions appear here.",
@@ -1000,13 +1002,23 @@ export default {
     next: "Next",
     pageOf: "Page {page:number} of {total:number}",
     register: "Register",
-    recording: "Recording",
+    errors: {
+      notHost:
+        "Only the teacher assigned to this class, or an organization admin, can start it.",
+      cancelled: "This class was cancelled.",
+      outsideWindow:
+        "A class can only be started around its scheduled time — 15 minutes before, until shortly after it was due to end.",
+      noRoomAvailable:
+        "Every connected onMeeting room is busy with another class in this slot. Connect another room, or start this class once one frees up.",
+      startFailed: "Couldn't start the class. Try again.",
+    },
   },
   attendance: {
     title: "Attendance",
-    // Says exactly where the figures come from and who can change them —
-    // Zoom reports who joined the meeting, a teacher has the final word.
-    lead: "Taken from who joined the Zoom meeting. Correct anything it got wrong — a student on the phone or in the room is still present.",
+    // Says exactly where the figures come from: the teacher, and only the
+    // teacher. Nothing observes the room (STATE.md D144), so promising
+    // otherwise here would be the kind of claim README rule 9 forbids.
+    lead: "Marked by the teacher. A student on the phone or in the room counts as present just the same.",
     statusOptions: {
       present: "Present",
       absent: "Absent",
@@ -1017,58 +1029,13 @@ export default {
     marked: "Attendance updated.",
     markFailed: "Couldn't update attendance. Please try again.",
     joinedAt: "Joined at {time:string}",
-    noZoomRecord: "Nothing reported by Zoom",
-    watchRecording: "Watch the recording",
-    recordingPasscode: "Passcode: {passcode:string}",
+    notMarkedYet: "Not marked yet",
     emptyTitle: "No one on the roster",
     emptyDescription:
       "Add trainees to this class and they'll appear here to be marked.",
     openGroup: "Open the class",
     notFoundTitle: "Class not found",
     notFoundDescription: "This class doesn't exist, or it was removed.",
-  },
-  zoomClients: {
-    title: "Zoom connections",
-    subtitle:
-      "Connect the Zoom account your classes run on. Scheduling works without it — sessions simply stay offline until an account is connected.",
-    connect: "Connect Zoom",
-    connectDescription:
-      "Name this connection, then approve it on Zoom. You'll come straight back here.",
-    continueToZoom: "Continue to Zoom",
-    name: "Connection name",
-    nameDescription: 'For your team, e.g. "Main licence" or "Evening classes".',
-    notLinkedYet: "Not linked to a Zoom account yet",
-    finishConnecting: "Finish connecting",
-    reconnect: "Reconnect",
-    disconnect: "Disconnect",
-    disconnectTitle: "Disconnect this Zoom account?",
-    disconnectDescription:
-      'Disconnect "{name}". Scheduled classes stay, but new sessions won\'t get Zoom meeting links from this account.',
-    disconnected: "Zoom account disconnected.",
-    disconnectFailed: "Could not disconnect the Zoom account.",
-    connectFailed: "Could not start the Zoom connection.",
-    loadFailed: "Couldn't load Zoom connections.",
-    emptyTitle: "No Zoom account connected",
-    emptyDescription:
-      "Connect an account and your scheduled classes get Zoom meeting links automatically.",
-    status: {
-      pending: "Awaiting approval",
-      active: "Connected",
-      error: "Needs attention",
-    },
-    result: {
-      connected: "Zoom account connected.",
-      denied: "The Zoom connection was cancelled.",
-      invalid_state:
-        "That connection link expired. Start the connection again.",
-      connect_failed: "Zoom couldn't complete the connection. Try again.",
-      not_configured: "Zoom isn't configured on this deployment yet.",
-      forbidden: "Only an organization admin can connect Zoom.",
-    },
-    errors: {
-      notConfigured:
-        "Zoom isn't configured on this deployment yet. Ask your operator to add the Zoom credentials.",
-    },
   },
   meetingAccounts: {
     title: "Meeting rooms",
@@ -1555,7 +1522,7 @@ export default {
         liveClasses: {
           title: "Live Classes",
           description:
-            "Host HD video sessions, share your screen, and record classes — powered by Zoom.",
+            "Host HD video sessions, share your screen, and record classes — powered by onMeeting.",
         },
         hr: {
           title: "HR Management",
@@ -1664,7 +1631,7 @@ export default {
       liveClasses: {
         title: "Live Classes",
         description:
-          "Host interactive live classes with HD video streaming and real-time collaboration — powered by Zoom.",
+          "Host interactive live classes with HD video streaming and real-time collaboration — powered by onMeeting.",
         bullets: {
           hdVideoStreaming: "HD Video Streaming",
           interactiveWhiteboard: "Interactive Whiteboard",

@@ -3,15 +3,17 @@ import { onContactMessageSubmitted } from "./on-contact-message-submitted";
 import { onGoogleIntegrationDisconnected } from "./on-google-integration-disconnected";
 import { onGroupScheduleChanged } from "./on-group-schedule-changed";
 import { onOrganizationMemberInvited } from "./on-organization-member-invited";
-import { onOrganizationZoomConnected } from "./on-organization-zoom-connected";
-import { onSessionMeetingCancelled } from "./on-session-meeting-cancelled";
-import { onSessionMeetingSyncRequested } from "./on-session-meeting-sync-requested";
 import { onUsageReconciliationRequested } from "./on-usage-reconciliation-requested";
 import { onUsageReconciliationScheduled } from "./on-usage-reconciliation-scheduled";
 import { onUserRegistered } from "./on-user-registered";
-import { onZoomClientDisconnected } from "./on-zoom-client-disconnected";
-import { onZoomWebhookReceived } from "./on-zoom-webhook-received";
 
+/**
+ * Live classes deliberately contribute nothing here (STATE.md D143): onMeeting
+ * meetings are created inline while the teacher waits for the link, and
+ * onMeeting has no webhooks — so there is neither an outbound job to offload
+ * nor an inbound delivery to process. The five Zoom functions that used to be
+ * in this list went with the Zoom integration.
+ */
 export const functions = [
   processTask,
   onUserRegistered,
@@ -19,11 +21,6 @@ export const functions = [
   onContactMessageSubmitted,
   onGroupScheduleChanged,
   onGoogleIntegrationDisconnected,
-  onZoomClientDisconnected,
-  onOrganizationZoomConnected,
-  onSessionMeetingSyncRequested,
-  onSessionMeetingCancelled,
-  onZoomWebhookReceived,
   onUsageReconciliationScheduled,
   onUsageReconciliationRequested,
 ];

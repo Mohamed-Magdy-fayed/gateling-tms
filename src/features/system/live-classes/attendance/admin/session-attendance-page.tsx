@@ -1,9 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon, SearchXIcon, UsersIcon, VideoIcon } from "lucide-react";
+import { ArrowLeftIcon, SearchXIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +26,7 @@ import { AttendanceRowActions, AttendanceStatusTag } from "./components";
  * One class: when it runs, how to get into it, and who was there.
  *
  * The register is the point of the page. Everything happening *in* the class —
- * the video, the whiteboard, the recording — happens in Zoom (D8); what this
+ * the video, the whiteboard, the recording — happens in onMeeting (D8); what this
  * screen owns is the schedule, the links, and the record of who attended.
  */
 export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
@@ -109,7 +108,7 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
           <div className="ms-auto">
             <SessionJoinActions
               session={session}
-              hasActiveZoomClient={data.hasActiveZoomClient}
+              hasActiveMeetingAccount={data.hasActiveMeetingAccount}
             />
           </div>
         </div>
@@ -128,29 +127,6 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
           {session.teacherName ? ` · ${session.teacherName}` : null}
         </p>
       </div>
-
-      {session.recordingUrl ? (
-        <Alert>
-          <AlertDescription className="flex flex-wrap items-center gap-2">
-            <VideoIcon className="size-4" />
-            <a
-              className="underline"
-              href={session.recordingUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("attendance.watchRecording")}
-            </a>
-            {session.recordingPassword ? (
-              <span className="text-muted-foreground text-xs">
-                {t("attendance.recordingPasscode", {
-                  passcode: session.recordingPassword,
-                })}
-              </span>
-            ) : null}
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
       <Card>
         <CardHeader>
@@ -192,7 +168,7 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
                         ? t("attendance.joinedAt", {
                             time: timeFmt.format(row.joinedAt),
                           })
-                        : t("attendance.noZoomRecord")}
+                        : t("attendance.notMarkedYet")}
                       {row.attendedMinutes > 0
                         ? ` · ${t("groups.sessions.durationValue", {
                             minutes: row.attendedMinutes,

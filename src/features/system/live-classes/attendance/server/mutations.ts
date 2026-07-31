@@ -11,13 +11,13 @@ import type { MarkAttendanceInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
 /**
- * A teacher's correction to the register.
+ * The register, as the teacher takes it.
  *
- * Zoom only ever knows who joined the meeting under a name it could match
- * (`lib/attendance-record.ts`), so a student who dialled in on a phone, shared
- * a device, or attended in the room needs a human to say so — phase-06.md step
- * 6's manual override. The record is stamped `manual`, which is what stops a
- * late webhook from overwriting it.
+ * This is now the *only* way attendance is recorded (STATE.md D144): onMeeting
+ * publishes no webhooks and no participants endpoint, so nothing can observe
+ * who was in the room. The record is still stamped `manual`, which keeps the
+ * column honest about where the verdict came from and leaves room for an
+ * automatic source if onMeeting ever exposes one.
  */
 export async function markAttendance(
   ctx: OrgTRPCContext,
@@ -117,8 +117,9 @@ export async function markAttendance(
       },
     });
 
-  // Zoom's join/leave stamps are left exactly as they were: overwriting a
-  // correction on top of them would erase what the meeting actually reported,
-  // and both readings are worth keeping side by side.
+  // `joinedAt`/`leftAt`/`attendedMinutes` are left exactly as they are. No
+  // writer fills them any more (D144), but rows seeded or recorded before the
+  // provider change still carry them, and a correction to the verdict is not a
+  // reason to erase the timings that were observed alongside it.
   return { status: input.status };
 }

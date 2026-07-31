@@ -33,17 +33,13 @@ export const env = createEnv({
     // (Phase 7) — one Cloud project, two redirect URIs, one extra scope.
     // GOOGLE_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
     // (`openssl rand -base64 32`); it encrypts those per-org OAuth tokens at
-    // rest, and is separate from the Zoom key so rotating one provider's key
+    // rest, and is separate from the onMeeting key so rotating one provider's key
     // never touches the other's stored tokens — see docs/integrations-google.md.
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     // Validated here rather than only where it is used: a mistyped key would
     // otherwise report Google as configured, offer the Connect button, and
     // fail after the admin had already approved the grant on Google's side.
-    // (ZOOM_TOKEN_ENCRYPTION_KEY is deliberately left as-is — it is already
-    // set in a live environment, and tightening its schema would turn a
-    // hypothetical bad value into a failed boot for the whole app rather than
-    // one unavailable integration.)
     GOOGLE_TOKEN_ENCRYPTION_KEY: z
       .string()
       .refine((value) => Buffer.from(value, "base64").length === 32, {
@@ -59,18 +55,6 @@ export const env = createEnv({
     SMTP_PASSWORD: z.string().min(1).optional(),
     SMTP_FROM_EMAIL: z.email().optional(),
     SMTP_FROM_NAME: z.string().min(1).optional(),
-
-    // Dormant until Mohamed provides Zoom credentials (Phase 6). An org can
-    // schedule classes without Zoom — connecting a Zoom account is the
-    // optional part — so these stay optional and the connect flow reports
-    // "integration not configured" instead of the app failing to boot.
-    // ZOOM_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
-    // (`openssl rand -base64 32`); it encrypts the per-org OAuth tokens at
-    // rest — see docs/integrations-zoom.md.
-    ZOOM_CLIENT_ID: z.string().min(1).optional(),
-    ZOOM_CLIENT_SECRET: z.string().min(1).optional(),
-    ZOOM_WEBHOOK_SECRET_TOKEN: z.string().min(1).optional(),
-    ZOOM_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 
     // onMeeting (Phase 6, D142) — the only deployment-level value the
     // integration needs. There is no app id, client secret or webhook token:

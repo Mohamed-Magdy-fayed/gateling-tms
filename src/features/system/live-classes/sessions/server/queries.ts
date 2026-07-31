@@ -4,26 +4,23 @@ import {
   count,
   desc,
   eq,
-  gt,
   gte,
   inArray,
   isNull,
   lt,
   type SQL,
 } from "drizzle-orm";
-import { db } from "@/drizzle";
 import {
   GroupStudentsTable,
   GroupsTable,
+  MeetingAccountsTable,
   SessionsTable,
   TraineesTable,
   UsersTable,
-  ZoomClientsTable,
 } from "@/drizzle/schema";
-import { resolveSessionLinks } from "../lib/session-links";
+import { canHostSession, resolveSessionLinks } from "../lib/session-links";
 import type { ListSessionsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
-import { needsZoomMeeting } from "./zoom-binding";
 
 const sessionColumns = {
   id: SessionsTable.id,
@@ -34,13 +31,11 @@ const sessionColumns = {
   groupName: GroupsTable.name,
   teacherId: SessionsTable.teacherId,
   teacherName: UsersTable.name,
-  zoomMeetingId: SessionsTable.zoomMeetingId,
-  zoomJoinUrl: SessionsTable.zoomJoinUrl,
+  meetingNumber: SessionsTable.meetingNumber,
+  joinUrl: SessionsTable.joinUrl,
   // Selected but never returned as-is: `toSessionRow` hands it only to the
   // assigned teacher or an admin (lib/session-links.ts).
-  zoomStartUrl: SessionsTable.zoomStartUrl,
-  recordingUrl: SessionsTable.zoomRecordingUrl,
-  recordingPassword: SessionsTable.zoomRecordingPassword,
+  startUrl: SessionsTable.startUrl,
 } as const;
 
 export type SessionRow = {
@@ -52,21 +47,18 @@ export type SessionRow = {
   groupName: string;
   teacherId: string | null;
   teacherName: string | null;
-  /** Null while the session is offline — no Zoom meeting exists for it. */
+  /** Null until the class has been started — no meeting exists for it yet. */
   joinUrl: string | null;
   /** Host link, present only for the teacher running it and for admins. */
   startUrl: string | null;
   /**
-   * Zoom's share link for the cloud recording, once there is one. Not gated
-   * per viewer: a student only ever sees their own classes, and a recording of
-   * the class you sat in is the one thing you are most likely to want back.
+   * Whether a meeting has been created for this session at all. Distinct from
+   * `joinUrl` being null, which a student also sees before the class starts —
+   * this is what the UI keys the "Start class" action off.
    */
-  recordingUrl: string | null;
-  /**
-   * Zoom's share links usually need this to open, so it travels with the link
-   * rather than being kept back — a link nobody can play is not a recording.
-   */
-  recordingPassword: string | null;
+  hasMeeting: boolean;
+  /** Whether this viewer may start the class (STATE.md D143). */
+  canStart: boolean;
 };
 
 /**
@@ -109,9 +101,9 @@ export async function listSessions(
     page,
     pageCount,
     total: Number(total),
-    // Lets the UI tell "this org never connected Zoom, and that's fine" apart
-    // from "a meeting for this class hasn't been created yet".
-    hasActiveZoomClient: await hasActiveZoomClient(ctx),
+    // Lets the UI tell "this org has no room connected, and that's fine" apart
+    // from "this class just hasn't been started yet".
+    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
   };
 }
 
@@ -132,43 +124,8 @@ export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
 
   return {
     rows: rows.map((row) => toSessionRow(ctx, row)),
-    hasActiveZoomClient: await hasActiveZoomClient(ctx),
+    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
   };
-}
-
-/**
- * Future sessions with no meeting yet — what a newly connected Zoom account
- * has to catch up on, since those groups were scheduled while the org had no
- * way to host anything. Module-level `db` rather than a request context: the
- * caller is an Inngest function, not a tRPC route.
- */
-export async function listSessionIdsAwaitingMeetings(
-  organizationId: string,
-  now = new Date(),
-): Promise<string[]> {
-  const rows = await db
-    .select({ id: SessionsTable.id })
-    .from(SessionsTable)
-    // Sessions left stranded on a disconnected account count too: connecting
-    // a replacement is exactly when they can be moved onto it.
-    .leftJoin(
-      ZoomClientsTable,
-      and(
-        eq(ZoomClientsTable.id, SessionsTable.zoomClientId),
-        eq(ZoomClientsTable.organizationId, SessionsTable.organizationId),
-      ),
-    )
-    .where(
-      and(
-        eq(SessionsTable.organizationId, organizationId),
-        eq(SessionsTable.status, "scheduled"),
-        gt(SessionsTable.scheduledAt, now),
-        needsZoomMeeting,
-      ),
-    )
-    .orderBy(asc(SessionsTable.scheduledAt), asc(SessionsTable.id));
-
-  return rows.map((row) => row.id);
 }
 
 /**
@@ -228,21 +185,22 @@ function selectSessions(
 }
 
 /** What `selectSessions` returns, before the link rules are applied. */
-type SessionQueryRow = Omit<SessionRow, "joinUrl" | "startUrl"> & {
-  zoomMeetingId: string | null;
-  zoomJoinUrl: string | null;
-  zoomStartUrl: string | null;
+type SessionQueryRow = Omit<
+  SessionRow,
+  "joinUrl" | "startUrl" | "hasMeeting" | "canStart"
+> & {
+  meetingNumber: string | null;
+  joinUrl: string | null;
+  startUrl: string | null;
 };
 
 function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
-  const links = resolveSessionLinks(
-    { userId: ctx.session.user.id, role: ctx.role },
-    {
-      teacherId: row.teacherId,
-      zoomJoinUrl: row.zoomJoinUrl,
-      zoomStartUrl: row.zoomStartUrl,
-    },
-  );
+  const viewer = { userId: ctx.session.user.id, role: ctx.role };
+  const links = resolveSessionLinks(viewer, {
+    teacherId: row.teacherId,
+    joinUrl: row.joinUrl,
+    startUrl: row.startUrl,
+  });
 
   return {
     id: row.id,
@@ -255,27 +213,27 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     teacherName: row.teacherName,
     joinUrl: links.joinUrl,
     startUrl: links.startUrl,
-    recordingUrl: row.recordingUrl,
-    recordingPassword: row.recordingPassword,
+    hasMeeting: row.meetingNumber !== null,
+    canStart: canHostSession(viewer, row.teacherId),
   };
 }
 
 /**
- * Whether the org has any Zoom account connected at all — the difference
- * between "this class hasn't been provisioned yet" and "this academy doesn't
- * use Zoom", which read very differently to whoever is looking (D102).
+ * Whether the org has any onMeeting room connected at all — the difference
+ * between "this class hasn't been started yet" and "this academy hasn't
+ * connected a room", which read very differently to whoever is looking (D102).
  */
-export async function hasActiveZoomClient(
+export async function hasActiveMeetingAccount(
   ctx: OrgTRPCContext,
 ): Promise<boolean> {
   const [{ value }] = await ctx.db
     .select({ value: count() })
-    .from(ZoomClientsTable)
+    .from(MeetingAccountsTable)
     .where(
       and(
-        eq(ZoomClientsTable.organizationId, ctx.organizationId),
-        eq(ZoomClientsTable.status, "active"),
-        isNull(ZoomClientsTable.deletedAt),
+        eq(MeetingAccountsTable.organizationId, ctx.organizationId),
+        eq(MeetingAccountsTable.status, "active"),
+        isNull(MeetingAccountsTable.deletedAt),
       ),
     );
 

@@ -87,7 +87,7 @@ export function GroupSessionsSection({
         ) : (
           <SessionList
             sessions={data.rows}
-            hasActiveZoomClient={data.hasActiveZoomClient}
+            hasActiveMeetingAccount={data.hasActiveMeetingAccount}
             timeZone={timeZone}
             canOpenRegister={canOpenRegister}
           />

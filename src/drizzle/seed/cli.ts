@@ -17,7 +17,7 @@ const commands = {
   },
   demo: {
     description:
-      "Seed the realistic-academy screenshot/demo dataset on top of baseline: 2 courses w/ levels+lectures+quiz, 3 groups w/ schedules+sessions (one Zoom-fixture-connected), 25 students w/ enrollments/attendance/certificates.",
+      "Seed the realistic-academy screenshot/demo dataset on top of baseline: 2 courses w/ levels+lectures+quiz, 3 groups w/ schedules+sessions (one onMeeting-fixture-connected), 25 students w/ enrollments/attendance/certificates.",
     action: async () => {
       const { runSeedProfile } = await import("@/drizzle/seed");
       await runSeedProfile("demo");

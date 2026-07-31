@@ -120,6 +120,20 @@
       "when": 1785514462115,
       "tag": "0016_hesitant_husk",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785513097241,
+      "tag": "0017_careless_puppet_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785513130445,
+      "tag": "0018_green_sasquatch",
+      "breakpoints": true
     }
   ]
 }

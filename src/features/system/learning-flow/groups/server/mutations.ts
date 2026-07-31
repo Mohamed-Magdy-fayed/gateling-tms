@@ -1,16 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   CoursesTable,
   GroupStudentsTable,
   GroupsTable,
   OrganizationMembershipsTable,
-  SessionsTable,
   TraineesTable,
 } from "@/drizzle/schema";
 import { inngest } from "@/integrations/inngest/client";
 import { groupScheduleChangedEvent } from "@/integrations/inngest/functions/on-group-schedule-changed";
-import { sessionMeetingCancelledEvent } from "@/integrations/inngest/functions/on-session-meeting-cancelled";
 import type {
   GroupAddStudentsInput,
   GroupDeleteInput,
@@ -168,26 +166,11 @@ export async function deleteGroup(
   ctx: OrgTRPCContext,
   input: GroupDeleteInput,
 ) {
-  // The group's sessions go with it (composite FK, ON DELETE CASCADE), so
-  // their Zoom meetings have to be read *before* the delete — afterwards
-  // nothing points at them and they would sit in the org's Zoom account
-  // forever.
-  const abandonedMeetings = await ctx.db.transaction(async (trx) => {
-    const meetings = await trx
-      .select({
-        zoomClientId: SessionsTable.zoomClientId,
-        zoomMeetingId: SessionsTable.zoomMeetingId,
-      })
-      .from(SessionsTable)
-      .where(
-        and(
-          eq(SessionsTable.groupId, input.id),
-          eq(SessionsTable.organizationId, ctx.organizationId),
-          isNotNull(SessionsTable.zoomClientId),
-          isNotNull(SessionsTable.zoomMeetingId),
-        ),
-      );
-
+  // The group's sessions go with it (composite FK, ON DELETE CASCADE).
+  // Nothing has to be told about that: onMeeting meetings are created when a
+  // class is started and live in the room until it ends, and there is no
+  // delete-meeting endpoint to call anyway (STATE.md D143/D145).
+  await ctx.db.transaction(async (trx) => {
     const [deleted] = await trx
       .delete(GroupsTable)
       .where(
@@ -204,49 +187,9 @@ export async function deleteGroup(
         message: ctx.t("errors.notFound"),
       });
     }
-
-    return meetings;
   });
 
-  await requestMeetingCancellations(ctx, abandonedMeetings);
-
   return { deleted: true };
-}
-
-/**
- * Same fire-and-forget shape as `requestSessionRegeneration`: the group is
- * already gone by the time this runs, so a queue hiccup must not turn a
- * completed delete into an error. The meeting is then only reachable from the
- * org's Zoom account, which the log line records.
- */
-async function requestMeetingCancellations(
-  ctx: OrgTRPCContext,
-  meetings: { zoomClientId: string | null; zoomMeetingId: string | null }[],
-) {
-  const cancellable = meetings.filter(
-    (meeting): meeting is { zoomClientId: string; zoomMeetingId: string } =>
-      Boolean(meeting.zoomClientId && meeting.zoomMeetingId),
-  );
-
-  if (cancellable.length === 0) return;
-
-  try {
-    await inngest.send(
-      cancellable.map((meeting) =>
-        sessionMeetingCancelledEvent.create({
-          organizationId: ctx.organizationId,
-          zoomClientId: meeting.zoomClientId,
-          zoomMeetingId: meeting.zoomMeetingId,
-        }),
-      ),
-    );
-  } catch (error) {
-    console.error("Failed to enqueue session/meeting-cancelled events", {
-      organizationId: ctx.organizationId,
-      meetingIds: cancellable.map((meeting) => meeting.zoomMeetingId),
-      error,
-    });
-  }
 }
 
 export async function addGroupStudents(

@@ -195,8 +195,9 @@ export async function seedDemoCertificate(input: {
 
 /**
  * Marks attendance for one already-happened session against one trainee.
- * `source` is always "manual" here — this is fixture demo data, not a Zoom
- * webhook replay.
+ * `source` is always "manual" — which is now the only source there is
+ * (STATE.md D144): onMeeting publishes no webhooks, so nothing observes who
+ * was in the room and the register is what the teacher says it is.
  */
 export async function seedDemoAttendance(input: {
   organizationId: string;
@@ -221,14 +222,6 @@ export async function seedDemoAttendance(input: {
       return row;
     },
     insert: async () => {
-      const joinedAt = input.present ? input.session.scheduledAt : undefined;
-      const leftAt =
-        input.present && joinedAt
-          ? new Date(
-              joinedAt.getTime() + input.session.durationMinutes * 60_000,
-            )
-          : undefined;
-
       const [row] = await db
         .insert(SessionStudentsTable)
         .values({
@@ -237,9 +230,10 @@ export async function seedDemoAttendance(input: {
           traineeId: input.traineeId,
           status: input.present ? "present" : "absent",
           source: "manual",
-          joinedAt,
-          leftAt,
-          attendedMinutes: input.present ? input.session.durationMinutes : 0,
+          // No join/leave stamps and no attended minutes: nothing in the app
+          // produces them any more (D144), so seeding them would put demo data
+          // on screen that no real flow can reach. The columns stay for rows
+          // recorded before the provider change.
           markedBy: input.markedBy,
         })
         .returning();

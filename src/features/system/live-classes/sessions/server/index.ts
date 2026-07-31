@@ -1,12 +1,10 @@
 export {
-  cancelSessionMeeting,
-  type SessionMeetingSyncResult,
-  syncSessionMeeting,
+  type StartSessionMeetingResult,
+  startSessionMeeting,
 } from "./meetings";
 export {
-  hasActiveZoomClient,
+  hasActiveMeetingAccount,
   listGroupSessions,
-  listSessionIdsAwaitingMeetings,
   listSessions,
   type SessionRow,
 } from "./queries";
