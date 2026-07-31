@@ -4,6 +4,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  timestamp,
   uniqueIndex,
   uuid,
   varchar,
@@ -38,6 +39,16 @@ export const OrganizationsTable = pgTable(
     // concrete UTC instants. Org-wide rather than per-group — an academy
     // runs on one clock (STATE.md D80).
     timeZone: varchar({ length: 64 }).notNull().default("Africa/Cairo"),
+    // Consent to appear in the public showcase band on the landing page (the
+    // academy's initials and its owner's photo). Opt-in, timestamped rather
+    // than boolean so it is auditable when someone asks "when did we agree to
+    // this?", and clearing it un-publishes immediately. Separate from a
+    // testimonial's own `isPublic`: they publish different things, so one
+    // consent must not imply the other.
+    publicShowcaseConsentAt: timestamp({ withTimezone: true }),
+    // When the owner dismissed the dashboard prompt asking for feedback, so it
+    // isn't asked again. Null means never dismissed.
+    testimonialPromptDismissedAt: timestamp({ withTimezone: true }),
     studentCount: integer().notNull().default(0),
     courseCount: integer().notNull().default(0),
     storageBytes: bigint({ mode: "number" }).notNull().default(0),

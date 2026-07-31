@@ -134,6 +134,13 @@
       "when": 1785513130445,
       "tag": "0018_green_sasquatch",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785529865812,
+      "tag": "0019_wandering_gladiator",
+      "breakpoints": true
     }
   ]
 }
