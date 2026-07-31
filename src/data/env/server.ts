@@ -72,6 +72,24 @@ export const env = createEnv({
     ZOOM_WEBHOOK_SECRET_TOKEN: z.string().min(1).optional(),
     ZOOM_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 
+    // onMeeting (Phase 6, D142) — the only deployment-level value the
+    // integration needs. There is no app id, client secret or webhook token:
+    // credentials belong to each organization and are obtained in-app by
+    // signing in to onMeeting once (D146). This key encrypts the API
+    // key/secret pair that exchange returns, at rest.
+    // 32 random bytes, base64-encoded (`openssl rand -base64 32`), different
+    // per environment — see docs/integrations-onmeeting.md.
+    // Validated here for the same reason as the Google key: a mistyped value
+    // would otherwise report onMeeting as configured and offer a Connect form
+    // that can only fail after the admin has typed their password into it.
+    ONMEETING_CREDENTIALS_ENCRYPTION_KEY: z
+      .string()
+      .refine((value) => Buffer.from(value, "base64").length === 32, {
+        error:
+          "ONMEETING_CREDENTIALS_ENCRYPTION_KEY must be 32 base64-encoded bytes.",
+      })
+      .optional(),
+
     // Grades short-answer questions whose text doesn't match an accepted
     // answer outright — see integrations/gemini. Optional on purpose: with no
     // key the grader still awards exact/normalised matches and leaves anything

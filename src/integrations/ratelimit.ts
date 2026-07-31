@@ -65,6 +65,21 @@ export const contactFormIpRatelimit = new Ratelimit({
 });
 
 /**
+ * Connecting an onMeeting account submits the admin's own onMeeting **password**
+ * to a third party's sign-in endpoint (STATE.md D146). Even though the caller
+ * is already an authenticated org admin, that makes this a credential endpoint
+ * — so it gets the same budget treatment as the auth flows above, rather than
+ * being left as an unmetered password oracle against onMeeting. Keyed per
+ * organization: connecting is a rare, deliberate act, and an org with a dozen
+ * rooms still only does it once.
+ */
+export const onMeetingConnectRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(10, "60 m"),
+  prefix: "ratelimit:onmeeting-connect",
+});
+
+/**
  * The Google Forms import calls Google's API on demand, and that quota belongs
  * to the whole deployment's Cloud project rather than to one organization — so
  * one org looping the preview button would exhaust it for every other tenant.

@@ -15,6 +15,7 @@ export default {
     certificates: "Certificates",
     liveClasses: "Live Classes",
     zoomConnections: "Zoom connections",
+    meetingRooms: "Meeting rooms",
     settings: "Settings",
     assessments: "Assessments",
   },
@@ -1066,6 +1067,53 @@ export default {
     errors: {
       notConfigured:
         "Zoom isn't configured on this deployment yet. Ask your operator to add the Zoom credentials.",
+    },
+  },
+  meetingAccounts: {
+    title: "Meeting rooms",
+    subtitle:
+      "Connect the onMeeting account your classes run on. Each of its rooms becomes a room you can hold a class in. Scheduling works without it — sessions simply stay offline until an account is connected.",
+    connect: "Connect onMeeting",
+    connectAction: "Connect account",
+    connectDescription:
+      "Sign in with your onMeeting account. Every room on it becomes available for classes.",
+    passwordNotice:
+      "Your onMeeting password is used once to get an access key, and is never stored by Gateling-TMS.",
+    name: "Connection name",
+    nameDescription: 'For your team, e.g. "Main account" or "Evening classes".',
+    email: "onMeeting email",
+    emailDescription: "The email you sign in to onMeeting with.",
+    password: "onMeeting password",
+    passwordDescription: "Used once, never saved.",
+    roomLabel: "Room: {room}",
+    connectedRooms: "Connected {count} room(s).",
+    connectFailed: "Could not connect the onMeeting account.",
+    disconnect: "Disconnect",
+    disconnectTitle: "Disconnect this room?",
+    disconnectDescription:
+      'Disconnect "{name}". Scheduled classes stay, but no new class can be started in this room. Your onMeeting access key stays valid on onMeeting — rotate it there if you want it revoked.',
+    disconnected: "Room disconnected.",
+    disconnectFailed: "Could not disconnect the room.",
+    loadFailed: "Couldn't load meeting rooms.",
+    emptyTitle: "No onMeeting account connected",
+    emptyDescription:
+      "Connect an account and its rooms become available for your scheduled classes.",
+    status: {
+      active: "Connected",
+      error: "Needs attention",
+    },
+    errors: {
+      notConfigured:
+        "onMeeting isn't configured on this deployment yet. Ask your operator to set the onMeeting encryption key.",
+      rejected:
+        "onMeeting didn't accept that email and password. Check them and try again.",
+      noRooms:
+        "That onMeeting account has no rooms, so there's nothing to hold a class in yet.",
+      rateLimited:
+        "Too many connection attempts. Wait a while before trying again.",
+      providerRateLimited:
+        "onMeeting is rate limiting this account right now. Try again shortly.",
+      unavailable: "Couldn't reach onMeeting. Try again shortly.",
     },
   },
   googleImport: {
