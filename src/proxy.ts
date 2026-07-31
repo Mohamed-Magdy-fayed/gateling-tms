@@ -3,6 +3,10 @@ import {
   getUserSession,
   updateUserSessionExpiration,
 } from "@/features/core/auth/core";
+import {
+  buildContentSecurityPolicy,
+  createCspNonce,
+} from "@/integrations/security/csp";
 
 // (system) routes require a session AND an active organization. DONOR-B
 // gates on a full screen-registry (`getProtectedScreenDefinitionByPathname`)
@@ -34,7 +38,18 @@ function startsWithAny(pathname: string, prefixes: string[]) {
 }
 
 export async function proxy(request: NextRequest) {
-  const response = (await middlewareAuth(request)) ?? NextResponse.next();
+  const nonce = createCspNonce();
+  const contentSecurityPolicy = buildContentSecurityPolicy({
+    nonce,
+    isDevelopment: process.env.NODE_ENV === "development",
+  });
+
+  const response =
+    (await middlewareAuth(request, nonce)) ?? nextWithNonce(request, nonce);
+
+  // Set on the response whatever `middlewareAuth` returned — a redirect still
+  // gets the policy, so there is no path out of here without one.
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
   // request.cookies reflects what the browser actually sent (the session-id
   // cookie); response.cookies only reflects what's been explicitly set on
@@ -53,11 +68,22 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-async function middlewareAuth(request: NextRequest) {
+/**
+ * Forwards the request with `x-nonce` attached, which is how the nonce reaches
+ * the render: Next reads it out of the CSP header for its own bundles, and
+ * `app/layout.tsx` reads this header for the tags it renders itself.
+ */
+function nextWithNonce(request: NextRequest, nonce: string) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
+async function middlewareAuth(request: NextRequest, nonce: string) {
   const pathname = request.nextUrl.pathname;
 
   if (!startsWithAny(pathname, PROTECTED_PATH_PREFIXES)) {
-    return NextResponse.next();
+    return nextWithNonce(request, nonce);
   }
 
   const session = await getUserSession(request.cookies);
@@ -72,7 +98,7 @@ async function middlewareAuth(request: NextRequest) {
     return NextResponse.redirect(new URL("/get-started", request.url));
   }
 
-  return NextResponse.next();
+  return nextWithNonce(request, nonce);
 }
 
 export const config = {

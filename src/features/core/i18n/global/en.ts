@@ -67,6 +67,7 @@ export default {
     imageUpload: {
       success: "Image uploaded.",
       error: "Could not upload image.",
+      unsupportedType: "Choose a JPEG, PNG, WebP, GIF, or AVIF image.",
       uploading: "Uploading…",
     },
   },

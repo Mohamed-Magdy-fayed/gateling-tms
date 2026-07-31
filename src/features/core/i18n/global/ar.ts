@@ -67,6 +67,7 @@ export default {
     imageUpload: {
       success: "تم رفع الصورة.",
       error: "تعذر رفع الصورة.",
+      unsupportedType: "اختر صورة بصيغة JPEG أو PNG أو WebP أو GIF أو AVIF.",
       uploading: "جاري الرفع…",
     },
   },

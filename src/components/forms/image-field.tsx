@@ -13,6 +13,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useTranslation } from "@/features/core/i18n/client";
+import {
+  ALLOWED_UPLOAD_MIME_TYPES,
+  isAllowedUploadMimeType,
+} from "@/features/core/uploads/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 import { FormBase, type FormFieldProps } from "./form-base";
 import { useFieldContext } from "./hooks";
@@ -36,6 +40,14 @@ export function FormImageField({
     async (files, options) => {
       for (const file of files) {
         try {
+          // `accept` steers the picker, it doesn't bind it — most browsers let
+          // the user switch to "all files". Checking here means an unsupported
+          // type fails immediately with the field's own error instead of after
+          // the file has been read and shipped to the server.
+          if (!isAllowedUploadMimeType(file.type)) {
+            throw new Error(t("forms.imageUpload.unsupportedType"));
+          }
+
           options.onProgress(file, 20);
 
           const base64 = await new Promise<string>((resolve, reject) => {
@@ -89,7 +101,9 @@ export function FormImageField({
   return (
     <FormBase {...props}>
       <FileUpload
-        accept="image/*"
+        // Same list the server enforces, so the picker can't offer a type the
+        // upload will reject (an SVG, above all).
+        accept={ALLOWED_UPLOAD_MIME_TYPES.join(",")}
         maxFiles={1}
         maxSize={4 * 1024 * 1024}
         className="w-full flex items-center gap-2"
