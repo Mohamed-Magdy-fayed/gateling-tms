@@ -45,9 +45,15 @@ for a one-off dataset.
 
 No real onMeeting credentials exist in dev/CI, and nothing in this profile calls the real onMeeting
 API. Instead, `seedDemoMeetingAccountFixture` inserts a `meeting_accounts` row with
-`status: "active"` and obviously-fake credential strings (`"fixture:not-a-real-key"`, never
-round-tripped through `encryptToken`/`decryptToken`), and the connected group's generated sessions
-get plausible `meetingNumber`/`joinUrl`/`startUrl` fields written directly at insert time.
+`status: "active"` and obviously-fake credential strings (`"fixture:not-a-real-key"`, written
+without `encryptToken` and never read back by the seed), and the connected group's generated
+sessions get plausible `meetingNumber`/`joinUrl`/`startUrl` fields written directly at insert time.
+
+Those strings are not ciphertext, so **anything that does try to use them fails deliberately**: the
+fixture room is `active`, so pressing "Start class" on one of the demo group's *unstarted* sessions
+will select it, fail to decrypt, mark that room `error` with the reason, and refuse — which is the
+same path a real room with rotated credentials takes, and a reasonable thing for a demo dataset to
+be able to show. It never reaches onMeeting.
 
 That last part is what makes the fixture worth having: a real session gets those fields **only when
 a host presses "Start class"** (STATE.md D143), so without it there would be no way to see the

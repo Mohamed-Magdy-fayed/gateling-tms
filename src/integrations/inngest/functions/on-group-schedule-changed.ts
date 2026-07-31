@@ -1,4 +1,4 @@
-import { and, eq, gt, notInArray, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, notInArray, sql } from "drizzle-orm";
 import { eventType } from "inngest";
 import { z } from "zod";
 
@@ -111,6 +111,9 @@ export const onGroupScheduleChanged = inngest.createFunction(
           eq(SessionsTable.organizationId, organizationId),
           eq(SessionsTable.status, "scheduled"),
           gt(SessionsTable.scheduledAt, regeneratedAt),
+          // Untouched by anyone starting it — see the note below.
+          isNull(SessionsTable.meetingAccountId),
+          isNull(SessionsTable.meetingNumber),
           keptTimes.length > 0
             ? notInArray(SessionsTable.scheduledAt, keptTimes)
             : undefined,
@@ -119,6 +122,13 @@ export const onGroupScheduleChanged = inngest.createFunction(
         // Only future, still-`scheduled` rows reach here, and a class nobody
         // started has no meeting — so a dropped occurrence leaves nothing
         // behind at onMeeting to clean up.
+        //
+        // "Nobody started it" is checked, not assumed. A session is claimed
+        // (`meetingAccountId` written) a moment before its meeting exists and
+        // before its status leaves `scheduled`, so a schedule edit landing in
+        // that window would otherwise delete a class somebody is in the middle
+        // of starting — and the teacher would be handed a link to a meeting
+        // whose session row no longer exists.
         const removed = await trx
           .delete(SessionsTable)
           .where(staleCondition)

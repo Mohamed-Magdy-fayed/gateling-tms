@@ -1,5 +1,16 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, gt, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  isNotNull,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
   GroupsTable,
@@ -28,6 +39,13 @@ export type StartSessionMeetingResult = {
 };
 
 const MEETING_TOPIC_MAX_LENGTH = 200;
+
+/**
+ * How long a start-class claim is honoured before another attempt may take it
+ * over. Comfortably longer than two timeout-bounded onMeeting requests, so it
+ * only ever expires on a claim whose process is gone.
+ */
+const STALE_CLAIM_SECONDS = 120;
 
 /**
  * Starts the class: creates the onMeeting meeting for this session and returns
@@ -164,18 +182,15 @@ async function createMeetingOn(
       // staring at "waiting for host" has no way to tell that from a broken
       // link.
       joinBeforeHost: true,
-      // Recording stays whatever the onMeeting room defaults to. Nothing in
-      // this app can retrieve a recording afterwards (D145), so forcing it on
-      // would promise something the UI can't deliver.
+      // Recording is switched off explicitly, not left to the room default.
+      // Nothing in this app can retrieve a recording afterwards (D145), so
+      // turning it on here would promise something the UI can't deliver.
       recording: false,
       alert: false,
     });
   } catch (error) {
     const translated = translateOnMeetingError(ctx, error);
     await recordMeetingAccountFailure(ctx, account.id, translated.message);
-    // The reservation is left in place deliberately: it is self-healing, since
-    // a session with no meeting still reads as not-started and the next
-    // attempt re-reserves.
     throw translated;
   }
 }
@@ -274,16 +289,38 @@ async function reserveMeetingAccount(
 
     if (!chosenId) return { status: "noRoom" };
 
+    // The reservation is the **exclusive claim on starting this session**, not
+    // merely a booking of the room.
+    //
+    // Guarding on `meetingNumber IS NULL` alone is not enough: that column is
+    // written only *after* the onMeeting call returns, and that call happens
+    // outside this transaction. Two hosts pressing Start at once would both
+    // find it null, both be told they had reserved, and both create a meeting
+    // — the later write winning, and the earlier meeting left sitting in a
+    // room with nobody holding a link to it. So an existing
+    // `meetingAccountId` also blocks the claim.
+    //
+    // The time bound is what stops that from being a trap. A claim whose
+    // process died between reserving and writing the meeting would otherwise
+    // make the class permanently unstartable, so a claim older than
+    // `STALE_CLAIM_SECONDS` may be taken over. Both provider requests are
+    // individually timeout-bounded well inside that window, so a live attempt
+    // is never stolen from.
     const [reserved] = await trx
       .update(SessionsTable)
-      .set({ meetingAccountId: chosenId })
+      .set({ meetingAccountId: chosenId, updatedAt: new Date() })
       .where(
         and(
           eq(SessionsTable.id, session.id),
           eq(SessionsTable.organizationId, organizationId),
-          // Something started this class while the lock was being waited on;
-          // that meeting stands.
           isNull(SessionsTable.meetingNumber),
+          or(
+            isNull(SessionsTable.meetingAccountId),
+            lt(
+              SessionsTable.updatedAt,
+              sql`now() - (${STALE_CLAIM_SECONDS} * interval '1 second')`,
+            ),
+          ),
         ),
       )
       .returning({ id: SessionsTable.id });

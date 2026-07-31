@@ -157,9 +157,34 @@ describe("listSessionsInput", () => {
     expect(listSessionsInput.parse({}).scope).toBe("upcoming");
   });
 
+  test("defaults to the first page at a bounded size", () => {
+    const parsed = listSessionsInput.parse({});
+
+    expect(parsed.page).toBe(1);
+    expect(parsed.perPage).toBe(20);
+  });
+
   test("rejects a scope it has no order for", () => {
     expect(listSessionsInput.safeParse({ scope: "sideways" }).success).toBe(
       false,
     );
+  });
+
+  test("refuses an unbounded page size", () => {
+    expect(listSessionsInput.safeParse({ perPage: 5000 }).success).toBe(false);
+  });
+
+  test("refuses a groupId that isn't a uuid", () => {
+    expect(listSessionsInput.safeParse({ groupId: "not-a-uuid" }).success).toBe(
+      false,
+    );
+  });
+
+  test("accepts a real groupId filter", () => {
+    expect(
+      listSessionsInput.safeParse({
+        groupId: "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+      }).success,
+    ).toBe(true);
   });
 });
