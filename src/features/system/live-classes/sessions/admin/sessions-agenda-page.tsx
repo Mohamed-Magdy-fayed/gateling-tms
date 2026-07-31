@@ -72,12 +72,12 @@ export function SessionsAgendaPage() {
         <Muted>{t("sessions.lead")}</Muted>
       </div>
 
-      {data && !data.hasActiveZoomClient ? (
+      {data && !data.hasActiveMeetingAccount ? (
         <Alert>
           <AlertDescription>
-            {t("sessions.noZoomAccount")}{" "}
-            <Link className="underline" href="/live-classes/zoom-clients">
-              {t("sessions.connectZoom")}
+            {t("sessions.noMeetingAccount")}{" "}
+            <Link className="underline" href="/live-classes/meeting-accounts">
+              {t("sessions.connectMeetingAccount")}
             </Link>
           </AlertDescription>
         </Alert>
@@ -118,7 +118,9 @@ export function SessionsAgendaPage() {
               <CardContent>
                 <SessionList
                   sessions={day.sessions}
-                  hasActiveZoomClient={data?.hasActiveZoomClient ?? false}
+                  hasActiveMeetingAccount={
+                    data?.hasActiveMeetingAccount ?? false
+                  }
                   timeZone={timeZone}
                   showGroup
                   canOpenRegister={isStaff}

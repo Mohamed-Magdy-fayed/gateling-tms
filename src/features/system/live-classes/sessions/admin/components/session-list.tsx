@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardListIcon, PlayIcon } from "lucide-react";
+import { ClipboardListIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/features/core/i18n/client";
@@ -10,7 +10,7 @@ import { SessionStatusTag } from "./session-status-tag";
 
 type SessionListProps = {
   sessions: SessionRow[];
-  hasActiveZoomClient: boolean;
+  hasActiveMeetingAccount: boolean;
   /** The org's IANA zone — sessions read on the academy's clock, not the
    * viewer's, so a teacher abroad still sees the local class time. */
   timeZone: string;
@@ -26,7 +26,7 @@ type SessionListProps = {
 
 export function SessionList({
   sessions,
-  hasActiveZoomClient,
+  hasActiveMeetingAccount,
   timeZone,
   showGroup = false,
   canOpenRegister = false,
@@ -64,37 +64,14 @@ export function SessionList({
                 minutes: session.durationMinutes,
               })}
               {session.teacherName ? ` · ${session.teacherName}` : null}
-              {/* Next to the recording button rather than hidden on the
-                  register: Zoom's share link usually won't open without it. */}
-              {session.recordingUrl && session.recordingPassword
-                ? ` · ${t("attendance.recordingPasscode", {
-                    passcode: session.recordingPassword,
-                  })}`
-                : null}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {session.recordingUrl ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                render={
-                  <a
-                    href={session.recordingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <PlayIcon className="size-3.5" />
-                    {t("sessions.recording")}
-                  </a>
-                }
-              />
-            ) : null}
             <SessionStatusTag status={session.status} />
             <SessionJoinActions
               session={session}
-              hasActiveZoomClient={hasActiveZoomClient}
+              hasActiveMeetingAccount={hasActiveMeetingAccount}
             />
             {canOpenRegister ? (
               <Button

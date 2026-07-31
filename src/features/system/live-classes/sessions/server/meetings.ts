@@ -1,292 +1,259 @@
+import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gt, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
-  CoursesTable,
   GroupsTable,
-  OrganizationsTable,
+  MeetingAccountsTable,
   SessionsTable,
-  ZoomClientsTable,
 } from "@/drizzle/schema";
-import { getValidZoomAccessToken } from "@/features/system/live-classes/zoom-clients/server";
 import {
-  createZoomMeeting,
-  deleteZoomMeeting,
-  updateZoomMeeting,
-} from "@/integrations/zoom";
-import { buildSessionMeetingRequest } from "../lib/meeting-request";
+  getCredentialsEncryptionKey,
+  OnMeetingNotConfiguredError,
+  recordMeetingAccountFailure,
+  translateOnMeetingError,
+} from "@/features/system/live-classes/meeting-accounts/server";
+import { decryptToken } from "@/integrations/oauth/token-crypto";
+import { createMeeting, requestAccessToken } from "@/integrations/onmeeting";
 import {
-  selectAvailableZoomClient,
+  isWithinMeetingWindow,
+  selectAvailableMeetingAccount,
   sessionEndsAt,
 } from "../lib/meeting-window";
-import { isUsableZoomClient } from "./zoom-binding";
+import { canHostSession } from "../lib/session-links";
+import type { OrgTRPCContext } from "./types";
 
-export type SessionMeetingSyncResult =
-  | { status: "created"; zoomMeetingId: string }
-  | { status: "updated"; zoomMeetingId: string }
-  /** No connected Zoom account was free — the session stays offline. */
-  | { status: "offline" }
-  /** Gone, cancelled, or already in the past: nothing to provision. */
-  | { status: "skipped" }
-  /** A concurrent run won the race and its meeting is the one that counts. */
-  | { status: "superseded" };
+export type StartSessionMeetingResult = {
+  joinUrl: string;
+  startUrl: string;
+};
 
-type ZoomClientReservation =
-  | { status: "reserved"; zoomClientId: string }
-  | { status: "offline" }
-  | { status: "superseded" };
+const MEETING_TOPIC_MAX_LENGTH = 200;
 
 /**
- * Makes the Zoom meeting for one session match the session.
+ * Starts the class: creates the onMeeting meeting for this session and returns
+ * its links.
  *
- * Called from Inngest for every session a schedule change touched, so it has
- * to be safe to run repeatedly and out of order: it creates a meeting only
- * when the row has none, and otherwise pushes the current time/duration to
- * the meeting it already has.
+ * onMeeting's create call takes a room and a topic and **no start time** — a
+ * meeting lives in a room rather than at a moment — so meetings cannot be
+ * generated ahead of schedule the way the Zoom implementation did. This runs
+ * when a host actually starts the class (STATE.md D143), which is also why it
+ * is inline rather than an Inngest job: the teacher is waiting on this exact
+ * link, so deferring it would trade a working class for a spinner. That is the
+ * documented exception in `docs/inngest-offload-policy.md`.
+ *
+ * Idempotent: a session that already has a meeting hands back its stored
+ * links. Starting twice must not strand the first meeting in a room while
+ * everyone holds a link to the second.
  */
-export async function syncSessionMeeting({
-  organizationId,
-  sessionId,
-  now = new Date(),
-}: {
-  organizationId: string;
-  sessionId: string;
-  now?: Date;
-}): Promise<SessionMeetingSyncResult> {
-  const session = await loadSession(organizationId, sessionId);
-
-  // Deleted between the event and this run, cancelled since, or already in
-  // the past — a retry will never make any of those provisionable.
-  if (
-    !session ||
-    session.status === "cancelled" ||
-    session.scheduledAt.getTime() <= now.getTime()
-  ) {
-    return { status: "skipped" };
-  }
-
-  const request = buildSessionMeetingRequest({
-    groupName: session.groupName,
-    courseName: session.courseName,
-    scheduledAt: session.scheduledAt,
-    durationMinutes: session.durationMinutes,
-    timeZone: session.timeZone,
-  });
-
-  if (session.zoomClientId && session.zoomMeetingId) {
-    if (session.isZoomClientUsable) {
-      const accessToken = await getValidZoomAccessToken(
-        organizationId,
-        session.zoomClientId,
-      );
-      // Pushed unconditionally rather than diffed: the row doesn't record what
-      // Zoom was last told, and one PATCH per touched session is cheaper than
-      // storing and reconciling a second copy of the schedule.
-      await updateZoomMeeting(accessToken, session.zoomMeetingId, request);
-      return { status: "updated", zoomMeetingId: session.zoomMeetingId };
-    }
-
-    // The account this session was booked on has been disconnected. Its
-    // links can't be maintained any more, and leaving them in place would
-    // strand the class on a dead meeting with nothing in the UI able to fix
-    // it — so the binding is released and the session re-provisioned below,
-    // onto another connected account if the org has one.
-    await releaseStaleMeeting(organizationId, sessionId, session.zoomClientId);
-  }
-
-  const reservation = await reserveZoomClient(organizationId, {
-    sessionId,
-    scheduledAt: session.scheduledAt,
-    durationMinutes: session.durationMinutes,
-  });
-
-  if (reservation.status !== "reserved") return reservation;
-
-  const { zoomClientId } = reservation;
-  const accessToken = await getValidZoomAccessToken(
-    organizationId,
-    zoomClientId,
-  );
-  const meeting = await createZoomMeeting(accessToken, request);
-
-  // Guarded on the reservation this run made: anything that released or
-  // replaced it in the meantime means this meeting is the stale one, so it is
-  // deleted rather than left orphaned in the account.
-  const [claimed] = await db
-    .update(SessionsTable)
-    .set({
-      zoomMeetingId: meeting.meetingId,
-      zoomMeetingPassword: meeting.password,
-      zoomJoinUrl: meeting.joinUrl,
-      zoomStartUrl: meeting.startUrl,
-    })
-    .where(
-      and(
-        eq(SessionsTable.id, sessionId),
-        eq(SessionsTable.organizationId, organizationId),
-        eq(SessionsTable.zoomClientId, zoomClientId),
-        isNull(SessionsTable.zoomMeetingId),
-      ),
-    )
-    .returning({ id: SessionsTable.id });
-
-  if (!claimed) {
-    await deleteZoomMeeting(accessToken, meeting.meetingId);
-    return { status: "superseded" };
-  }
-
-  return { status: "created", zoomMeetingId: meeting.meetingId };
-}
-
-/**
- * Removes a meeting whose session is gone. The ids travel in the event
- * payload because the row they came from has already been deleted by the time
- * this runs.
- */
-export async function cancelSessionMeeting({
-  organizationId,
-  zoomClientId,
-  zoomMeetingId,
-}: {
-  organizationId: string;
-  zoomClientId: string;
-  zoomMeetingId: string;
-}): Promise<void> {
-  const accessToken = await getValidZoomAccessToken(
-    organizationId,
-    zoomClientId,
-  );
-  await deleteZoomMeeting(accessToken, zoomMeetingId);
-}
-
-async function loadSession(organizationId: string, sessionId: string) {
-  const [session] = await db
-    .select({
-      scheduledAt: SessionsTable.scheduledAt,
-      durationMinutes: SessionsTable.durationMinutes,
-      status: SessionsTable.status,
-      zoomClientId: SessionsTable.zoomClientId,
-      zoomMeetingId: SessionsTable.zoomMeetingId,
-      // Whether the account this session is booked on is still connected —
-      // a disconnected one can't maintain the meeting any more.
-      isZoomClientUsable: isUsableZoomClient,
-      groupName: GroupsTable.name,
-      courseName: CoursesTable.name,
-      timeZone: OrganizationsTable.timeZone,
-    })
-    .from(SessionsTable)
-    .innerJoin(
-      GroupsTable,
-      and(
-        eq(GroupsTable.id, SessionsTable.groupId),
-        eq(GroupsTable.organizationId, SessionsTable.organizationId),
-      ),
-    )
-    .innerJoin(
-      OrganizationsTable,
-      eq(OrganizationsTable.id, SessionsTable.organizationId),
-    )
-    .leftJoin(CoursesTable, eq(CoursesTable.id, GroupsTable.courseId))
-    .leftJoin(
-      ZoomClientsTable,
-      and(
-        eq(ZoomClientsTable.id, SessionsTable.zoomClientId),
-        eq(ZoomClientsTable.organizationId, SessionsTable.organizationId),
-      ),
-    )
-    .where(
-      and(
-        eq(SessionsTable.id, sessionId),
-        eq(SessionsTable.organizationId, organizationId),
-      ),
-    );
-
-  return session;
-}
-
-/**
- * Drops the meeting a disconnected account left behind, guarded on that exact
- * account so a concurrent run that already re-provisioned the session can't
- * have its fresh links wiped.
- */
-async function releaseStaleMeeting(
-  organizationId: string,
+export async function startSessionMeeting(
+  ctx: OrgTRPCContext,
   sessionId: string,
-  staleZoomClientId: string,
-) {
-  await db
+): Promise<StartSessionMeetingResult> {
+  const session = await loadSession(ctx, sessionId);
+
+  if (
+    !canHostSession(
+      { userId: ctx.session.user.id, role: ctx.role },
+      session.teacherId,
+    )
+  ) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: ctx.t("sessions.errors.notHost"),
+    });
+  }
+
+  if (session.status === "cancelled") {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: ctx.t("sessions.errors.cancelled"),
+    });
+  }
+
+  // Already started — return what exists rather than claiming a second room.
+  if (session.meetingNumber && session.joinUrl && session.startUrl) {
+    return { joinUrl: session.joinUrl, startUrl: session.startUrl };
+  }
+
+  if (
+    !isWithinMeetingWindow(
+      session.scheduledAt,
+      session.durationMinutes,
+      new Date(),
+    )
+  ) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: ctx.t("sessions.errors.outsideWindow"),
+    });
+  }
+
+  const encryptionKey = resolveEncryptionKey(ctx);
+  const reservation = await reserveMeetingAccount(ctx.organizationId, session);
+
+  if (reservation.status === "superseded") {
+    // Someone else started the same class while this call was waiting on the
+    // lock. Their meeting is the real one.
+    const started = await loadSession(ctx, sessionId);
+    if (started.joinUrl && started.startUrl) {
+      return { joinUrl: started.joinUrl, startUrl: started.startUrl };
+    }
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: ctx.t("sessions.errors.startFailed"),
+    });
+  }
+
+  if (reservation.status === "noRoom") {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: ctx.t("sessions.errors.noRoomAvailable"),
+    });
+  }
+
+  const meeting = await createMeetingOn(
+    ctx,
+    reservation.account,
+    encryptionKey,
+    buildTopic(session.groupName, session.scheduledAt),
+  );
+
+  await ctx.db
     .update(SessionsTable)
     .set({
-      zoomClientId: null,
-      zoomMeetingId: null,
-      zoomMeetingPassword: null,
-      zoomJoinUrl: null,
-      zoomStartUrl: null,
+      meetingNumber: meeting.meetingNumber,
+      joinUrl: meeting.joinUrl,
+      startUrl: meeting.startUrl,
+      status: session.status === "scheduled" ? "ongoing" : session.status,
     })
     .where(
       and(
         eq(SessionsTable.id, sessionId),
-        eq(SessionsTable.organizationId, organizationId),
-        eq(SessionsTable.zoomClientId, staleZoomClientId),
+        eq(SessionsTable.organizationId, ctx.organizationId),
       ),
     );
+
+  return { joinUrl: meeting.joinUrl, startUrl: meeting.startUrl };
 }
 
 /**
- * Picks the account this session will be hosted on and writes that choice to
- * the row, before any meeting exists.
+ * Calls onMeeting with one room's credentials.
  *
- * Choosing and recording have to be one atomic step. A Zoom user can only host
- * one meeting at a time, and two jobs provisioning two overlapping sessions
- * would otherwise both read "account A is free", both create a meeting on it,
- * and both succeed — each claim only guards its own row. Read Committed
- * doesn't stop that (the conflict is a row neither transaction has written
- * yet), so the selection runs under an advisory lock keyed on the
- * organization; the reservation the winner writes is what the loser then sees
- * as busy.
- *
- * The lock covers database work only — never the call to Zoom. Holding it
- * across an external request would tie up a pooled connection per waiting job
- * and could exhaust the pool with everyone blocked on the lock holder.
- *
- * A reservation with no meeting behind it (crash, or a Zoom error after this
- * commits) is self-healing: the row still counts as awaiting a meeting, and
- * the retry re-reserves and tries again.
+ * A failure here marks that room as needing attention before it is re-thrown:
+ * an admin looking at the rooms page should be able to see *which* room's
+ * credentials stopped working, rather than only hearing that classes won't
+ * start. The provider's own error text never travels — `translateOnMeetingError`
+ * maps it onto this app's copy (D146).
  */
-async function reserveZoomClient(
+async function createMeetingOn(
+  ctx: OrgTRPCContext,
+  account: { id: string; roomCode: string; apiKey: string; apiSecret: string },
+  encryptionKey: string,
+  topic: string,
+) {
+  try {
+    const token = await requestAccessToken({
+      apiKey: decryptToken(account.apiKey, encryptionKey),
+      apiSecret: decryptToken(account.apiSecret, encryptionKey),
+    });
+
+    return await createMeeting(token, {
+      topic,
+      roomCode: account.roomCode,
+      // The class link is handed out before the teacher arrives, and a student
+      // staring at "waiting for host" has no way to tell that from a broken
+      // link.
+      joinBeforeHost: true,
+      // Recording stays whatever the onMeeting room defaults to. Nothing in
+      // this app can retrieve a recording afterwards (D145), so forcing it on
+      // would promise something the UI can't deliver.
+      recording: false,
+      alert: false,
+    });
+  } catch (error) {
+    const translated = translateOnMeetingError(ctx, error);
+    await recordMeetingAccountFailure(ctx, account.id, translated.message);
+    // The reservation is left in place deliberately: it is self-healing, since
+    // a session with no meeting still reads as not-started and the next
+    // attempt re-reserves.
+    throw translated;
+  }
+}
+
+type MeetingAccountReservation =
+  | { status: "noRoom" }
+  | { status: "superseded" }
+  | {
+      status: "reserved";
+      account: {
+        id: string;
+        roomCode: string;
+        apiKey: string;
+        apiSecret: string;
+      };
+    };
+
+/**
+ * Picks the room this session will run in and writes that choice to the row,
+ * before any meeting exists.
+ *
+ * Choosing and recording have to be one atomic step. A room can host only one
+ * live meeting at a time, and two hosts starting two overlapping classes would
+ * otherwise both read "room A is free", both create a meeting in it, and the
+ * second would collide. Read Committed doesn't stop that (the conflict is a
+ * row neither transaction has written yet), so the selection runs under an
+ * advisory lock keyed on the organization; the reservation the winner writes
+ * is what the loser then sees as busy.
+ *
+ * The lock covers database work only — never the call to onMeeting. Holding it
+ * across an external request would tie up a pooled connection per waiting
+ * caller and could exhaust the pool with everyone blocked on the lock holder.
+ */
+async function reserveMeetingAccount(
   organizationId: string,
-  session: { sessionId: string; scheduledAt: Date; durationMinutes: number },
-): Promise<ZoomClientReservation> {
+  session: { id: string; scheduledAt: Date; durationMinutes: number },
+): Promise<MeetingAccountReservation> {
   return db.transaction(async (trx) => {
     await trx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${organizationId}, 0))`,
     );
 
-    const clients = await trx
-      .select({ id: ZoomClientsTable.id })
-      .from(ZoomClientsTable)
+    const accounts = await trx
+      .select({
+        id: MeetingAccountsTable.id,
+        roomCode: MeetingAccountsTable.roomCode,
+        apiKey: MeetingAccountsTable.apiKey,
+        apiSecret: MeetingAccountsTable.apiSecret,
+      })
+      .from(MeetingAccountsTable)
       .where(
         and(
-          eq(ZoomClientsTable.organizationId, organizationId),
-          eq(ZoomClientsTable.status, "active"),
-          isNull(ZoomClientsTable.deletedAt),
+          eq(MeetingAccountsTable.organizationId, organizationId),
+          eq(MeetingAccountsTable.status, "active"),
+          isNotNull(MeetingAccountsTable.apiKey),
+          isNotNull(MeetingAccountsTable.apiSecret),
+          isNull(MeetingAccountsTable.deletedAt),
         ),
       )
-      .orderBy(asc(ZoomClientsTable.createdAt), asc(ZoomClientsTable.id));
+      .orderBy(
+        asc(MeetingAccountsTable.createdAt),
+        asc(MeetingAccountsTable.id),
+      );
 
-    if (clients.length === 0) return { status: "offline" };
+    if (accounts.length === 0) return { status: "noRoom" };
 
     const endsAt = sessionEndsAt(session.scheduledAt, session.durationMinutes);
 
-    // Every session already pointing at an account counts as busy, meeting or
-    // not — a reservation is a booking even before Zoom has been called.
+    // Every session already pointing at a room counts as busy, meeting or not
+    // — a reservation is a booking even before onMeeting has been called.
     const busy = await trx
-      .selectDistinct({ zoomClientId: SessionsTable.zoomClientId })
+      .selectDistinct({ meetingAccountId: SessionsTable.meetingAccountId })
       .from(SessionsTable)
       .where(
         and(
           eq(SessionsTable.organizationId, organizationId),
-          isNotNull(SessionsTable.zoomClientId),
-          ne(SessionsTable.id, session.sessionId),
+          isNotNull(SessionsTable.meetingAccountId),
+          ne(SessionsTable.id, session.id),
           ne(SessionsTable.status, "cancelled"),
           // Half-open overlap: a class starting exactly when another ends is
           // not a clash.
@@ -298,31 +265,106 @@ async function reserveZoomClient(
         ),
       );
 
-    const zoomClientId = selectAvailableZoomClient(
-      clients.map((client) => client.id),
+    const chosenId = selectAvailableMeetingAccount(
+      accounts.map((account) => account.id),
       busy
-        .map((row) => row.zoomClientId)
+        .map((row) => row.meetingAccountId)
         .filter((id): id is string => id !== null),
     );
 
-    if (!zoomClientId) return { status: "offline" };
+    if (!chosenId) return { status: "noRoom" };
 
     const [reserved] = await trx
       .update(SessionsTable)
-      .set({ zoomClientId })
+      .set({ meetingAccountId: chosenId })
       .where(
         and(
-          eq(SessionsTable.id, session.sessionId),
+          eq(SessionsTable.id, session.id),
           eq(SessionsTable.organizationId, organizationId),
-          // Something provisioned this session while the lock was being
-          // waited on; that meeting stands.
-          isNull(SessionsTable.zoomMeetingId),
+          // Something started this class while the lock was being waited on;
+          // that meeting stands.
+          isNull(SessionsTable.meetingNumber),
         ),
       )
       .returning({ id: SessionsTable.id });
 
-    return reserved
-      ? { status: "reserved", zoomClientId }
-      : { status: "superseded" };
+    if (!reserved) return { status: "superseded" };
+
+    const account = accounts.find((candidate) => candidate.id === chosenId);
+    // Narrowing only: `chosenId` came from this list, and the columns were
+    // filtered non-null above.
+    if (!account?.apiKey || !account.apiSecret) return { status: "noRoom" };
+
+    return {
+      status: "reserved",
+      account: {
+        id: account.id,
+        roomCode: account.roomCode,
+        apiKey: account.apiKey,
+        apiSecret: account.apiSecret,
+      },
+    };
   });
+}
+
+async function loadSession(ctx: OrgTRPCContext, sessionId: string) {
+  const [session] = await ctx.db
+    .select({
+      id: SessionsTable.id,
+      scheduledAt: SessionsTable.scheduledAt,
+      durationMinutes: SessionsTable.durationMinutes,
+      status: SessionsTable.status,
+      teacherId: SessionsTable.teacherId,
+      meetingNumber: SessionsTable.meetingNumber,
+      joinUrl: SessionsTable.joinUrl,
+      startUrl: SessionsTable.startUrl,
+      groupName: GroupsTable.name,
+    })
+    .from(SessionsTable)
+    .innerJoin(
+      GroupsTable,
+      and(
+        eq(GroupsTable.id, SessionsTable.groupId),
+        eq(GroupsTable.organizationId, SessionsTable.organizationId),
+      ),
+    )
+    .where(
+      and(
+        eq(SessionsTable.id, sessionId),
+        eq(SessionsTable.organizationId, ctx.organizationId),
+      ),
+    );
+
+  if (!session) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
+  return session;
+}
+
+function resolveEncryptionKey(ctx: OrgTRPCContext): string {
+  try {
+    return getCredentialsEncryptionKey();
+  } catch (error) {
+    if (error instanceof OnMeetingNotConfiguredError) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: ctx.t("meetingAccounts.errors.notConfigured"),
+      });
+    }
+    throw error;
+  }
+}
+
+/**
+ * What the meeting is called inside onMeeting. The group name plus the date is
+ * what a host scanning their onMeeting dashboard needs to tell one class from
+ * the next; the session id would be precise and useless to a human.
+ */
+function buildTopic(groupName: string, scheduledAt: Date): string {
+  const date = scheduledAt.toISOString().slice(0, 10);
+  return `${groupName} — ${date}`.slice(0, MEETING_TOPIC_MAX_LENGTH);
 }

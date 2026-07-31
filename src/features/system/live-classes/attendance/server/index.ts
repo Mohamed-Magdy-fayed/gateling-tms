@@ -11,4 +11,3 @@ export {
   markAttendanceSchema,
   sessionAttendanceSchema,
 } from "./schemas";
-export { applyZoomWebhookEvent, type ZoomWebhookOutcome } from "./webhook";

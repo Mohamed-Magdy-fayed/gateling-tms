@@ -14,7 +14,6 @@ export default {
     enrollments: "التسجيلات",
     certificates: "الشهادات",
     liveClasses: "الحصص المباشرة",
-    zoomConnections: "اتصالات Zoom",
     meetingRooms: "غرف الاجتماعات",
     settings: "الإعدادات",
     assessments: "التقييمات",
@@ -889,8 +888,7 @@ export default {
       "أرقام الحصص مأخوذة من جدول المجموعة. افتح أي حصة لعرض كشف حضورها وتعديله.",
     attendance: "الحضور",
     attendanceDetail: dt("حضر {attended:number} من {recorded:number}", {}),
-    attendanceNone:
-      "لم يُسجَّل حضور بعد — يظهر تلقائيًا بعد انعقاد الحصص على Zoom، أو عندما يسجّله المعلم.",
+    attendanceNone: "لم يُسجَّل حضور بعد — يظهر عندما يسجّله المعلم.",
     emptyTitle: "لا يوجد ما يُقاس بعد",
     traineeEmptyDescription:
       "سجّل هذا المتدرب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",
@@ -935,7 +933,7 @@ export default {
   },
   sessions: {
     title: "الحصص المباشرة",
-    lead: "كل الحصص المجدولة في مكان واحد. اربط حساب Zoom لتحصل كل حصة على رابط اجتماعها هنا — وتُقام الحصة نفسها على Zoom.",
+    lead: "كل الحصص المجدولة في مكان واحد. اربط غرفة onMeeting لتتمكن من بدء كل حصة من هنا — وتُقام الحصة نفسها على onMeeting.",
     scopeOptions: {
       upcoming: "القادمة",
       past: "السابقة",
@@ -947,12 +945,15 @@ export default {
       cancelled: "ملغاة",
     },
     start: "بدء الحصة",
+    starting: "جارٍ البدء…",
     join: "انضمام",
-    offline: "بدون رابط Zoom",
-    preparing: "الرابط في الطريق",
-    noZoomAccount:
-      "لا يوجد حساب Zoom مرتبط، لذلك تُجدول الحصص بدون روابط اجتماعات.",
-    connectZoom: "ربط Zoom",
+    offline: "لا توجد غرفة مرتبطة",
+    notStarted: "لم تبدأ بعد",
+    waitingForHost: "بانتظار بدء المعلّم للحصة",
+    noMeetingAccount:
+      "لا توجد غرفة onMeeting مرتبطة، لذلك تُجدول الحصص لكن لا يمكن بدؤها من هنا.",
+    connectMeetingAccount: "ربط onMeeting",
+    started: "بدأت الحصة.",
     emptyTitle: "لا يوجد شيء مجدول",
     emptyUpcoming: "أضف جدولًا أسبوعيًا لإحدى المجموعات لتظهر حصصها هنا.",
     emptyPast: "ستظهر الحصص السابقة هنا بعد انتهاء أول حصة.",
@@ -960,11 +961,19 @@ export default {
     next: "التالي",
     pageOf: "صفحة {page:number} من {total:number}",
     register: "كشف الحضور",
-    recording: "التسجيل",
+    errors: {
+      notHost: "يمكن فقط للمعلّم المسند إليه هذه الحصة أو لمدير المؤسسة بدؤها.",
+      cancelled: "تم إلغاء هذه الحصة.",
+      outsideWindow:
+        "يمكن بدء الحصة قرب موعدها فقط — من ١٥ دقيقة قبلها وحتى وقت قصير بعد موعد انتهائها.",
+      noRoomAvailable:
+        "كل غرف onMeeting المرتبطة مشغولة بحصة أخرى في هذا الوقت. اربط غرفة إضافية أو ابدأ الحصة بعد أن تتفرغ إحداها.",
+      startFailed: "تعذّر بدء الحصة. حاول مرة أخرى.",
+    },
   },
   attendance: {
     title: "الحضور",
-    lead: "مأخوذ ممن انضم إلى اجتماع Zoom. صحِّح ما فاته — الطالب الذي حضر بالهاتف أو داخل القاعة حاضر أيضًا.",
+    lead: "يسجّله المعلّم. الطالب الذي حضر بالهاتف أو داخل القاعة حاضر تمامًا مثل غيره.",
     statusOptions: {
       present: "حاضر",
       absent: "غائب",
@@ -975,56 +984,12 @@ export default {
     marked: "تم تحديث الحضور.",
     markFailed: "تعذّر تحديث الحضور. حاول مرة أخرى.",
     joinedAt: "انضم في {time:string}",
-    noZoomRecord: "لم يسجّل Zoom شيئًا",
-    watchRecording: "مشاهدة التسجيل",
-    recordingPasscode: "رمز الدخول: {passcode:string}",
+    notMarkedYet: "لم يُسجَّل بعد",
     emptyTitle: "لا يوجد طلاب في المجموعة",
     emptyDescription: "أضف متدربين إلى هذه المجموعة ليظهروا هنا لتسجيل حضورهم.",
     openGroup: "فتح المجموعة",
     notFoundTitle: "الحصة غير موجودة",
     notFoundDescription: "هذه الحصة غير موجودة أو تم حذفها.",
-  },
-  zoomClients: {
-    title: "اتصالات Zoom",
-    subtitle:
-      "اربط حساب Zoom الذي تُقام عليه حصصك. الجدولة تعمل بدونه — تبقى الحصص بدون رابط حتى تربط حسابًا.",
-    connect: "ربط Zoom",
-    connectDescription:
-      "سمِّ هذا الاتصال ثم وافق عليه في Zoom، وستعود إلى هنا مباشرة.",
-    continueToZoom: "المتابعة إلى Zoom",
-    name: "اسم الاتصال",
-    nameDescription: "لفريقك، مثل «الرخصة الرئيسية» أو «الحصص المسائية».",
-    notLinkedYet: "غير مرتبط بحساب Zoom بعد",
-    finishConnecting: "إكمال الربط",
-    reconnect: "إعادة الربط",
-    disconnect: "فصل",
-    disconnectTitle: "فصل حساب Zoom هذا؟",
-    disconnectDescription:
-      "سيتم فصل «{name}». تبقى الحصص المجدولة كما هي، لكن الجلسات الجديدة لن تحصل على روابط اجتماعات من هذا الحساب.",
-    disconnected: "تم فصل حساب Zoom.",
-    disconnectFailed: "تعذّر فصل حساب Zoom.",
-    connectFailed: "تعذّر بدء الربط مع Zoom.",
-    loadFailed: "تعذّر تحميل اتصالات Zoom.",
-    emptyTitle: "لا يوجد حساب Zoom مرتبط",
-    emptyDescription:
-      "اربط حسابًا وستحصل حصصك المجدولة على روابط اجتماعات Zoom تلقائيًا.",
-    status: {
-      pending: "بانتظار الموافقة",
-      active: "مرتبط",
-      error: "يحتاج إلى مراجعة",
-    },
-    result: {
-      connected: "تم ربط حساب Zoom.",
-      denied: "تم إلغاء الربط مع Zoom.",
-      invalid_state: "انتهت صلاحية رابط الربط. ابدأ العملية من جديد.",
-      connect_failed: "تعذّر على Zoom إكمال الربط. حاول مرة أخرى.",
-      not_configured: "لم يتم إعداد Zoom على هذا النظام بعد.",
-      forbidden: "يمكن لمدير المؤسسة فقط ربط Zoom.",
-    },
-    errors: {
-      notConfigured:
-        "لم يتم إعداد Zoom على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Zoom.",
-    },
   },
   meetingAccounts: {
     title: "غرف الاجتماعات",
@@ -1528,7 +1493,7 @@ export default {
         liveClasses: {
           title: "الحصص المباشرة",
           description:
-            "قدّم جلسات فيديو عالية الجودة، شارك الشاشة، وسجّل الحصص — بواسطة Zoom.",
+            "قدّم جلسات فيديو عالية الجودة، شارك الشاشة، وسجّل الحصص — بواسطة onMeeting.",
         },
         hr: {
           title: "إدارة الموارد البشرية",
@@ -1634,7 +1599,7 @@ export default {
       liveClasses: {
         title: "الفصول المباشرة",
         description:
-          "بث فصول مباشرة تفاعلية بجودة عالية مع أدوات تعاون فوري — بواسطة Zoom.",
+          "بث فصول مباشرة تفاعلية بجودة عالية مع أدوات تعاون فوري — بواسطة onMeeting.",
         bullets: {
           hdVideoStreaming: "بث فيديو عالي الجودة",
           interactiveWhiteboard: "سبورة تفاعلية",

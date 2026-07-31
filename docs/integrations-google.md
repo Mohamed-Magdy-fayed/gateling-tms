@@ -70,8 +70,8 @@ credential leaves a feature unavailable rather than an endpoint unprotected).
 
 `GOOGLE_TOKEN_ENCRYPTION_KEY` must be **32 bytes, base64-encoded**, and must
 differ per environment. It is deliberately *not* the same value as
-`ZOOM_TOKEN_ENCRYPTION_KEY`, so rotating one provider's key never touches the
-other's stored tokens. Rotating it doesn't corrupt anything: stored tokens
+`ONMEETING_CREDENTIALS_ENCRYPTION_KEY`, so rotating one provider's key never
+touches the other's stored credentials. Rotating it doesn't corrupt anything: stored tokens
 stop decrypting, the affected connection reports an error, and each
 organization reconnects once.
 
@@ -121,16 +121,17 @@ never does. Two codes are worth calling out because each has a specific fix:
 ## 4. Tokens
 
 - `accessToken`/`refreshToken` hold AES-256-GCM ciphertext
-  (`integrations/oauth/token-crypto.ts`, shared with Zoom). Nothing outside
+  (`integrations/oauth/token-crypto.ts`, shared with the onMeeting grant).
+  Nothing outside
   `google-import/server/` ever selects those columns — the query layer's
   column list can't leak them by accident.
 - `getValidGoogleAccessToken(organizationId)` is the only way the rest of the
   app gets a usable token. It refreshes a minute before expiry.
-- **No advisory lock**, unlike Zoom's equivalent. Zoom rotates the refresh
-  token on every refresh and invalidates the previous one, which makes
-  concurrent refreshes destructive; Google keeps the refresh token stable and
-  returns no new one, so two simultaneous refreshes both succeed and the last
-  write simply wins.
+- **No advisory lock.** Google keeps the refresh token stable and returns no
+  new one, so two simultaneous refreshes both succeed and the last write
+  simply wins. (The Zoom integration needed a lock here because Zoom rotated
+  the refresh token on every refresh and invalidated the previous one — that
+  went with the rest of it, STATE.md D142.)
 - A refused refresh marks the row `status: "error"` with the reason, so
   `/assessments/google` tells the admins to reconnect instead of the import
   failing with no explanation anywhere.

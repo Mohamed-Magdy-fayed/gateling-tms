@@ -1,6 +1,11 @@
 import { createTRPCRouter, orgProcedure } from "@/integrations/trpc/init";
+import { startSessionMeeting } from "./meetings";
 import { listGroupSessions, listSessions } from "./queries";
-import { listSessionsInput, sessionsByGroupSchema } from "./schemas";
+import {
+  listSessionsInput,
+  sessionIdSchema,
+  sessionsByGroupSchema,
+} from "./schemas";
 
 /**
  * Readable by every member, students included: knowing when your class is and
@@ -18,4 +23,15 @@ export const sessionsRouter = createTRPCRouter({
   byGroup: orgProcedure
     .input(sessionsByGroupSchema)
     .query(async ({ ctx, input }) => listGroupSessions(ctx, input.groupId)),
+  /**
+   * Creates the onMeeting meeting for a session, on demand (STATE.md D143).
+   *
+   * Left on `orgProcedure` rather than a staff-only procedure because the host
+   * rule is per row, not per role: the assigned teacher may start their own
+   * class, and `startSessionMeeting` enforces exactly that — a role gate here
+   * would either lock out that teacher or let every teacher start every class.
+   */
+  startMeeting: orgProcedure
+    .input(sessionIdSchema)
+    .mutation(async ({ ctx, input }) => startSessionMeeting(ctx, input.id)),
 });

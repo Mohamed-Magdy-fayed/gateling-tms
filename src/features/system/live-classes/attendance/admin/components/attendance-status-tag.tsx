@@ -14,8 +14,9 @@ const ATTENDANCE_STATUS_COLORS = {
 >;
 
 /**
- * A null status is its own state, not a third value: nobody — neither Zoom nor
- * a teacher — has said anything about this trainee for this class yet.
+ * A null status is its own state, not a third value: no teacher has said
+ * anything about this trainee for this class yet. Nothing else ever will —
+ * attendance is marked by hand (STATE.md D144).
  */
 export function AttendanceStatusTag({
   status,

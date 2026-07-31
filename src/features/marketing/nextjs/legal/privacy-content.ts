@@ -39,7 +39,7 @@ export const privacyContent: LocalizedLegalContent = {
       {
         title: "Data sharing",
         paragraphs: [
-          "We do not sell your information. We share data only with the service providers that run the platform on our behalf: our database and hosting providers, our file storage provider, and our email provider — each bound to use your data only to provide their service to us. When Live Classes launches, session data will also be shared with Zoom to host your video sessions.",
+          "We do not sell your information. We share data only with the service providers that run the platform on our behalf: our database and hosting providers, our file storage provider, and our email provider — each bound to use your data only to provide their service to us. When Live Classes launches, session data will also be shared with onMeeting to host your video sessions.",
         ],
       },
       {
@@ -113,7 +113,7 @@ export const privacyContent: LocalizedLegalContent = {
       {
         title: "مشاركة البيانات",
         paragraphs: [
-          "نحن لا نبيع معلوماتك. نشارك البيانات فقط مع مزوّدي الخدمة الذين يشغّلون المنصة نيابة عنا: مزوّدي قاعدة البيانات والاستضافة، ومزوّد تخزين الملفات، ومزوّد البريد الإلكتروني — وجميعهم ملزمون باستخدام بياناتك فقط لتقديم خدمتهم لنا. عند إطلاق الحصص المباشرة، ستتم مشاركة بيانات الجلسات أيضًا مع Zoom لاستضافة جلسات الفيديو.",
+          "نحن لا نبيع معلوماتك. نشارك البيانات فقط مع مزوّدي الخدمة الذين يشغّلون المنصة نيابة عنا: مزوّدي قاعدة البيانات والاستضافة، ومزوّد تخزين الملفات، ومزوّد البريد الإلكتروني — وجميعهم ملزمون باستخدام بياناتك فقط لتقديم خدمتهم لنا. عند إطلاق الحصص المباشرة، ستتم مشاركة بيانات الجلسات أيضًا مع onMeeting لاستضافة جلسات الفيديو.",
         ],
       },
       {

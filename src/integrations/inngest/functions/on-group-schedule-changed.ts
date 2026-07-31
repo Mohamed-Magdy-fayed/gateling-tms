@@ -10,8 +10,6 @@ import {
 } from "@/drizzle/schema";
 import { generateSessionOccurrences } from "@/features/system/learning-flow/groups/server/schedule";
 import { inngest } from "../client";
-import { sessionMeetingCancelledEvent } from "./on-session-meeting-cancelled";
-import { sessionMeetingSyncRequestedEvent } from "./on-session-meeting-sync-requested";
 
 /**
  * Fired whenever a group's generated sessions could have gone stale: on
@@ -23,20 +21,21 @@ import { sessionMeetingSyncRequestedEvent } from "./on-session-meeting-sync-requ
  * body (STATE.md D80). The payload carries ids only — the handler re-reads the
  * group, so an Inngest retry or redelivery can never act on a stale schedule.
  */
-/** A meeting whose session no longer exists, so Zoom still has to be told. */
-type CancelledMeeting = { zoomClientId: string; zoomMeetingId: string };
-
+/**
+ * This function no longer tells any provider anything (STATE.md D143).
+ * onMeeting meetings are created when a class is started, not ahead of it, so
+ * a dropped occurrence has no meeting to cancel and a new one has no meeting
+ * to provision — regeneration is purely a database concern now.
+ */
 type RegenerationResult = {
   removed: number;
   writtenSessionIds: string[];
-  cancelledMeetings: CancelledMeeting[];
 };
 
 /** Nothing to regenerate: shaped like a real run so callers need no branch. */
 const emptyRegeneration: RegenerationResult = {
   removed: 0,
   writtenSessionIds: [],
-  cancelledMeetings: [],
 };
 
 export const groupScheduleChangedEvent = eventType("group/schedule-changed", {
@@ -117,32 +116,18 @@ export const onGroupScheduleChanged = inngest.createFunction(
             : undefined,
         );
 
-        // The Zoom columns come back too: a dropped occurrence takes its
-        // meeting with it, and once the row is gone these ids are the only
-        // way to tell Zoom about it.
+        // Only future, still-`scheduled` rows reach here, and a class nobody
+        // started has no meeting — so a dropped occurrence leaves nothing
+        // behind at onMeeting to clean up.
         const removed = await trx
           .delete(SessionsTable)
           .where(staleCondition)
-          .returning({
-            id: SessionsTable.id,
-            zoomClientId: SessionsTable.zoomClientId,
-            zoomMeetingId: SessionsTable.zoomMeetingId,
-          });
-
-        const cancelledMeetings = removed.filter(
-          (
-            session,
-          ): session is typeof session & {
-            zoomClientId: string;
-            zoomMeetingId: string;
-          } => Boolean(session.zoomClientId && session.zoomMeetingId),
-        );
+          .returning({ id: SessionsTable.id });
 
         if (occurrences.length === 0) {
           return {
             removed: removed.length,
             writtenSessionIds: [],
-            cancelledMeetings,
           };
         }
 
@@ -188,47 +173,19 @@ export const onGroupScheduleChanged = inngest.createFunction(
 
         return {
           removed: removed.length,
-          // Every touched row, not just the new ones: an occurrence whose
-          // duration or teacher changed keeps its id and its meeting, and
-          // that meeting now describes the wrong class.
           writtenSessionIds: written.map((session) => session.id),
-          cancelledMeetings,
         };
       });
     });
 
-    // Zoom is reached from the meeting functions, never from here: this step
-    // owns one transaction and shouldn't hold it open across an external API,
-    // and each session's meeting is then retried on its own.
-    if (result.cancelledMeetings.length > 0) {
-      await step.sendEvent(
-        "cancel-session-meetings",
-        result.cancelledMeetings.map((session) =>
-          sessionMeetingCancelledEvent.create({
-            organizationId,
-            zoomClientId: session.zoomClientId,
-            zoomMeetingId: session.zoomMeetingId,
-          }),
-        ),
-      );
-    }
-
-    if (result.writtenSessionIds.length > 0) {
-      await step.sendEvent(
-        "sync-session-meetings",
-        result.writtenSessionIds.map((sessionId) =>
-          sessionMeetingSyncRequestedEvent.create({
-            organizationId,
-            sessionId,
-          }),
-        ),
-      );
-    }
-
+    // Nothing is dispatched from here any more. Under Zoom this step fanned
+    // out a meeting-sync event per written session and a cancel per dropped
+    // one; onMeeting meetings are created when the class starts instead
+    // (STATE.md D143), so a regenerated schedule has nothing to tell anyone
+    // about until someone actually starts a class.
     return {
       removed: result.removed,
       written: result.writtenSessionIds.length,
-      cancelledMeetings: result.cancelledMeetings.length,
     };
   },
 );

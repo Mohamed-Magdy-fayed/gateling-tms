@@ -8,8 +8,8 @@ import { seedDemoCourse } from "./content";
 import { DEMO_COURSES, DEMO_TRAINEES } from "./data";
 import {
   seedDemoGroup,
+  seedDemoMeetingAccountFixture,
   seedDemoSessionsForGroup,
-  seedDemoZoomClientFixture,
 } from "./groups";
 import {
   seedDemoAttendance,
@@ -27,7 +27,7 @@ const ATTENDANCE_SESSION_COUNT = 4;
 /**
  * The realistic-academy screenshot/demo dataset: 2 courses (levels +
  * lectures + a quiz each), 3 groups with weekly schedules and generated
- * sessions (one Zoom-fixture-connected), 25 trainees spread across the
+ * sessions (one onMeeting-fixture-connected), 25 trainees spread across the
  * groups with enrollments, level progress, attendance on past sessions, and
  * certificates for completed enrollments.
  *
@@ -48,7 +48,7 @@ export async function seedDemoProfile() {
   const english = await seedDemoCourse(organization.id, englishCourseSeed);
   const business = await seedDemoCourse(organization.id, businessCourseSeed);
 
-  const zoomFixture = await seedDemoZoomClientFixture(organization.id);
+  const meetingFixture = await seedDemoMeetingAccountFixture(organization.id);
 
   const groupA = await seedDemoGroup({
     organizationId: organization.id,
@@ -88,7 +88,7 @@ export async function seedDemoProfile() {
     organizationId: organization.id,
     group: groupA,
     timeZone: organization.timeZone,
-    zoomFixture: { zoomClientId: zoomFixture.id },
+    meetingFixture: { meetingAccountId: meetingFixture.id },
   });
   const groupBSessions = await seedDemoSessionsForGroup({
     organizationId: organization.id,

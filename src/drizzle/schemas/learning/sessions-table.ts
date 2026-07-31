@@ -13,7 +13,7 @@ import {
 import { OrganizationsTable, UsersTable } from "@/drizzle/schemas/auth";
 import { LecturesTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
-import { ZoomClientsTable } from "@/drizzle/schemas/live";
+import { MeetingAccountsTable } from "@/drizzle/schemas/live";
 import { GroupsTable } from "./groups-table";
 
 export const sessionStatusValues = [
@@ -51,25 +51,21 @@ export const SessionsTable = pgTable(
     lectureId: uuid().references(() => LecturesTable.id, {
       onDelete: "set null",
     }),
-    // Which connected Zoom account hosts this session's meeting, and the
-    // meeting it created. All null for an "offline" session — an org that
-    // never connects Zoom still schedules classes (phase-06.md step 3), so
-    // every read path treats these as optional rather than expected.
-    zoomClientId: uuid(),
-    // Zoom's meeting id is a number, but it is an identifier and not an
+    // Which connected onMeeting room hosts this session's meeting, and the
+    // meeting created in it. All null until the class is actually started:
+    // onMeeting's create call takes no start time, so a meeting is made on
+    // demand rather than ahead of schedule (STATE.md D143). Null therefore
+    // means "not started yet" *or* "this org has no room connected" — both are
+    // normal, and every read path treats these as optional.
+    meetingAccountId: uuid(),
+    // onMeeting's meeting number is digits, but it is an identifier and not an
     // amount: stored as text so it is never rounded or arithmetic'd.
-    zoomMeetingId: varchar({ length: 64 }),
-    zoomMeetingPassword: varchar({ length: 64 }),
-    zoomJoinUrl: varchar({ length: 1024 }),
+    meetingNumber: varchar({ length: 64 }),
+    joinUrl: varchar({ length: 1024 }),
     // Host link. Grants host rights to whoever opens it, so it is only ever
     // selected for the assigned teacher or an org admin (sessions/lib
-    // resolve-session-links.ts).
-    zoomStartUrl: varchar({ length: 2048 }),
-    // Filled by the `recording.completed` webhook, and only for accounts whose
-    // plan records to the cloud — nothing forces recording on (STATE.md D101),
-    // so a null here means "no recording", never "not loaded yet".
-    zoomRecordingUrl: varchar({ length: 2048 }),
-    zoomRecordingPassword: varchar({ length: 64 }),
+    // session-links.ts).
+    startUrl: varchar({ length: 2048 }),
     createdAt,
     updatedAt,
   },
@@ -95,21 +91,24 @@ export const SessionsTable = pgTable(
       columns: [table.organizationId, table.groupId],
       foreignColumns: [GroupsTable.organizationId, GroupsTable.id],
     }).onDelete("cascade"),
-    // Composite, so a session can never point at another org's Zoom account.
+    // Composite, so a session can never point at another org's room.
     // Deliberately NO ACTION rather than SET NULL (which would try to null the
     // NOT NULL organizationId too, STATE.md D79) and rather than CASCADE
-    // (losing the Zoom account must not delete the classes it hosted).
+    // (losing the room must not delete the classes it hosted).
     // Disconnecting is a soft delete, so the row a session points at stays
     // readable; deleting the organization cascades both tables in one
     // statement, which NO ACTION tolerates.
     foreignKey({
-      name: "sessions_organization_zoom_client_fk",
-      columns: [table.organizationId, table.zoomClientId],
-      foreignColumns: [ZoomClientsTable.organizationId, ZoomClientsTable.id],
+      name: "sessions_organization_meeting_account_fk",
+      columns: [table.organizationId, table.meetingAccountId],
+      foreignColumns: [
+        MeetingAccountsTable.organizationId,
+        MeetingAccountsTable.id,
+      ],
     }),
-    // The meeting-sync function asks "which sessions is this Zoom account
-    // already hosting in this window?" on every provisioning run.
-    index("sessions_zoom_client_id_idx").on(table.zoomClientId),
+    // Starting a class asks "which rooms are already busy in this window?"
+    // before it picks one.
+    index("sessions_meeting_account_id_idx").on(table.meetingAccountId),
   ],
 );
 
@@ -130,9 +129,9 @@ export const sessionsRelations = relations(SessionsTable, ({ one }) => ({
     fields: [SessionsTable.lectureId],
     references: [LecturesTable.id],
   }),
-  zoomClient: one(ZoomClientsTable, {
-    fields: [SessionsTable.zoomClientId],
-    references: [ZoomClientsTable.id],
+  meetingAccount: one(MeetingAccountsTable, {
+    fields: [SessionsTable.meetingAccountId],
+    references: [MeetingAccountsTable.id],
   }),
 }));
 

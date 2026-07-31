@@ -30,26 +30,28 @@ content, rather than needing a second login to see it:
 - **3 groups** with weekly schedules, each expanded into up to 12 generated sessions via the same
   pure `generateSessionOccurrences` expander the real `group/schedule-changed` Inngest function
   uses (`src/features/system/learning-flow/groups/server/schedule.ts`). One group ("Beginner Batch
-  A") is Zoom-fixture-connected — see "Zoom fixture data" below.
+  A") is onMeeting-fixture-connected — see "onMeeting fixture data" below.
 - **25 trainees**, split across the three groups' rosters, with enrollments spanning the full
   status lifecycle (`completed` → a certificate, `ongoing`, `waiting`, `placementTest`,
   `postponed`/`cancelled`), level-progress rows for anything past `waiting`, and manually-recorded
-  attendance on the earliest 4 sessions of the Zoom-connected group.
+  attendance on the earliest 4 sessions of the onMeeting-connected group.
 
 All names/emails/phones are hand-authored, deterministic literal data
 (`src/drizzle/seed/profiles/demo/data.ts`) — no data-generation library is approved
 (`docs/rebuild/02-dependencies.md` has no faker-style package), and adding one wasn't justified
 for a one-off dataset.
 
-#### Zoom fixture data
+#### onMeeting fixture data
 
-No real Zoom credentials exist in dev/CI, and nothing in this profile calls the real Zoom API.
-Instead, `seedDemoZoomClientFixture` inserts a `zoom_clients` row with `status: "active"` and
-obviously-fake token strings (`"fixture:not-a-real-token"`, never round-tripped through
-`encryptToken`/`decryptToken`), and the connected group's generated sessions get plausible
-`zoomMeetingId`/`zoomJoinUrl`/`zoomStartUrl` fields written directly at insert time — bypassing the
-real create-meeting Inngest flow entirely. The UI shows a connected org with working-looking join
-links; nothing here ever reaches `api.zoom.us`.
+No real onMeeting credentials exist in dev/CI, and nothing in this profile calls the real onMeeting
+API. Instead, `seedDemoMeetingAccountFixture` inserts a `meeting_accounts` row with
+`status: "active"` and obviously-fake credential strings (`"fixture:not-a-real-key"`, never
+round-tripped through `encryptToken`/`decryptToken`), and the connected group's generated sessions
+get plausible `meetingNumber`/`joinUrl`/`startUrl` fields written directly at insert time.
+
+That last part is what makes the fixture worth having: a real session gets those fields **only when
+a host presses "Start class"** (STATE.md D143), so without it there would be no way to see the
+already-started state in a screenshot or an e2e run. Nothing here ever reaches `onmeeting.co`.
 
 ### 3. `performance`
 
@@ -77,7 +79,7 @@ src/drizzle/seed/
     demo/
       index.ts                 # orchestrator
       content.ts                 # courses/levels/lectures/quiz forms
-      groups.ts                   # groups/sessions + the Zoom fixture
+      groups.ts                   # groups/sessions + the onMeeting fixture
       trainees.ts                  # trainees/enrollments/attendance/certificates
       data.ts                       # hand-authored literal content
     performance.ts

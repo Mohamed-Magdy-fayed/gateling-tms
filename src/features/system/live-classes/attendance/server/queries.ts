@@ -14,13 +14,13 @@ import {
   canHostSession,
   resolveSessionLinks,
 } from "@/features/system/live-classes/sessions/lib/session-links";
-import { hasActiveZoomClient } from "@/features/system/live-classes/sessions/server/queries";
+import { hasActiveMeetingAccount } from "@/features/system/live-classes/sessions/server/queries";
 import type { OrgTRPCContext } from "./types";
 
 export type AttendanceRow = {
   traineeId: string;
   traineeName: string;
-  /** Null until someone — Zoom or a teacher — has said anything. */
+  /** Null until the teacher has said anything. */
   status: AttendanceStatus | null;
   source: AttendanceSource | null;
   joinedAt: Date | null;
@@ -45,14 +45,16 @@ export type SessionAttendance = {
     teacherName: string | null;
     joinUrl: string | null;
     startUrl: string | null;
-    recordingUrl: string | null;
-    recordingPassword: string | null;
+    /** Whether a meeting has been created for this class yet (D143). */
+    hasMeeting: boolean;
+    /** Whether this viewer may start it. */
+    canStart: boolean;
   };
   rows: AttendanceRow[];
   /** Whether this viewer may correct the register (see `router.ts`). */
   canMark: boolean;
-  /** Tells "no meeting yet" apart from "this academy has no Zoom" (D102). */
-  hasActiveZoomClient: boolean;
+  /** Tells "not started yet" apart from "no room connected" (D102). */
+  hasActiveMeetingAccount: boolean;
 };
 
 /**
@@ -77,12 +79,11 @@ export async function getSessionAttendance(
       groupName: GroupsTable.name,
       teacherId: SessionsTable.teacherId,
       teacherName: UsersTable.name,
-      zoomJoinUrl: SessionsTable.zoomJoinUrl,
+      meetingNumber: SessionsTable.meetingNumber,
+      joinUrl: SessionsTable.joinUrl,
       // Selected so the per-viewer decision can be taken per row, never
       // returned raw (STATE.md D103).
-      zoomStartUrl: SessionsTable.zoomStartUrl,
-      recordingUrl: SessionsTable.zoomRecordingUrl,
-      recordingPassword: SessionsTable.zoomRecordingPassword,
+      startUrl: SessionsTable.startUrl,
     })
     .from(SessionsTable)
     .innerJoin(
@@ -113,8 +114,8 @@ export async function getSessionAttendance(
     { userId: ctx.session.user.id, role: ctx.role },
     {
       teacherId: session.teacherId,
-      zoomJoinUrl: session.zoomJoinUrl,
-      zoomStartUrl: session.zoomStartUrl,
+      joinUrl: session.joinUrl,
+      startUrl: session.startUrl,
     },
   );
 
@@ -130,12 +131,15 @@ export async function getSessionAttendance(
       teacherName: session.teacherName,
       joinUrl: links.joinUrl,
       startUrl: links.startUrl,
-      recordingUrl: session.recordingUrl,
-      recordingPassword: session.recordingPassword,
+      hasMeeting: session.meetingNumber !== null,
+      canStart: canHostSession(
+        { userId: ctx.session.user.id, role: ctx.role },
+        session.teacherId,
+      ),
     },
     rows,
     canMark: canMarkAttendance(ctx, session.teacherId),
-    hasActiveZoomClient: await hasActiveZoomClient(ctx),
+    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
   };
 }
 
@@ -244,7 +248,7 @@ async function listRegisterRows(
 /**
  * The register belongs to whoever runs the class: the assigned teacher, plus
  * admins, who answer for the org's records as a whole. Deliberately the same
- * set that may hold the Zoom host link — a teacher covering someone else's
+ * set that may hold the onMeeting host link — a teacher covering someone else's
  * class is not the person who marks its register either.
  */
 export function canMarkAttendance(

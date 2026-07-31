@@ -17,5 +17,9 @@ export const sessionsByGroupSchema = z.object({
   groupId: z.uuid(),
 });
 
+export const sessionIdSchema = z.object({
+  id: z.uuid(),
+});
+
 export type ListSessionsInput = z.infer<typeof listSessionsInput>;
 export type SessionsByGroupInput = z.infer<typeof sessionsByGroupSchema>;

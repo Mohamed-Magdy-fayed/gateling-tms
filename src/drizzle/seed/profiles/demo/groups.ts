@@ -4,34 +4,34 @@ import {
   type Group,
   type GroupScheduleSlot,
   GroupsTable,
+  MeetingAccountsTable,
   type Session,
   SessionsTable,
-  ZoomClientsTable,
 } from "@/drizzle/schema";
 import { generateSessionOccurrences } from "@/features/system/learning-flow/groups/server/schedule";
 import { seedIfMissing } from "../../base";
 import { SEED_SYSTEM_ACTOR } from "../../constants";
 
 /**
- * A connected-looking Zoom account for the demo org, entirely fixture data —
- * no real Zoom credentials exist for dev/CI, and nothing in this profile ever
- * calls the real Zoom API. `accessToken`/`refreshToken` are plainly-fake
+ * A connected-looking onMeeting room for the demo org, entirely fixture data —
+ * no real onMeeting credentials exist for dev/CI, and nothing in this profile
+ * ever calls the real onMeeting API. `apiKey`/`apiSecret` are plainly-fake
  * placeholder strings, not ciphertext: nothing reads them back through
  * `decryptToken`, since the sessions this connects get their join links
  * written directly below rather than provisioned through the real
  * create-meeting flow.
  */
-export async function seedDemoZoomClientFixture(organizationId: string) {
+export async function seedDemoMeetingAccountFixture(organizationId: string) {
   return seedIfMissing({
-    label: `fixture Zoom client for org ${organizationId}`,
+    label: `fixture onMeeting room for org ${organizationId}`,
     find: async () => {
       const [row] = await db
         .select()
-        .from(ZoomClientsTable)
+        .from(MeetingAccountsTable)
         .where(
           and(
-            eq(ZoomClientsTable.organizationId, organizationId),
-            eq(ZoomClientsTable.name, "Demo Academy Zoom (fixture)"),
+            eq(MeetingAccountsTable.organizationId, organizationId),
+            eq(MeetingAccountsTable.name, "Demo Academy — Main room (fixture)"),
           ),
         )
         .limit(1);
@@ -39,16 +39,16 @@ export async function seedDemoZoomClientFixture(organizationId: string) {
     },
     insert: async () => {
       const [row] = await db
-        .insert(ZoomClientsTable)
+        .insert(MeetingAccountsTable)
         .values({
           organizationId,
-          name: "Demo Academy Zoom (fixture)",
+          name: "Demo Academy — Main room (fixture)",
           status: "active",
-          zoomUserId: "fixture-zoom-user",
-          zoomAccountId: "fixture-zoom-account",
-          zoomEmail: "zoom-demo@gateling-tms.dev",
-          accessToken: "fixture:not-a-real-token",
-          refreshToken: "fixture:not-a-real-token",
+          accountId: "fixture-onmeeting-account",
+          roomCode: "FIXTURE-ROOM-1",
+          roomName: "Main room",
+          apiKey: "fixture:not-a-real-key",
+          apiSecret: "fixture:not-a-real-secret",
           createdBy: SEED_SYSTEM_ACTOR,
         })
         .returning();
@@ -102,15 +102,17 @@ export async function seedDemoGroup(input: {
 /**
  * Expands the group's schedule into sessions (reusing the same pure expander
  * the real `group/schedule-changed` Inngest function uses) and inserts them.
- * When `zoomFixture` is set, every generated session is written with
- * plausible meeting fields already attached — fixture data, not a real
- * Zoom-provisioned meeting (see `seedDemoZoomClientFixture`).
+ * When `meetingFixture` is set, every generated session is written as if it
+ * had already been started — fixture data, not a real onMeeting-provisioned
+ * meeting (see `seedDemoMeetingAccountFixture`). Real sessions get these
+ * fields only when a host presses "Start class" (STATE.md D143); the demo
+ * needs at least one already-started class to show that state.
  */
 export async function seedDemoSessionsForGroup(input: {
   organizationId: string;
   group: Group;
   timeZone: string;
-  zoomFixture?: { zoomClientId: string };
+  meetingFixture?: { meetingAccountId: string };
 }): Promise<Session[]> {
   const occurrences = generateSessionOccurrences({
     schedule: input.group.schedule,
@@ -145,13 +147,12 @@ export async function seedDemoSessionsForGroup(input: {
             scheduledAt: occurrence.scheduledAt,
             durationMinutes: occurrence.durationMinutes,
             teacherId: input.group.teacherId,
-            ...(input.zoomFixture
+            ...(input.meetingFixture
               ? {
-                  zoomClientId: input.zoomFixture.zoomClientId,
-                  zoomMeetingId: `${8000000000 + index}`,
-                  zoomMeetingPassword: "demo123",
-                  zoomJoinUrl: `https://zoom.us/j/${8000000000 + index}?pwd=fixture`,
-                  zoomStartUrl: `https://zoom.us/s/${8000000000 + index}?zak=fixture`,
+                  meetingAccountId: input.meetingFixture.meetingAccountId,
+                  meetingNumber: `${8000000000 + index}`,
+                  joinUrl: `https://onmeeting.co/j/${8000000000 + index}`,
+                  startUrl: `https://onmeeting.co/s/${8000000000 + index}?zak=fixture`,
                 }
               : {}),
           })

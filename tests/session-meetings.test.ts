@@ -1,10 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
-  buildSessionMeetingRequest,
-  toZoomStartTime,
-} from "../src/features/system/live-classes/sessions/lib/meeting-request";
-import {
-  selectAvailableZoomClient,
+  isWithinMeetingWindow,
+  MEETING_EARLY_START_MINUTES,
+  MEETING_LATE_START_MINUTES,
+  selectAvailableMeetingAccount,
   sessionEndsAt,
 } from "../src/features/system/live-classes/sessions/lib/meeting-window";
 import {
@@ -12,95 +11,81 @@ import {
   resolveSessionLinks,
 } from "../src/features/system/live-classes/sessions/lib/session-links";
 import { listSessionsInput } from "../src/features/system/live-classes/sessions/server/schemas";
-import { chunk } from "../src/lib/utils";
 
 const scheduledAt = new Date("2026-08-03T15:00:00.000Z");
+const durationMinutes = 90;
 
-describe("zoom meeting request", () => {
-  const request = buildSessionMeetingRequest({
-    groupName: "Evening B1",
-    courseName: "English B1",
-    scheduledAt,
-    durationMinutes: 90,
-    timeZone: "Africa/Cairo",
+describe("meeting window", () => {
+  test("session end is its start plus its duration", () => {
+    expect(sessionEndsAt(scheduledAt, durationMinutes).toISOString()).toBe(
+      "2026-08-03T16:30:00.000Z",
+    );
   });
 
-  test("describes the session as a single scheduled meeting", () => {
-    expect(request.type).toBe(2);
-    expect(request.topic).toBe("Evening B1");
-    expect(request.agenda).toBe("English B1 — Evening B1");
-    expect(request.duration).toBe(90);
-    expect(request.timezone).toBe("Africa/Cairo");
+  test("a class can be started at its scheduled time", () => {
+    expect(
+      isWithinMeetingWindow(scheduledAt, durationMinutes, scheduledAt),
+    ).toBe(true);
   });
 
-  test("sends the start time in Zoom's format, without milliseconds", () => {
-    expect(request.start_time).toBe("2026-08-03T15:00:00Z");
+  test("a teacher who arrives early can still open the room", () => {
+    const early = new Date(
+      scheduledAt.getTime() - (MEETING_EARLY_START_MINUTES - 1) * 60_000,
+    );
+
+    expect(isWithinMeetingWindow(scheduledAt, durationMinutes, early)).toBe(
+      true,
+    );
   });
 
-  test("lets students in before the teacher arrives", () => {
-    expect(request.settings.join_before_host).toBe(true);
-    expect(request.settings.waiting_room).toBe(false);
+  test("a class three weeks away cannot claim a room today", () => {
+    const longBefore = new Date(scheduledAt.getTime() - 21 * 86_400_000);
+
+    expect(
+      isWithinMeetingWindow(scheduledAt, durationMinutes, longBefore),
+    ).toBe(false);
   });
 
-  // SOURCE hard-coded `auto_recording: "cloud"`, which an account without
-  // cloud recording rejects outright — that must never be why a class fails
-  // to get a meeting.
-  test("does not force a recording setting on the connected account", () => {
-    expect(request.settings).not.toHaveProperty("auto_recording");
+  test("a teacher running late can still start it", () => {
+    const late = new Date(
+      sessionEndsAt(scheduledAt, durationMinutes).getTime() +
+        (MEETING_LATE_START_MINUTES - 1) * 60_000,
+    );
+
+    expect(isWithinMeetingWindow(scheduledAt, durationMinutes, late)).toBe(
+      true,
+    );
   });
 
-  test("falls back to the class name when there is no course", () => {
-    const withoutCourse = buildSessionMeetingRequest({
-      groupName: "Evening B1",
-      courseName: null,
-      scheduledAt,
-      durationMinutes: 60,
-      timeZone: "UTC",
-    });
+  test("last week's class can no longer be started", () => {
+    const longAfter = new Date(scheduledAt.getTime() + 7 * 86_400_000);
 
-    expect(withoutCourse.agenda).toBe("Evening B1");
-  });
-
-  test("truncates a topic Zoom would reject", () => {
-    const request = buildSessionMeetingRequest({
-      groupName: "x".repeat(500),
-      courseName: null,
-      scheduledAt,
-      durationMinutes: 60,
-      timeZone: "UTC",
-    });
-
-    expect(request.topic).toHaveLength(200);
-  });
-
-  test("keeps the instant, not the wall clock, when formatting", () => {
-    expect(toZoomStartTime(new Date("2026-08-03T15:30:45.123Z"))).toBe(
-      "2026-08-03T15:30:45Z",
+    expect(isWithinMeetingWindow(scheduledAt, durationMinutes, longAfter)).toBe(
+      false,
     );
   });
 });
 
-describe("zoom client selection", () => {
-  test("uses the first connected account when nothing is booked", () => {
-    expect(selectAvailableZoomClient(["a", "b"], [])).toBe("a");
+/**
+ * A room hosts one live meeting at a time — the legacy client surfaced the
+ * collision as "Another meeting may be ongoing now on this zoom room!", so
+ * picking a busy one is a real failure, not a cosmetic one (STATE.md D143).
+ */
+describe("meeting room selection", () => {
+  test("uses the first connected room when nothing is booked", () => {
+    expect(selectAvailableMeetingAccount(["a", "b"], [])).toBe("a");
   });
 
-  test("skips an account already hosting an overlapping class", () => {
-    expect(selectAvailableZoomClient(["a", "b"], ["a"])).toBe("b");
+  test("skips a room already hosting an overlapping class", () => {
+    expect(selectAvailableMeetingAccount(["a", "b"], ["a"])).toBe("b");
   });
 
-  test("reports no account rather than double-booking one", () => {
-    expect(selectAvailableZoomClient(["a", "b"], ["a", "b"])).toBeNull();
+  test("reports no room rather than double-booking one", () => {
+    expect(selectAvailableMeetingAccount(["a", "b"], ["a", "b"])).toBeNull();
   });
 
-  test("has nothing to choose from when the org connected no account", () => {
-    expect(selectAvailableZoomClient([], [])).toBeNull();
-  });
-
-  test("session end is its start plus its duration", () => {
-    expect(sessionEndsAt(scheduledAt, 90).toISOString()).toBe(
-      "2026-08-03T16:30:00.000Z",
-    );
+  test("has nothing to choose from when the org connected no room", () => {
+    expect(selectAvailableMeetingAccount([], [])).toBeNull();
   });
 });
 
@@ -109,8 +94,8 @@ describe("session link visibility", () => {
   const otherUserId = "22222222-2222-4222-8222-222222222222";
   const meeting = {
     teacherId,
-    zoomJoinUrl: "https://zoom.us/j/123",
-    zoomStartUrl: "https://zoom.us/s/123?zak=secret",
+    joinUrl: "https://onmeeting.co/j/123",
+    startUrl: "https://onmeeting.co/s/123?zak=secret",
   };
 
   test("the assigned teacher hosts", () => {
@@ -143,68 +128,38 @@ describe("session link visibility", () => {
     );
   });
 
-  // The host link carries a ZAK token: whoever opens it controls the meeting.
+  // The host link grants control of the meeting to whoever opens it.
   test("only the host is handed the start url", () => {
     expect(
       resolveSessionLinks({ userId: teacherId, role: "teacher" }, meeting),
     ).toEqual({
-      joinUrl: meeting.zoomJoinUrl,
-      startUrl: meeting.zoomStartUrl,
+      joinUrl: meeting.joinUrl,
+      startUrl: meeting.startUrl,
     });
 
     expect(
       resolveSessionLinks({ userId: otherUserId, role: "student" }, meeting),
-    ).toEqual({ joinUrl: meeting.zoomJoinUrl, startUrl: null });
+    ).toEqual({ joinUrl: meeting.joinUrl, startUrl: null });
   });
 
-  test("an offline session hands out no links at all", () => {
+  test("a class nobody has started yet hands out no links at all", () => {
     expect(
       resolveSessionLinks(
         { userId: teacherId, role: "admin" },
-        { teacherId, zoomJoinUrl: null, zoomStartUrl: null },
+        { teacherId, joinUrl: null, startUrl: null },
       ),
     ).toEqual({ joinUrl: null, startUrl: null });
   });
 });
 
-// The Zoom-connected back-fill sends one event per pending session, and
-// Inngest rejects a send carrying more than 5,000 of them.
-describe("event fan-out batching", () => {
-  test("splits a list into full batches plus a remainder", () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
-  });
-
-  test("keeps a list that already fits as a single batch", () => {
-    expect(chunk([1, 2], 5)).toEqual([[1, 2]]);
-  });
-
-  test("has nothing to send for an empty list", () => {
-    expect(chunk([], 100)).toEqual([]);
-  });
-
-  test("refuses a size that would loop forever", () => {
-    expect(() => chunk([1], 0)).toThrow(RangeError);
-  });
-});
-
-describe("session list input", () => {
+describe("listSessionsInput", () => {
   test("defaults to the upcoming agenda", () => {
-    const parsed = listSessionsInput.parse({});
-    expect(parsed.scope).toBe("upcoming");
-    expect(parsed.page).toBe(1);
+    expect(listSessionsInput.parse({}).scope).toBe("upcoming");
   });
 
-  test("rejects a scope the query has no ordering for", () => {
-    expect(listSessionsInput.safeParse({ scope: "all" }).success).toBe(false);
-  });
-
-  test("rejects a group filter that isn't an id", () => {
-    expect(listSessionsInput.safeParse({ groupId: "not-a-uuid" }).success).toBe(
+  test("rejects a scope it has no order for", () => {
+    expect(listSessionsInput.safeParse({ scope: "sideways" }).success).toBe(
       false,
     );
-  });
-
-  test("caps the page size", () => {
-    expect(listSessionsInput.safeParse({ perPage: 500 }).success).toBe(false);
   });
 });

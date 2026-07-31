@@ -29,7 +29,6 @@ export type SystemNavItem = {
     | "nav.enrollments"
     | "nav.certificates"
     | "nav.liveClasses"
-    | "nav.zoomConnections"
     | "nav.meetingRooms";
   Icon: LucideIcon;
 };
