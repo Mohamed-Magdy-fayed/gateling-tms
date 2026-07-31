@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
-import { AnswersTable, QuestionsTable } from "@/drizzle/schema";
+import {
+  AnswersTable,
+  QuestionsTable,
+  type QuestionType,
+} from "@/drizzle/schema";
 import type {
   AnswerDeleteInput,
   AnswerMoveInput,
@@ -8,6 +12,21 @@ import type {
   AnswerUpdateInput,
 } from "./schemas";
 import type { OrgTRPCContext } from "./types";
+
+/**
+ * Every answer row on a short-answer question is a wording the grader accepts
+ * — a row with `isCorrect` false would be compared against by nothing and do
+ * silent no work. The admin dialog already hides the toggle, but this is a
+ * public tRPC mutation, so the rule belongs here too rather than only in the
+ * UI that happens to call it today.
+ *
+ * Choice questions are untouched, which is also what makes converting a
+ * choice question to a short answer behave: its distractors keep saying they
+ * are not accepted, instead of all becoming accepted wordings.
+ */
+function resolveIsCorrect(questionType: QuestionType, requested: boolean) {
+  return questionType === "short_answer" ? true : requested;
+}
 
 export async function createAnswer(
   ctx: OrgTRPCContext,
@@ -19,7 +38,7 @@ export async function createAnswer(
     // same `order` allocation and insert duplicates — same pattern as
     // questions/server/mutations.ts's createQuestion.
     const [question] = await trx
-      .select({ id: QuestionsTable.id })
+      .select({ id: QuestionsTable.id, type: QuestionsTable.type })
       .from(QuestionsTable)
       .where(
         and(
@@ -54,7 +73,7 @@ export async function createAnswer(
         organizationId: ctx.organizationId,
         questionId: input.questionId,
         text: input.text,
-        isCorrect: input.isCorrect,
+        isCorrect: resolveIsCorrect(question.type, input.isCorrect),
         order: Number(maxOrder) + 1,
       })
       .returning({ id: AnswersTable.id });
@@ -67,9 +86,32 @@ export async function updateAnswer(
   ctx: OrgTRPCContext,
   input: AnswerUpdateInput,
 ) {
+  // The question's type decides whether `isCorrect` is the caller's to set,
+  // and the input only carries the answer id — so read them together.
+  const [target] = await ctx.db
+    .select({ id: AnswersTable.id, questionType: QuestionsTable.type })
+    .from(AnswersTable)
+    .innerJoin(QuestionsTable, eq(QuestionsTable.id, AnswersTable.questionId))
+    .where(
+      and(
+        eq(AnswersTable.id, input.id),
+        eq(AnswersTable.organizationId, ctx.organizationId),
+      ),
+    );
+
+  if (!target) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
   const [updated] = await ctx.db
     .update(AnswersTable)
-    .set({ text: input.text, isCorrect: input.isCorrect })
+    .set({
+      text: input.text,
+      isCorrect: resolveIsCorrect(target.questionType, input.isCorrect),
+    })
     .where(
       and(
         eq(AnswersTable.id, input.id),
