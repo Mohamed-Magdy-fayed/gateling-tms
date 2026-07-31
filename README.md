@@ -8,6 +8,19 @@ dependency policy, data model, phase-by-phase steps) lives in
 [`docs/rebuild/`](docs/rebuild/README.md); current progress is tracked in
 [`docs/STATE.md`](docs/STATE.md).
 
+## Docs
+
+| Doc | What it covers |
+|---|---|
+| [`docs/STATE.md`](docs/STATE.md) | Where the product stands, and what's next |
+| [`docs/deploy.md`](docs/deploy.md) | Environments, Vercel env vars, Neon, the deploy step, testimonial moderation, release checklist |
+| [`docs/demo-readiness-checklist.md`](docs/demo-readiness-checklist.md) | Every landing claim mapped to a demo path; walked before a release |
+| [`docs/seeding-and-demo-data.md`](docs/seeding-and-demo-data.md) | The three seed profiles |
+| [`docs/integrations-onmeeting.md`](docs/integrations-onmeeting.md) | Live classes |
+| [`docs/integrations-google.md`](docs/integrations-google.md) | Google sign-in and the Forms import |
+| [`docs/integrations-gemini.md`](docs/integrations-gemini.md) | AI-assisted short-answer grading |
+| [`docs/inngest-offload-policy.md`](docs/inngest-offload-policy.md) | What goes to a background job, and why |
+
 ## Dev setup
 
 1. **Postgres:** `docker compose up -d` (Postgres 17, local dev database).
@@ -25,8 +38,10 @@ dependency policy, data model, phase-by-phase steps) lives in
 | `npm run check` | Typecheck + lint (Biome) |
 | `npm run format` | Format with Biome |
 | `npm run audit:gate` | `npm audit`, fails on any vulnerability |
-| `npm test` | Unit tests (vitest) |
-| `npm run test:e2e` | End-to-end tests (Playwright) |
+| `npm run scan:secrets` | Sweep tracked files for known secret shapes |
+| `npm test` | Unit tests (vitest) — no database needed |
+| `npm run test:isolation` | Org-isolation suite (vitest) — **needs local Postgres** |
+| `npm run test:e2e` | End-to-end tests (Playwright) — needs local Postgres + the demo seed |
 | `npm run db:generate` | Generate a Drizzle migration from schema changes |
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:studio` | Open Drizzle Studio against the local database |

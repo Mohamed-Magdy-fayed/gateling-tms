@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { getStorageBucket } from "./admin";
+import { matchesImageSignature } from "./image-signature";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
 // Base64 inflates raw bytes by 4/3 — reject oversized/malformed input by
@@ -79,6 +80,15 @@ export async function uploadImage(
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Image exceeds the maximum allowed size (8MB)",
+    });
+  }
+
+  // The declared type has to match what the bytes actually are. Everything
+  // above this line trusts the caller's word about the content.
+  if (!matchesImageSignature(buffer, mimeType)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "File contents do not match the declared image type",
     });
   }
 

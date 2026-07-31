@@ -67,6 +67,7 @@ export default {
     imageUpload: {
       success: "تم رفع الصورة.",
       error: "تعذر رفع الصورة.",
+      unsupportedType: "اختر صورة بصيغة JPEG أو PNG أو WebP أو GIF أو AVIF.",
       uploading: "جاري الرفع…",
     },
   },
@@ -1448,7 +1449,7 @@ export default {
       },
     },
     logos: {
-      eyebrow: "موثوق به من أكاديميات في كل مكان",
+      eyebrow: "أكاديميات تعمل على جيتلينج",
     },
     testimonial: {
       eyebrow: "ماذا تقول الأكاديميات",

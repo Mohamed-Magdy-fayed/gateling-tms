@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fredoka, JetBrains_Mono, Nunito } from "next/font/google";
+import { headers } from "next/headers";
 import { Providers } from "@/app/_providers";
 import { baseUrl } from "@/data/env/server";
 import { getLocaleCookie } from "@/features/core/i18n/server";
@@ -55,6 +56,13 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocaleCookie();
   const dir = locale === "ar" ? "rtl" : "ltr";
+  // Set by src/proxy.ts. Next applies the nonce to its own framework and page
+  // bundles by reading the CSP header directly, but anything this file renders
+  // itself has to carry it explicitly or `script-src` blocks it. `?? undefined`
+  // rather than `?? ""`: an empty nonce attribute is not a valid nonce, so it
+  // is better for the tag to have none and fail loudly in a CSP report than to
+  // look nonced and not be.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -67,6 +75,7 @@ export default async function RootLayout({
         {/* Static, agent-authored JSON-LD — no user input, safe to inline. */}
         <script
           type="application/ld+json"
+          nonce={nonce}
           // biome-ignore lint/security/noDangerouslySetInnerHtml: static constant object, not user-derived
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd),
@@ -74,10 +83,13 @@ export default async function RootLayout({
         />
         <script
           type="application/ld+json"
+          nonce={nonce}
           // biome-ignore lint/security/noDangerouslySetInnerHtml: static constant object, not user-derived
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
-        <Providers locale={locale}>{children}</Providers>
+        <Providers locale={locale} nonce={nonce}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -67,6 +67,7 @@ export default {
     imageUpload: {
       success: "Image uploaded.",
       error: "Could not upload image.",
+      unsupportedType: "Choose a JPEG, PNG, WebP, GIF, or AVIF image.",
       uploading: "Uploading…",
     },
   },
@@ -1464,7 +1465,7 @@ export default {
       },
     },
     logos: {
-      eyebrow: "Trusted by academies everywhere",
+      eyebrow: "Academies running on Gateling",
     },
     testimonial: {
       eyebrow: "What academies say",
