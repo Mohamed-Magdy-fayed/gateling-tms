@@ -61,6 +61,7 @@ export default {
       max200: "Must be at most 200 characters.",
       max256: "Must be at most 256 characters.",
       max500: "Must be at most 500 characters.",
+      max1024: "Must be at most 1024 characters.",
       max2000: "Must be at most 2000 characters.",
     },
     imageUpload: {
@@ -1458,7 +1459,7 @@ export default {
         priceLabel: "Free",
       },
       socialProof: {
-        count: "1,000+ academies",
+        count: dt("{count:number}+ academies", {}),
         suffix: "already teach on Gateling",
       },
     },
@@ -1467,11 +1468,7 @@ export default {
     },
     testimonial: {
       eyebrow: "What academies say",
-      quote:
-        "“We moved our whole academy onto Gateling in a weekend. Enrollment is up and I finally stopped juggling spreadsheets.”",
-      initials: "PN",
-      name: "Priya N.",
-      role: "Founder, BrightPath Academy",
+      readMore: "Read more feedback",
     },
     valueProposition: {
       header: {
@@ -1856,6 +1853,62 @@ export default {
         greeting: "New message from the contact form",
         intro: '{name} ({email}) sent a message: "{subject}"',
       },
+    },
+  },
+  testimonials: {
+    page: {
+      eyebrow: "What academies say",
+      title: "Feedback from academies using Gateling",
+      description:
+        "Every quote here was written by an academy running on Gateling-TMS, published with their permission.",
+      empty: "No published feedback yet — check back soon.",
+    },
+    prompt: {
+      title: "How is Gateling working for your academy?",
+      description:
+        "Tell us what's working and what isn't. If you're happy for it to be shared, we may publish your words on our website.",
+      cta: "Write feedback",
+      dismiss: "Not now",
+    },
+    form: {
+      title: "Share your feedback",
+      description:
+        "Written by you, on behalf of your academy. Nothing is published unless you allow it below and our team reviews it first.",
+      quoteLabel: "Your feedback",
+      quotePlaceholder: "What has Gateling changed for your academy?",
+      authorNameLabel: "Name to show",
+      authorNamePlaceholder: "e.g. Priya N.",
+      authorRoleLabel: "Role (optional)",
+      authorRolePlaceholder: "e.g. Founder",
+      imageLabel: "Photo (optional)",
+      imageHint:
+        "Shown next to your quote if it's published. Skip it and we'll show your initials instead.",
+      imageRemove: "Remove photo",
+      consentLabel: "Allow Gateling to publish this",
+      consentDescription:
+        "Publishes your feedback, the name and role you typed above, your photo if you added one, and your academy's name on gateling.com. You can withdraw this at any time.",
+      submit: "Send feedback",
+      submitting: "Sending…",
+      success: "Thanks — your feedback was saved.",
+      error: {
+        rateLimited: "Too many submissions. Please try again later.",
+      },
+    },
+    settings: {
+      title: "Public showcase",
+      description:
+        "Control what, if anything, your academy shows on Gateling's public website. Everything here is off by default.",
+      showcaseLabel: "Show our academy on the Gateling homepage",
+      showcaseDescription:
+        "Publishes your academy's name and your profile photo in the visitor-facing band on gateling.com.",
+      feedbackTitle: "Your feedback",
+      writeCta: "Write feedback",
+      editCta: "Edit feedback",
+      statusNone: "You haven't sent us feedback yet.",
+      statusPrivate:
+        "Saved, and kept private — only the Gateling team sees it.",
+      statusPending: "Waiting for review before it appears publicly.",
+      statusApproved: "Published on the Gateling website.",
     },
   },
 } as const satisfies LanguageMessages;

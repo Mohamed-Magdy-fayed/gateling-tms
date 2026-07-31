@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = [
   "/features",
   "/pricing",
   "/about",
+  "/testimonials",
   "/contact",
   "/get-started",
   "/privacy",
