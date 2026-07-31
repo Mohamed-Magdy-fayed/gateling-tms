@@ -72,6 +72,16 @@ export const env = createEnv({
     ZOOM_WEBHOOK_SECRET_TOKEN: z.string().min(1).optional(),
     ZOOM_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 
+    // Grades short-answer questions whose text doesn't match an accepted
+    // answer outright — see integrations/gemini. Optional on purpose: with no
+    // key the grader still awards exact/normalised matches and leaves anything
+    // ambiguous for manual review, so assessments keep working unconfigured.
+    // This is an AI Studio key and is unrelated to GOOGLE_CLIENT_ID/SECRET
+    // above, which are OAuth credentials for the Forms import.
+    GEMINI_API_KEY: z.string().min(1).optional(),
+    // Overridable so the model can be bumped without a code change.
+    GEMINI_MODEL: z.string().min(1).optional(),
+
     // Where /contact form submissions are emailed. Falls back to
     // SMTP_FROM_EMAIL/SMTP_USER if unset — see
     // integrations/inngest/functions/on-contact-message-submitted.ts.

@@ -1,16 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { InboxIcon } from "lucide-react";
+import { InboxIcon, PencilIcon } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tag } from "@/components/ui/tag";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
+import { ResponseGradeDialog } from "./components";
+
 export function ResponsesSection({ formId }: { formId: string }) {
   const { t, locale } = useTranslation();
   const trpc = useTRPC();
+  const [gradingResponseId, setGradingResponseId] = useState<string | null>(
+    null,
+  );
 
   const { data: responses, isFetching } = useQuery(
     trpc.responses.list.queryOptions({ formId }),
@@ -52,14 +59,35 @@ export function ResponsesSection({ formId }: { formId: string }) {
                 {dateFmt.format(new Date(response.submittedAt))}
               </p>
             </div>
-            <Tag color={response.score === null ? "orange" : "green"}>
-              {response.score === null
-                ? t("responses.scorePending")
-                : `${t("responses.score")}: ${response.score}`}
-            </Tag>
+            <div className="flex items-center gap-2">
+              <Tag color={response.score === null ? "orange" : "green"}>
+                {response.score === null
+                  ? t("responses.scorePending")
+                  : `${t("responses.score")}: ${response.score}`}
+              </Tag>
+              {/* Offered on every response, not just the ungraded ones: a
+                  grader may also disagree with an automatic score. */}
+              <Button
+                type="button"
+                variant={response.score === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setGradingResponseId(response.id)}
+              >
+                <PencilIcon className="size-3.5" />
+                {t("responses.grade")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}
+
+      <ResponseGradeDialog
+        open={gradingResponseId !== null}
+        onOpenChange={(open) => {
+          if (!open) setGradingResponseId(null);
+        }}
+        responseId={gradingResponseId}
+      />
     </div>
   );
 }

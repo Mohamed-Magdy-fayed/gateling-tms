@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -69,7 +70,7 @@ export function EntityAuditInfoDialog({
             {t("systemPages.auditInfoDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="divide-y divide-border">
+        <DialogBody className="divide-y divide-border">
           <AuditRow
             label={t("dataTable.id")}
             value={<code className="text-[0.7rem]">{record.id}</code>}
@@ -106,7 +107,7 @@ export function EntityAuditInfoDialog({
               />
             </>
           ) : null}
-        </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

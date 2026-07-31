@@ -10,6 +10,7 @@ import {
   TraineesTable,
 } from "@/drizzle/schema";
 import {
+  computeShortAnswerVerdicts,
   getScorableQuestions,
   scoreFormResponse,
 } from "@/features/system/assessments/responses/server";
@@ -136,6 +137,32 @@ export async function recordPlacementAttempt(
   const session = ctx.session;
   if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
 
+  // Grading short answers can involve a model call, which must not happen
+  // while the transaction below holds this test's row lock — a multi-second
+  // round trip would block every concurrent submit of the same test. So the
+  // form is read unlocked here purely to work out the verdicts, and the
+  // transaction re-reads under lock and does the (pure, synchronous) scoring.
+  //
+  // If the assigned form changes in between, the verdicts are keyed by
+  // question id and simply won't match the re-read questions — those fall
+  // through to ungraded, which is the correct outcome rather than a stale one.
+  const [preRead] = await ctx.db
+    .select({ formId: PlacementTestsTable.formId })
+    .from(PlacementTestsTable)
+    .where(
+      and(
+        eq(PlacementTestsTable.id, input.id),
+        eq(PlacementTestsTable.organizationId, ctx.organizationId),
+      ),
+    );
+
+  const verdicts = preRead?.formId
+    ? await computeShortAnswerVerdicts(
+        await getScorableQuestions(ctx, preRead.formId),
+        input.answers,
+      )
+    : new Map<string, boolean>();
+
   return ctx.db.transaction(async (trx) => {
     // Locked before its status and formId are read, so two staff members
     // submitting the same test can't both pass the "not recorded yet" check
@@ -190,7 +217,7 @@ export async function recordPlacementAttempt(
       { ...ctx, db: trx },
       current.formId,
     );
-    const score = scoreFormResponse(questions, input.answers);
+    const score = scoreFormResponse(questions, input.answers, verdicts);
 
     const [response] = await trx
       .insert(FormResponsesTable)

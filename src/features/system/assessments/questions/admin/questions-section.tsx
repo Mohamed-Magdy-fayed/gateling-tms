@@ -92,8 +92,9 @@ export function QuestionsSection({ sectionId }: { sectionId: string }) {
           }
         >
           {questions?.map((question, index) => {
-            const isChoice = question.type !== "short_answer";
-            const isExpanded = isChoice && expandedQuestionId === question.id;
+            // Short-answer questions expand too: their answer rows are the
+            // wordings the grader accepts, not choices offered to the student.
+            const isExpanded = expandedQuestionId === question.id;
 
             return (
               <div
@@ -126,29 +127,23 @@ export function QuestionsSection({ sectionId }: { sectionId: string }) {
                     </Button>
                   </div>
 
-                  {isChoice ? (
-                    <button
-                      type="button"
-                      className="flex flex-1 items-center gap-2 text-start"
-                      onClick={() =>
-                        setExpandedQuestionId(isExpanded ? null : question.id)
-                      }
-                      aria-expanded={isExpanded}
-                    >
-                      {isExpanded ? (
-                        <ChevronDownIcon className="size-3.5 text-muted-foreground" />
-                      ) : (
-                        <ChevronRightIcon className="size-3.5 text-muted-foreground" />
-                      )}
-                      <span className="font-medium text-foreground text-sm">
-                        {question.text}
-                      </span>
-                    </button>
-                  ) : (
-                    <span className="flex-1 font-medium text-foreground text-sm">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center gap-2 text-start"
+                    onClick={() =>
+                      setExpandedQuestionId(isExpanded ? null : question.id)
+                    }
+                    aria-expanded={isExpanded}
+                  >
+                    {isExpanded ? (
+                      <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                    ) : (
+                      <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+                    )}
+                    <span className="font-medium text-foreground text-sm">
                       {question.text}
                     </span>
-                  )}
+                  </button>
 
                   <Tag color="blue">
                     {t(`questions.typeOptions.${question.type}`)}
@@ -196,7 +191,10 @@ export function QuestionsSection({ sectionId }: { sectionId: string }) {
 
                 {isExpanded ? (
                   <div className="px-3 pb-3">
-                    <AnswersSection questionId={question.id} />
+                    <AnswersSection
+                      questionId={question.id}
+                      questionType={question.type}
+                    />
                   </div>
                 ) : null}
               </div>

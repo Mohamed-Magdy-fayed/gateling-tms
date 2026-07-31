@@ -1288,6 +1288,22 @@ export default {
     emptyDescription: "Add at least two answer choices for this question.",
     moveUp: "Move up",
     moveDown: "Move down",
+    // Short-answer questions reuse the same answer rows, but each one is a
+    // phrasing the grader should *accept* rather than a choice to pick from —
+    // so the wording changes even though the data model doesn't.
+    shortAnswer: {
+      title: "Accepted answers",
+      add: "Add accepted answer",
+      edit: "Edit accepted answer",
+      addDescription:
+        "Add wording that should be marked correct for this question.",
+      editDescription: "Update this accepted answer.",
+      deleteTitle: "Delete accepted answer?",
+      deleteDescription: "Remove this accepted answer. This can't be undone.",
+      emptyTitle: "No accepted answers yet",
+      emptyDescription:
+        "Add at least one accepted answer so this question can be graded automatically.",
+    },
   },
   responses: {
     title: "Responses",
@@ -1306,6 +1322,21 @@ export default {
     previewEmptyTitle: "Nothing to preview yet",
     previewEmptyDescription:
       "Add at least one section with a question to preview this assessment.",
+    grade: "Grade",
+    gradeTitle: "Grade response",
+    gradeDescription:
+      "Enter the score yourself. Automatic grading leaves a response ungraded rather than guessing at it.",
+    gradeScore: "Score",
+    gradeOutOf: "out of {max:number}",
+    gradeStudentAnswer: "Student answer",
+    gradeAcceptedAnswers: "Accepted answers",
+    gradeNoAnswer: "Left blank",
+    gradeNoAcceptedAnswers: "No accepted answers were set for this question.",
+    gradeNoShortAnswers:
+      "This assessment has no short answers, so its score is computed automatically.",
+    graded: "Score saved.",
+    gradeFailed: "Could not save the score.",
+    scoreAboveMax: "The score can't be higher than {max:number}.",
   },
   dashboard: {
     nav: {

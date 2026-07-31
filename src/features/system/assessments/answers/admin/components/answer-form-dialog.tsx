@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup, FieldSet } from "@/components/ui/field";
-import type { Answer } from "@/drizzle/schema";
+import type { Answer, QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { answerMutationSchema } from "@/features/system/assessments/answers/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
@@ -30,6 +30,7 @@ type AnswerFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   open: boolean;
   questionId: string;
+  questionType: QuestionType;
 };
 
 export function AnswerFormDialog({
@@ -37,11 +38,15 @@ export function AnswerFormDialog({
   onOpenChange,
   open,
   questionId,
+  questionType,
 }: AnswerFormDialogProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const isEdit = answer != null;
+  // For a short answer this row is a wording the grader should accept, not a
+  // choice the student picks — see AnswersSection.
+  const isShortAnswer = questionType === "short_answer";
 
   const createMut = useMutation(trpc.answers.create.mutationOptions());
   const updateMut = useMutation(trpc.answers.update.mutationOptions());
@@ -50,9 +55,12 @@ export function AnswerFormDialog({
     () => ({
       questionId,
       text: answer?.text ?? "",
-      isCorrect: answer?.isCorrect ?? false,
+      // Every wording a teacher records against a short answer is one they
+      // accept — a row that isn't accepted would be graded against by nothing
+      // and silently do no work, so there is no choice to offer here.
+      isCorrect: isShortAnswer ? true : (answer?.isCorrect ?? false),
     }),
-    [questionId, answer],
+    [questionId, answer, isShortAnswer],
   );
 
   const form = useAppForm({
@@ -112,10 +120,24 @@ export function AnswerFormDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {t(isEdit ? "answers.edit" : "answers.add")}
+            {isShortAnswer
+              ? t(
+                  isEdit
+                    ? "answers.shortAnswer.edit"
+                    : "answers.shortAnswer.add",
+                )
+              : t(isEdit ? "answers.edit" : "answers.add")}
           </DialogTitle>
           <DialogDescription>
-            {t(isEdit ? "answers.editDescription" : "answers.addDescription")}
+            {isShortAnswer
+              ? t(
+                  isEdit
+                    ? "answers.shortAnswer.editDescription"
+                    : "answers.shortAnswer.addDescription",
+                )
+              : t(
+                  isEdit ? "answers.editDescription" : "answers.addDescription",
+                )}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,11 +154,13 @@ export function AnswerFormDialog({
                 )}
               </form.AppField>
 
-              <form.AppField name="isCorrect">
-                {(field) => (
-                  <field.BooleanField label={t("answers.isCorrect")} />
-                )}
-              </form.AppField>
+              {isShortAnswer ? null : (
+                <form.AppField name="isCorrect">
+                  {(field) => (
+                    <field.BooleanField label={t("answers.isCorrect")} />
+                  )}
+                </form.AppField>
+              )}
             </FieldGroup>
           </FieldSet>
         </OverlayFormBody>

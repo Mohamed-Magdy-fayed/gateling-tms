@@ -63,6 +63,7 @@ Versions mirror DONOR-B (`G:\apps\gateling.com\package.json`) and DONOR-C where 
 | Package | Min version | Phase |
 |---|---|---|
 | `googleapis` | ^155 | 7 (Google Forms import) |
+| `@google/genai` | ^2.15 | 8 (short-answer grading — see `docs/integrations-gemini.md` and STATE.md D136). Optional at runtime: with no `GEMINI_API_KEY` the grader still settles exact/normalised matches and leaves the rest for manual grading. Audited clean on install. |
 | `exceljs` | ^4.4 | 7 (XLSX templates; DONOR-B `lib\csv.ts` covers CSV) |
 | `react-day-picker` | ^9.8 | 5 (schedules) |
 | `@dnd-kit/*` | latest | 4 (form-builder question ordering) — only if the builder needs drag-and-drop |

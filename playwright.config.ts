@@ -45,7 +45,15 @@ export default defineConfig({
   webServer: {
     command: "npm run preview",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // Never reuse, not even locally. `next start` from an earlier run keeps
+    // holding port 3000 after Playwright exits, and reuse then points the
+    // whole suite at that stale build — a green gate that proves nothing
+    // about the working tree, with nothing on screen to say so (this is how
+    // a run of this suite passed against the previous day's build). Always
+    // spawning costs one `next build`, which is incremental; if something is
+    // already on 3000 the run now fails loudly with EADDRINUSE instead of
+    // silently testing it.
+    reuseExistingServer: false,
     timeout: 180_000,
     env: process.env as Record<string, string>,
   },

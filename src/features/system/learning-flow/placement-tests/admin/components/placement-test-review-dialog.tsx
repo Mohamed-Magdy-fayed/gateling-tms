@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -122,7 +123,7 @@ export function PlacementTestReviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="placement-review-course">
               {t("enrollments.course")}
@@ -192,7 +193,7 @@ export function PlacementTestReviewDialog({
               onChange={(event) => setFeedback(event.target.value)}
             />
           </div>
-        </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button

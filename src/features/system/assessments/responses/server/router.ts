@@ -3,9 +3,14 @@ import {
   orgContentManagerProcedure,
   orgProcedure,
 } from "@/integrations/trpc/init";
-import { submitResponse } from "./mutations";
-import { listResponses } from "./queries";
-import { listResponsesInput, submitResponseSchema } from "./schemas";
+import { gradeResponse, submitResponse } from "./mutations";
+import { getGradingSheet, listResponses } from "./queries";
+import {
+  gradeResponseSchema,
+  gradingSheetInput,
+  listResponsesInput,
+  submitResponseSchema,
+} from "./schemas";
 
 export const responsesRouter = createTRPCRouter({
   // Any org member can submit — students take assessments, admins/teachers
@@ -18,4 +23,12 @@ export const responsesRouter = createTRPCRouter({
   list: orgContentManagerProcedure
     .input(listResponsesInput)
     .query(async ({ ctx, input }) => listResponses(ctx, input.formId)),
+  // Carries the accepted wordings, so it stays behind the same staff gate as
+  // `list` — a student membership must never be able to read it.
+  gradingSheet: orgContentManagerProcedure
+    .input(gradingSheetInput)
+    .query(async ({ ctx, input }) => getGradingSheet(ctx, input.responseId)),
+  grade: orgContentManagerProcedure
+    .input(gradeResponseSchema)
+    .mutation(async ({ ctx, input }) => gradeResponse(ctx, input)),
 });
