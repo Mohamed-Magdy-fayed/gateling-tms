@@ -1,4 +1,10 @@
-# Zoom integration
+# Zoom integration — SUPERSEDED
+
+> **This integration is being removed.** Live Classes now targets **onMeeting**
+> — see `docs/integrations-onmeeting.md` and blueprint decision **D142**. This
+> file describes code that is still shipped today and stays accurate until the
+> Phase 6 rebuild's second segment deletes it, at which point this file goes
+> with it. Do not build anything new against it.
 
 How Gateling-TMS connects to Zoom, what has to be configured before it works,
 and where the moving parts live. Written while building Phase 6 segment ① and

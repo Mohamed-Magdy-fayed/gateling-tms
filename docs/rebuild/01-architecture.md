@@ -32,7 +32,7 @@ src\
 │   ├── (landing)\             # public marketing pages
 │   ├── (system)\              # authed app (sidebar layout)
 │   ├── auth\                  # sign-in/up, verify, oauth callback pages
-│   └── api\                   # trpc, inngest, oauth, webhooks\zoom
+│   └── api\                   # trpc, inngest, oauth
 ├── features\
 │   ├── core\
 │   │   ├── auth\              # from DONOR-B features\core\auth
@@ -43,7 +43,7 @@ src\
 │       ├── content-library\   # courses, levels, lectures (+ their forms)
 │       ├── assessments\       # form builder, responses, google-forms import
 │       ├── learning-flow\     # trainees, enrollments, groups, placement, certificates
-│       ├── live-classes\      # zoom clients, sessions, attendance
+│       ├── live-classes\      # meeting accounts (onMeeting), sessions, attendance
 │       └── dashboard\
 ├── components\
 │   ├── forms\                 # from DONOR-B components\forms (useAppForm + fields)
@@ -66,7 +66,7 @@ Feature modules own their UI components, translations (`translations\<name>-en.t
 ### AD-1 Multi-tenancy: shared schema, row-level, org column everywhere
 Market-standard pattern for SaaS at this scale (one Postgres, one schema):
 - `organizations` (tenant) + `organization_memberships` (user↔org many-to-many, `role` on the membership).
-- **Every tenant-owned table carries `organizationId`** (FK, cascade, indexed). No transitive-only scoping — SOURCE's model (only `courses` and `zoom_clients` had the column) made cross-entity queries and limit enforcement fragile, and is explicitly rejected.
+- **Every tenant-owned table carries `organizationId`** (FK, cascade, indexed). No transitive-only scoping — SOURCE's model (only `courses` and its meeting-account table had the column) made cross-entity queries and limit enforcement fragile, and is explicitly rejected.
 - Active org lives in the session; `orgProcedure` (tRPC middleware) injects `ctx.organizationId` and every query filters by it. UI gets an org-switcher for users in multiple orgs.
 - Implementation: adapt DONOR-B's proven branches model — `G:\apps\gateling.com\src\drizzle\schemas\auth\branches-table.ts` + `branch-memberships-table.ts` and its branch-switcher/provider UI — renamed branch→organization.
 - Postgres RLS noted as later defense-in-depth; not required for v1.
@@ -81,7 +81,7 @@ From DONOR-B `src\features\core\auth\`: `core\session.ts` (Redis-backed, `sessio
 `G:\apps\gateling.com\src\features\core\data-table\` copied as a unit (components, hooks, lib — 24 files). Server-side pagination/filtering through `use-table-url-state.ts` + `lib\filter-values.ts`; CSV export/import in `lib\csv.ts`. Every admin list in the app uses it — no ad-hoc tables.
 
 ### AD-5 Inngest: offload policy
-App id `gateling-tms`. Adopt DONOR-B's `G:\apps\gateling.com\docs\inngest-offload-policy.md` as a rule: anything not needed for the immediate response is an event → function. V1 functions (domain events re-implemented from SOURCE's set): org lifecycle, verification/welcome emails, group→session generation, media processing, cascade deletes, Zoom client authorization, quota recalculation.
+App id `gateling-tms`. Adopt DONOR-B's `G:\apps\gateling.com\docs\inngest-offload-policy.md` as a rule: anything not needed for the immediate response is an event → function. V1 functions (domain events re-implemented from SOURCE's set): org lifecycle, verification/welcome emails, group→session generation, media processing, cascade deletes, quota recalculation. **Live-class meetings are deliberately not on this list** — onMeeting meetings are created on demand while the teacher waits for the link, so that one call is inline (D143), the same exception the Zoom OAuth callback used to hold.
 
 ### AD-6 Plan limits enforced at the write path
 `organizations` stores plan + usage counters (`studentCount`, `courseCount`, `storageBytes`). Creation mutations check the limit inside the same transaction; storage tracked on upload/delete via Firebase helper. Friendly limit UI, never silent failure. Counters recalculated by an Inngest reconciliation function (drift-proof).

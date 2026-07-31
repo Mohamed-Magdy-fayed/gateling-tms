@@ -21,7 +21,7 @@ before stopping. Never violate docs\rebuild\02-dependencies.md.
 
 | Alias | Path | Role |
 |---|---|---|
-| **SOURCE** | `C:\Users\moham\OneDrive\Desktop\gateling-tms` | The old app. Product spec (landing pages), domain schema, Zoom + Google Forms code. Never copied blindly — it has vulnerable deps and design flaws. |
+| **SOURCE** | `C:\Users\moham\OneDrive\Desktop\gateling-tms` | The old app. Product spec (landing pages), domain schema, onMeeting + Google Forms code. Never copied blindly — it has vulnerable deps and design flaws. |
 | **DONOR-B** | `G:\apps\gateling.com` | Platform-core donor: data table, forms, auth, i18n, tRPC, Inngest, Firebase, seed harness, tenancy model. Copy core subsystems from here. |
 | **DONOR-A** | `G:\apps\atelier-management-system` | Entity-CRUD pattern donor (table page + form dialog + router + tenant-scoped schema). Data-table core is byte-identical to DONOR-B — use B's copy. |
 | **DONOR-C** | `G:\apps\gateling-software-team` | Discipline donor: `docs\STATE.md` pattern, ADRs, vitest + Playwright setup, nodemailer ^9.0.3 usage. |
@@ -72,7 +72,7 @@ docs\rebuild\
     ├── phase-03.md  Landing pages
     ├── phase-04.md  Content Library
     ├── phase-05.md  Learning Flow
-    ├── phase-06.md  Live Classes (Zoom)
+    ├── phase-06.md  Live Classes (onMeeting)
     ├── phase-07.md  Excel + Google Forms import
     └── phase-08.md  Limits, polish, launch
 ```

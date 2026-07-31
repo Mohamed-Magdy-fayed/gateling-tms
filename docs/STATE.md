@@ -22,7 +22,7 @@
 | 3 — Landing pages | ☐ not started |
 | 4 — Content Library | ☐ not started |
 | 5 — Learning Flow | ☐ not started |
-| 6 — Live Classes (Zoom) | ☐ not started |
+| 6 — Live Classes (onMeeting) | ☐ not started |
 | 7 — Excel + Google Forms import | ☐ not started |
 | 8 — Limits, polish, launch | ☐ not started |
 

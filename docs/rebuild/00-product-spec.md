@@ -45,10 +45,10 @@ Bullets are verbatim from SOURCE `features-en.ts`; every one must be true at lau
 | Learning Flow | Progress Tracking | enrollment status flow + per-student progress view | 5 |
 | Learning Flow | Built-in Assessments | forms system: assignment / quiz / final / placement; built in-app or imported from Google Forms | 4 + 7 |
 | Learning Flow | Certificate Generation | certificates on completion | 5 |
-| Live Classes | HD Video Streaming | Zoom meetings created/managed by the system | 6 |
-| Live Classes | Interactive Whiteboard | Zoom-native; copy says **"powered by Zoom"** | 6 |
-| Live Classes | Class Recording | Zoom-native recording; links surfaced on the session | 6 |
-| Live Classes | Screen Sharing | Zoom-native | 6 |
+| Live Classes | HD Video Streaming | onMeeting meetings created/managed by the system | 6 |
+| Live Classes | Interactive Whiteboard | onMeeting-native; copy says **"powered by onMeeting"** | 6 |
+| Live Classes | Class Recording | onMeeting-native. **The app surfaces no recording link** — onMeeting exposes no endpoint to retrieve one, so any claim beyond "record in onMeeting" is untrue (D145) | 6 |
+| Live Classes | Screen Sharing | onMeeting-native | 6 |
 
 Paid modules (HR, Course Store, CRM, Smart Forms, Community, Support) are **not built in v1** — their verbatim promises are preserved in `05-roadmap.md` and shown as "coming soon".
 
@@ -65,7 +65,7 @@ This is the walkthrough that must work at launch, and the script for the Phase 8
    - add **students** directly — typed one-by-one or **imported from an Excel template** downloaded from the app;
    - **assign** students to the group on the spot.
    No course, level, or any catalog entry is required first. Creating a course later *enriches* groups (levels, curriculum, assessments) but is never a prerequisite.
-6. **Teach** — schedule live sessions via connected Zoom account; students get links; attendance is tracked.
+6. **Teach** — schedule live sessions; the teacher starts the class on a connected onMeeting room, students get the join link, and the teacher marks the register (attendance is teacher-marked, not detected — D144).
 7. **Assess** — create a quiz/assignment in the form builder, or **import an existing Google Form** as assignment / quiz / final / placement test; students respond; results tracked.
 8. **Placement** — placement tests assign incoming students to appropriate levels.
 9. **Progress** — enrollment status flow (placementTest → waiting → ongoing → completed) with per-student view.

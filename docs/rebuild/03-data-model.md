@@ -5,7 +5,7 @@ Target schema for `G:\apps\gateling-tms`. Sources: auth/tenancy shape from DONOR
 ## Global conventions
 
 - Shared helpers (id, `createdAt/By`, `updatedAt/By`, soft-delete `deletedAt/By`): adapt DONOR-B `src\drizzle\schemas\helpers.ts` (SOURCE equivalents: `src\drizzle\schemas\helpers.ts`, `src\auth\tables\schema-helpers.ts`).
-- **Tenancy invariant (AD-1): every table in the "Tenant-owned" section has `organizationId` FK → `organizations.id`, cascade delete, indexed.** This is the biggest correction vs SOURCE (which scoped only `courses` and `zoom_clients`).
+- **Tenancy invariant (AD-1): every table in the "Tenant-owned" section has `organizationId` FK → `organizations.id`, cascade delete, indexed.** This is the biggest correction vs SOURCE (which scoped only `courses` and its meeting-account table).
 - Schema organization: `src\drizzle\schemas\{auth,org,content,assessment,learning,live}\` with a `schema.ts` barrel (DONOR-B pattern). One table per file, named `<entity>-table.ts`.
 - Migrations: generated only (`db:generate` → `db:migrate`), committed with `meta\` + `_journal.json`.
 
@@ -57,8 +57,8 @@ Sessions are Redis, not Postgres — no sessions table.
 ### Live classes (SOURCE `src\drizzle\schemas\online-lectures\`)
 | Table | SOURCE file | Changes |
 |---|---|---|
-| `zoom_clients` | `zoom-clients-table.ts` | already had `organizationId` — keep; per-org Zoom OAuth credentials |
-| `sessions` | `zoom-sessions-table.ts` | **+ organizationId**; FK group; generated from schedule by Inngest. **Renamed from SOURCE's `zoom_sessions` (STATE.md D80)** — a class session exists whether or not the org ever connects Zoom, so Zoom is one optional delivery channel Phase 6 layers on top (meeting number/password/`zoomClientId` land in Phase 6's own migration) |
+| `meeting_accounts` | `zoom-clients-table.ts` | already had `organizationId` — keep. **Renamed from SOURCE's `zoom_clients` (D142)**, and onMeeting-only: one row per **room**, holding encrypted `apiKey`/`apiSecret` + `accountId` + `roomCode`. SOURCE's dual-provider `isZoom` flag and its Zoom OAuth columns are gone with the Zoom integration |
+| `sessions` | `zoom-sessions-table.ts` | **+ organizationId**; FK group; generated from schedule by Inngest. **Renamed from SOURCE's `zoom_sessions` (STATE.md D80)** — a class session exists whether or not the org ever connects a meeting account, so live delivery is one optional channel Phase 6 layers on top. Its meeting columns (`meetingAccountId`, `meetingNumber`, `joinUrl`, `startUrl`) are filled **on demand when the class starts**, not at generation time (D143) |
 | `session_students` | `session-student-table.ts` | **+ organizationId**; attendance records |
 
 ### Dropped from SOURCE
@@ -74,7 +74,7 @@ organizations 1─* groups *─* users(students)   [group_students; groups.cours
 organizations 1─* forms 1─* form_sections 1─* questions 1─* answers
 forms 1─* form_responses *─1 users
 users(student) 1─* enrollments *─1 courses ; enrollments 1─* enrollment_levels
-organizations 1─* zoom_clients ; groups 1─* sessions 1─* session_students
+organizations 1─* meeting_accounts ; groups 1─* sessions 1─* session_students
 placement_tests: form ↔ student ↔ assigned level
 certificates: student ↔ course/group
 ```
