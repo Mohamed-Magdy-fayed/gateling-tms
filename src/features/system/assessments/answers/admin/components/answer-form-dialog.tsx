@@ -55,9 +55,12 @@ export function AnswerFormDialog({
     () => ({
       questionId,
       text: answer?.text ?? "",
-      isCorrect: answer?.isCorrect ?? false,
+      // Every wording a teacher records against a short answer is one they
+      // accept — a row that isn't accepted would be graded against by nothing
+      // and silently do no work, so there is no choice to offer here.
+      isCorrect: isShortAnswer ? true : (answer?.isCorrect ?? false),
     }),
-    [questionId, answer],
+    [questionId, answer, isShortAnswer],
   );
 
   const form = useAppForm({
@@ -151,17 +154,13 @@ export function AnswerFormDialog({
                 )}
               </form.AppField>
 
-              <form.AppField name="isCorrect">
-                {(field) => (
-                  <field.BooleanField
-                    label={t(
-                      isShortAnswer
-                        ? "answers.shortAnswer.isCorrect"
-                        : "answers.isCorrect",
-                    )}
-                  />
-                )}
-              </form.AppField>
+              {isShortAnswer ? null : (
+                <form.AppField name="isCorrect">
+                  {(field) => (
+                    <field.BooleanField label={t("answers.isCorrect")} />
+                  )}
+                </form.AppField>
+              )}
             </FieldGroup>
           </FieldSet>
         </OverlayFormBody>

@@ -135,7 +135,9 @@ export function AnswersSection({
                 </Button>
               </div>
 
-              {answer.isCorrect ? (
+              {/* No marker on a short answer: every row there is accepted, so
+                  a tick on all of them says nothing. */}
+              {isShortAnswer ? null : answer.isCorrect ? (
                 <CheckIcon className="size-3.5 shrink-0 text-emerald-600" />
               ) : (
                 <span className="size-3.5 shrink-0" />
