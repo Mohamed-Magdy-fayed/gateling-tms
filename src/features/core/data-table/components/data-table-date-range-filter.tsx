@@ -238,10 +238,15 @@ export function DataTableDateRangeFilter<TData, TValue>({
         <DialogTrigger render={trigger} />
         {/* Opts out of the standard header/body/footer flex column: there is
             no footer and the calendar must not be flex-shrunk, so `grid`
-            restores intrinsic sizing and the whole popup scrolls as one. */}
+            restores intrinsic sizing and the whole popup scrolls as one.
+
+            `pt-9` reserves the strip the absolutely-positioned close button
+            occupies (`top-2` + a `size-6` button). Without it the button sits
+            on top of the first preset row — and because it is placed with
+            `end-2`, it covers the last preset in LTR and the first in RTL. */}
         <DialogContent
           showCloseButton
-          className="grid max-h-[min(90dvh,40rem)] w-auto max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-md"
+          className="grid max-h-[min(90dvh,40rem)] w-auto max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto p-0 pt-9 sm:max-w-md"
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {presetsRow}
