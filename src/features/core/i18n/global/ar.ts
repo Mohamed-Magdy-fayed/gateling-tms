@@ -1263,7 +1263,6 @@ export default {
     // وحدها دون بنية البيانات.
     shortAnswer: {
       title: "الإجابات المقبولة",
-      isCorrect: "اعتبار هذه الإجابة صحيحة",
       add: "إضافة إجابة مقبولة",
       edit: "تعديل إجابة مقبولة",
       addDescription: "أضف صيغة يجب اعتبارها صحيحة لهذا السؤال.",
@@ -1291,6 +1290,21 @@ export default {
     previewEmptyTitle: "لا شيء لمعاينته بعد",
     previewEmptyDescription:
       "أضف قسمًا واحدًا على الأقل يحتوي على سؤال لمعاينة هذا التقييم.",
+    grade: "تصحيح",
+    gradeTitle: "تصحيح الرد",
+    gradeDescription:
+      "أدخل الدرجة بنفسك. التصحيح التلقائي يترك الرد دون درجة بدلًا من تخمينها.",
+    gradeScore: "الدرجة",
+    gradeOutOf: "من {max:number}",
+    gradeStudentAnswer: "إجابة الطالب",
+    gradeAcceptedAnswers: "الإجابات المقبولة",
+    gradeNoAnswer: "تُركت فارغة",
+    gradeNoAcceptedAnswers: "لم تُضبط إجابات مقبولة لهذا السؤال.",
+    gradeNoShortAnswers:
+      "لا يحتوي هذا التقييم على أسئلة مقالية قصيرة، لذا تُحتسب درجته تلقائيًا.",
+    graded: "تم حفظ الدرجة.",
+    gradeFailed: "تعذر حفظ الدرجة.",
+    scoreAboveMax: "لا يمكن أن تكون الدرجة أكبر من {max:number}.",
   },
   dashboard: {
     nav: {

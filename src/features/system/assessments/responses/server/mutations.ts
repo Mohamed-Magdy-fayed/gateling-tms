@@ -1,8 +1,14 @@
 import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
 import { FormResponsesTable } from "@/drizzle/schema";
 import { gradeFormResponse } from "./grading";
-import { assertFormInOrg, getScorableQuestions } from "./queries";
-import type { SubmitResponseInput } from "./schemas";
+import {
+  assertFormInOrg,
+  getResponseInOrg,
+  getScorableQuestions,
+} from "./queries";
+import type { GradeResponseInput, SubmitResponseInput } from "./schemas";
+import { sumQuestionPoints } from "./scoring";
 import type { OrgTRPCContext } from "./types";
 
 // No "already submitted" guard (unlike SOURCE's allowMultipleResponses
@@ -41,4 +47,40 @@ export async function submitResponse(
     .returning({ id: FormResponsesTable.id });
 
   return { id: response.id, score };
+}
+
+/**
+ * Records a grader's own score for a response.
+ *
+ * The automatic pass leaves a response ungraded rather than guessing (a short
+ * answer with no accepted wordings, or one no model verdict came back for), and
+ * this is how that response stops being stuck. Nothing re-scores a submitted
+ * response, so a manual score is never overwritten later.
+ */
+export async function gradeResponse(
+  ctx: OrgTRPCContext,
+  input: GradeResponseInput,
+) {
+  const response = await getResponseInOrg(ctx, input.responseId);
+  const questions = await getScorableQuestions(ctx, response.formId);
+  const maxScore = sumQuestionPoints(questions);
+
+  if (input.score > maxScore) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: ctx.t("responses.scoreAboveMax", { max: maxScore }),
+    });
+  }
+
+  await ctx.db
+    .update(FormResponsesTable)
+    .set({ score: input.score })
+    .where(
+      and(
+        eq(FormResponsesTable.id, response.id),
+        eq(FormResponsesTable.organizationId, ctx.organizationId),
+      ),
+    );
+
+  return { id: response.id, score: input.score };
 }

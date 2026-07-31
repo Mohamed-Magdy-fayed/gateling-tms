@@ -1293,7 +1293,6 @@ export default {
     // so the wording changes even though the data model doesn't.
     shortAnswer: {
       title: "Accepted answers",
-      isCorrect: "Accept this answer",
       add: "Add accepted answer",
       edit: "Edit accepted answer",
       addDescription:
@@ -1323,6 +1322,21 @@ export default {
     previewEmptyTitle: "Nothing to preview yet",
     previewEmptyDescription:
       "Add at least one section with a question to preview this assessment.",
+    grade: "Grade",
+    gradeTitle: "Grade response",
+    gradeDescription:
+      "Enter the score yourself. Automatic grading leaves a response ungraded rather than guessing at it.",
+    gradeScore: "Score",
+    gradeOutOf: "out of {max:number}",
+    gradeStudentAnswer: "Student answer",
+    gradeAcceptedAnswers: "Accepted answers",
+    gradeNoAnswer: "Left blank",
+    gradeNoAcceptedAnswers: "No accepted answers were set for this question.",
+    gradeNoShortAnswers:
+      "This assessment has no short answers, so its score is computed automatically.",
+    graded: "Score saved.",
+    gradeFailed: "Could not save the score.",
+    scoreAboveMax: "The score can't be higher than {max:number}.",
   },
   dashboard: {
     nav: {

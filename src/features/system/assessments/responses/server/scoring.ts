@@ -50,6 +50,14 @@ export function normalizeAnswerText(value: string): string {
     .toLowerCase();
 }
 
+/**
+ * The highest score a response to this question tree can earn — the ceiling a
+ * manual grade is checked against, so a typo can't record 500/10.
+ */
+export function sumQuestionPoints(questions: ScorableQuestion[]): number {
+  return questions.reduce((total, question) => total + question.points, 0);
+}
+
 export type ShortAnswerOutcome =
   /** Matched an accepted answer outright, or was left blank. */
   | { kind: "settled"; isCorrect: boolean }
