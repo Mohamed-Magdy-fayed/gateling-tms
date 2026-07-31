@@ -5,14 +5,20 @@ import {
   AnswersTable,
   CertificatesTable,
   CoursesTable,
+  EnrollmentLevelsTable,
   EnrollmentsTable,
+  FormResponsesTable,
+  FormSectionsTable,
   FormsTable,
+  GroupStudentsTable,
   GroupsTable,
   LecturesTable,
   LevelsTable,
   MeetingAccountsTable,
   PlacementTestsTable,
   QuestionsTable,
+  SessionStudentsTable,
+  SessionsTable,
   TestimonialsTable,
   TraineesTable,
 } from "@/drizzle/schema";
@@ -364,8 +370,9 @@ describe("scoped lists never contain another tenant's rows", () => {
 /**
  * Writes matter more than reads: a refused read leaks nothing, but an accepted
  * cross-tenant write corrupts the other tenant's data. Each case asserts both
- * that the call was refused **and** that org B's row is still there afterwards
- * — "it threw" is not by itself proof that nothing was written.
+ * that the call was refused **for tenancy reasons** and that org B's row is
+ * unchanged afterwards — "it threw" is not by itself proof that nothing was
+ * written, and neither is a rejection that came from somewhere else entirely.
  */
 describe("cross-tenant writes are refused and change nothing", () => {
   async function rowCount(
@@ -380,16 +387,34 @@ describe("cross-tenant writes are refused and change nothing", () => {
     return row?.value ?? 0;
   }
 
+  /**
+   * Asserts the call was refused, and refused *for tenancy reasons*.
+   *
+   * `errorCodeOf` reports `"UNKNOWN"` for any non-tRPC rejection, so a bare
+   * "it threw" would also pass when the call died of something unrelated — a
+   * missing environment value, an unreachable external service — and the test
+   * would be proving nothing about isolation. Naming the acceptable codes is
+   * what turns the rejection into evidence.
+   */
+  async function expectTenantRefusal(call: Promise<unknown>, label: string) {
+    const code = await errorCodeOf(call);
+    expect(code, `${label} resolved instead of refusing`).not.toBeNull();
+    expect(
+      ["NOT_FOUND", "FORBIDDEN", "BAD_REQUEST"],
+      `${label} refused with ${code}, which is not a tenancy refusal`,
+    ).toContain(code);
+  }
+
   test("courses.update leaves another org's course alone", async () => {
-    const code = await errorCodeOf(
+    await expectTenantRefusal(
       orgA.caller.courses.update({
         id: dataB.courseId,
         name: "Hijacked",
         description: "",
         thumbnailUrl: "",
       }),
+      "courses.update",
     );
-    expect(code).not.toBeNull();
 
     const [course] = await db
       .select({ name: CoursesTable.name })
@@ -399,137 +424,150 @@ describe("cross-tenant writes are refused and change nothing", () => {
   });
 
   test("courses.delete leaves another org's course alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.courses.delete({ id: dataB.courseId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.courses.delete({ id: dataB.courseId }),
+      "courses.delete",
+    );
     expect(await rowCount(CoursesTable, dataB.courseId)).toBe(1);
   });
 
   test("levels.delete leaves another org's level alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.levels.delete({ id: dataB.levelId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.levels.delete({ id: dataB.levelId }),
+      "levels.delete",
+    );
     expect(await rowCount(LevelsTable, dataB.levelId)).toBe(1);
   });
 
   test("lectures.delete leaves another org's lecture alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.lectures.delete({ id: dataB.lectureId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.lectures.delete({ id: dataB.lectureId }),
+      "lectures.delete",
+    );
     expect(await rowCount(LecturesTable, dataB.lectureId)).toBe(1);
   });
 
   test("trainees.delete leaves another org's trainee alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.trainees.delete({ id: dataB.traineeId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.trainees.delete({ id: dataB.traineeId }),
+      "trainees.delete",
+    );
     expect(await rowCount(TraineesTable, dataB.traineeId)).toBe(1);
   });
 
   test("groups.delete leaves another org's group alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.groups.delete({ id: dataB.groupId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.groups.delete({ id: dataB.groupId }),
+      "groups.delete",
+    );
     expect(await rowCount(GroupsTable, dataB.groupId)).toBe(1);
   });
 
   test("groups.removeStudent leaves another org's roster alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.groups.removeStudent({
-          groupId: dataB.groupId,
-          traineeId: dataB.traineeId,
-        }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.groups.removeStudent({
+        groupId: dataB.groupId,
+        traineeId: dataB.traineeId,
+      }),
+      "groups.removeStudent",
+    );
+    expect(await rowCount(GroupStudentsTable, dataB.groupStudentId)).toBe(1);
   });
 
   test("enrollments.delete leaves another org's enrollment alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.enrollments.delete({ id: dataB.enrollmentId }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.enrollments.delete({ id: dataB.enrollmentId }),
+      "enrollments.delete",
+    );
     expect(await rowCount(EnrollmentsTable, dataB.enrollmentId)).toBe(1);
   });
 
   test("enrollments.setLevelStatus leaves another org's progress alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.enrollments.setLevelStatus({
-          enrollmentId: dataB.enrollmentId,
-          levelId: dataB.levelId,
-          status: "completed",
-        }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.enrollments.setLevelStatus({
+        enrollmentId: dataB.enrollmentId,
+        levelId: dataB.levelId,
+        status: "completed",
+      }),
+      "enrollments.setLevelStatus",
+    );
+
+    const [enrollmentLevel] = await db
+      .select({ status: EnrollmentLevelsTable.status })
+      .from(EnrollmentLevelsTable)
+      .where(eq(EnrollmentLevelsTable.id, dataB.enrollmentLevelId));
+    expect(enrollmentLevel.status).toBe("inProgress");
   });
 
   test("forms.delete leaves another org's form alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.forms.delete({ id: dataB.formId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.forms.delete({ id: dataB.formId }),
+      "forms.delete",
+    );
     expect(await rowCount(FormsTable, dataB.formId)).toBe(1);
   });
 
   test("sections.delete leaves another org's section alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.sections.delete({ id: dataB.sectionId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.sections.delete({ id: dataB.sectionId }),
+      "sections.delete",
+    );
+    expect(await rowCount(FormSectionsTable, dataB.sectionId)).toBe(1);
   });
 
   test("questions.delete leaves another org's question alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.questions.delete({ id: dataB.questionId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.questions.delete({ id: dataB.questionId }),
+      "questions.delete",
+    );
     expect(await rowCount(QuestionsTable, dataB.questionId)).toBe(1);
   });
 
   test("answers.delete leaves another org's answer alone", async () => {
-    expect(
-      await errorCodeOf(orgA.caller.answers.delete({ id: dataB.answerId })),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.answers.delete({ id: dataB.answerId }),
+      "answers.delete",
+    );
     expect(await rowCount(AnswersTable, dataB.answerId)).toBe(1);
   });
 
   test("responses.grade leaves another org's response alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.responses.grade({
-          responseId: dataB.responseId,
-          score: 99,
-        }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.responses.grade({ responseId: dataB.responseId, score: 99 }),
+      "responses.grade",
+    );
+
+    const [response] = await db
+      .select({ score: FormResponsesTable.score })
+      .from(FormResponsesTable)
+      .where(eq(FormResponsesTable.id, dataB.responseId));
+    expect(response.score).toBeNull();
   });
 
   test("placementTests.delete leaves another org's placement test alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.placementTests.delete({ id: dataB.placementTestId }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.placementTests.delete({ id: dataB.placementTestId }),
+      "placementTests.delete",
+    );
     expect(await rowCount(PlacementTestsTable, dataB.placementTestId)).toBe(1);
   });
 
   test("certificates.delete leaves another org's certificate alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.certificates.delete({ id: dataB.certificateId }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.certificates.delete({ id: dataB.certificateId }),
+      "certificates.delete",
+    );
     expect(await rowCount(CertificatesTable, dataB.certificateId)).toBe(1);
   });
 
   test("meetingAccounts.rename leaves another org's room alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.meetingAccounts.rename({
-          id: dataB.meetingAccountId,
-          name: "Hijacked",
-        }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.meetingAccounts.rename({
+        id: dataB.meetingAccountId,
+        name: "Hijacked",
+      }),
+      "meetingAccounts.rename",
+    );
 
     const [room] = await db
       .select({ name: MeetingAccountsTable.name })
@@ -539,23 +577,35 @@ describe("cross-tenant writes are refused and change nothing", () => {
   });
 
   test("attendance.mark leaves another org's register alone", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.attendance.mark({
-          sessionId: dataB.sessionId,
-          traineeId: dataB.traineeId,
-          status: "absent",
-        }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.attendance.mark({
+        sessionId: dataB.sessionId,
+        traineeId: dataB.traineeId,
+        status: "absent",
+      }),
+      "attendance.mark",
+    );
+
+    const [register] = await db
+      .select({ status: SessionStudentsTable.status })
+      .from(SessionStudentsTable)
+      .where(eq(SessionStudentsTable.id, dataB.sessionStudentId));
+    expect(register.status).toBe("present");
   });
 
   test("sessions.startMeeting refuses another org's session", async () => {
-    expect(
-      await errorCodeOf(
-        orgA.caller.sessions.startMeeting({ id: dataB.sessionId }),
-      ),
-    ).not.toBeNull();
+    await expectTenantRefusal(
+      orgA.caller.sessions.startMeeting({ id: dataB.sessionId }),
+      "sessions.startMeeting",
+    );
+
+    // No meeting was provisioned onto B's session — the join link is the
+    // artefact a successful start would have written.
+    const [session] = await db
+      .select({ joinUrl: SessionsTable.joinUrl })
+      .from(SessionsTable)
+      .where(eq(SessionsTable.id, dataB.sessionId));
+    expect(session.joinUrl).toBeNull();
   });
 
   // The submit path is an upsert keyed on the caller's own organizationId, so

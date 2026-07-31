@@ -66,7 +66,7 @@ path is a launch blocker, not a documentation gap.
 
 ## B. The product-spec journey
 
-`00-product-spec.md`'s acceptance script, steps 1–11. Automated end to end in
+`00-product-spec.md`'s acceptance script, steps 1–11. Automated end-to-end in
 `e2e/journey/full-journey.spec.ts`, so this is a confirmation walk rather than a
 discovery one — do it on a **fresh signup**, not the demo org, because the
 zero-master-data promise is about an empty org.

@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 
 const PATTERNS = [
   { name: "AWS access key id", re: /\bAKIA[0-9A-Z]{16}\b/ },
@@ -23,10 +23,19 @@ const PATTERNS = [
   { name: "Slack token", re: /\bxox[abposr]-[0-9A-Za-z-]{10,}/ },
   { name: "GitHub token", re: /\bgh[pousr]_[0-9A-Za-z]{36,}\b/ },
   { name: "Stripe secret key", re: /\bsk_(live|test)_[0-9A-Za-z]{16,}\b/ },
-  { name: "OpenAI/Anthropic style key", re: /\bsk-(ant-)?[0-9A-Za-z_-]{32,}\b/ },
-  { name: "JSON Web Token", re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\./ },
+  {
+    name: "OpenAI/Anthropic style key",
+    re: /\bsk-(ant-)?[0-9A-Za-z_-]{32,}\b/,
+  },
+  {
+    name: "JSON Web Token",
+    re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\./,
+  },
   { name: "Private key block", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
-  { name: "Postgres URL with password", re: /postgres(ql)?:\/\/[^\s:@/]+:[^\s:@/]+@/ },
+  {
+    name: "Postgres URL with password",
+    re: /postgres(ql)?:\/\/[^\s:@/]+:[^\s:@/]+@/,
+  },
   {
     name: "long secret-shaped assignment",
     re: /\b(secret|password|passwd|token|api[_-]?key|private[_-]?key)\b\s*[:=]\s*["'`][A-Za-z0-9+/_-]{32,}={0,2}["'`]/i,
@@ -69,50 +78,92 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
-function isScannable(path) {
-  if (IGNORED_PATHS.includes(path)) return false;
+/**
+ * Why a file wasn't scanned, or `null` when it was.
+ *
+ * `lstatSync`, not `statSync`: both `statSync` and `readFileSync` follow
+ * symlinks, so a tracked symlink pointing outside the checkout would have this
+ * script open — and potentially print — a file that isn't in the repository at
+ * all. Symlinks are refused rather than followed.
+ */
+function skipReason(path) {
+  if (IGNORED_PATHS.includes(path)) return "explicitly ignored";
   if (IGNORED_EXTENSIONS.some((ext) => path.toLowerCase().endsWith(ext))) {
-    return false;
+    return "binary extension";
   }
+
+  let stats;
   try {
-    return statSync(path).size <= MAX_FILE_BYTES;
-  } catch {
-    return false;
+    stats = lstatSync(path);
+  } catch (error) {
+    return `could not stat (${error.code ?? "unknown"})`;
   }
+
+  if (stats.isSymbolicLink()) return "symlink, not followed";
+  if (!stats.isFile()) return "not a regular file";
+  if (stats.size > MAX_FILE_BYTES) return "larger than 2 MiB";
+
+  return null;
 }
 
 const findings = [];
+const skipped = [];
 
 for (const path of trackedFiles()) {
-  if (!isScannable(path)) continue;
+  const reason = skipReason(path);
+  if (reason) {
+    skipped.push({ path, reason });
+    continue;
+  }
 
   let contents;
   try {
     contents = readFileSync(path, "utf8");
-  } catch {
+  } catch (error) {
+    skipped.push({
+      path,
+      reason: `could not read (${error.code ?? "unknown"})`,
+    });
     continue;
   }
 
   contents.split(/\r?\n/).forEach((line, index) => {
     for (const { name, re } of PATTERNS) {
-      if (re.test(line)) {
-        findings.push({ path, line: index + 1, name, text: line.trim().slice(0, 120) });
-      }
+      // Only the location and the pattern name are kept. Printing the matching
+      // line would put the credential itself into CI logs and build artifacts,
+      // which is the thing this script exists to prevent.
+      if (re.test(line)) findings.push({ path, line: index + 1, name });
     }
   });
 }
 
+// Reported, not silent: a skipped file is a file this run says nothing about,
+// and "0 findings" would otherwise read as "nothing in the repo" when it means
+// "nothing in the part of the repo I looked at".
+if (skipped.length > 0) {
+  console.log(`scan:secrets — ${skipped.length} file(s) not scanned:`);
+  for (const entry of skipped) {
+    console.log(`  ${entry.path} — ${entry.reason}`);
+  }
+  console.log("");
+}
+
 if (findings.length === 0) {
-  console.log("scan:secrets — no known secret shapes found in tracked files.");
+  console.log(
+    `scan:secrets — no known secret shapes found in the ${
+      trackedFiles().length - skipped.length
+    } scanned file(s).`,
+  );
   process.exit(0);
 }
 
 console.error(`scan:secrets — ${findings.length} potential secret(s) found:\n`);
 for (const finding of findings) {
   console.error(`  ${finding.path}:${finding.line}  [${finding.name}]`);
-  console.error(`    ${finding.text}`);
 }
 console.error(
-  "\nIf a match is a false positive, add the path to IGNORED_PATHS in scripts/scan-secrets.mjs with a reason.",
+  "\nOpen each location and check it by hand — the matched text is deliberately not printed.\n" +
+    "If a match is genuinely a false positive, add the path to IGNORED_PATHS in\n" +
+    "scripts/scan-secrets.mjs with a reason, and note that it will then be listed as skipped.",
 );
 process.exit(1);

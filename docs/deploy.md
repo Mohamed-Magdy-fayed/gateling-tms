@@ -80,8 +80,66 @@ what each scope must have for a deploy to actually succeed.
    `next build` (STATE.md D20), so the schema is in place before the app
    compiles against it.
 3. A failed migration fails the build, and the previous deployment stays live.
-4. Confirm afterwards: the deployment reads `READY`, `tms.gateling.com` returns
+4. Confirm afterward: the deployment reads `READY`, `tms.gateling.com` returns
    200, and Vercel reports no new runtime errors.
+
+### What a failed migration actually leaves behind
+
+Step 3 protects the *app*, not the *database*, and the difference matters.
+
+`drizzle-kit migrate` applies each pending migration in its own transaction, so
+a migration that fails rolls itself back. It does **not** roll back the ones
+that already succeeded in the same run. A deploy with three pending migrations
+that fails on the third leaves the database on migration two while `master` and
+the running app are still on the previous release.
+
+Two further exceptions are worth knowing before assuming a rollback happened:
+
+- Statements Postgres refuses to run inside a transaction (`CREATE INDEX
+  CONCURRENTLY`, some `ALTER TYPE` sequences) will fail the migration outright
+  rather than being rolled back cleanly. Nothing in `0000`–`0019` uses them;
+  check before adding one.
+- A **data** migration that succeeds structurally but transforms rows wrongly
+  commits happily. Nothing here will tell you.
+
+**`READY` and a 200 do not prove the database matches the code.** They prove the
+app started. The check is the schema version, not the HTTP status.
+
+### Recovering the database
+
+Do this when a deploy's migrate step failed, or when a migration succeeded and
+was wrong.
+
+1. **Establish where the database actually is.** Read the tracking table
+   directly — never from a local `.env.*.local`, which is not demonstrably the
+   database Vercel deploys against (STATE.md D152):
+
+   ```sql
+   select hash, created_at from drizzle.__drizzle_migrations order by created_at;
+   ```
+
+   Compare the count against `src/drizzle/migrations/meta/_journal.json`.
+
+2. **If migrations are simply behind and forward is safe** — the usual case, a
+   migration that failed for an environmental reason — fix the cause and
+   redeploy. The migrate step is idempotent: it applies only what's missing.
+
+3. **If a migration applied and should not have**, restore rather than patch:
+   - In Neon, create a branch from `main` at a timestamp **before** the deploy.
+     A branch is instant and costs nothing, and it preserves the bad state for
+     inspection instead of destroying it.
+   - Point `DATABASE_URL` in Vercel's Production scope at the new branch.
+   - Redeploy the last known-good commit. Its migrate step is a no-op against a
+     database already at that version.
+   - Once the app is confirmed healthy, promote the branch or plan the cut-over
+     back to `main`.
+
+4. **Verify by schema, not by status code.** Re-run the query from step 1 and
+   confirm the count matches the journal for the commit that is now live.
+
+> Take a Neon branch from `main` **before** merging any PR that drops a column,
+> rewrites data, or changes a column type. It is the difference between a
+> one-minute restore and a reconstruction.
 
 **Preview → production parity.** Before a release, check that the last merged
 PR's preview deployment behaved the same as production does after the deploy —
@@ -130,7 +188,8 @@ npm run scan:secrets
 npm run test:e2e
 ```
 
-`test:isolation` and `test:e2e` need local Docker Postgres running and the demo
-seed applied (`npm run db:seed:demo`).
+Both `test:isolation` and `test:e2e` need local Docker Postgres running. Only
+`test:e2e` needs the demo seed (`npm run db:seed:demo`) — the isolation suite
+creates and tears down its own fixture organizations.
 
 Then walk `docs/demo-readiness-checklist.md`.
