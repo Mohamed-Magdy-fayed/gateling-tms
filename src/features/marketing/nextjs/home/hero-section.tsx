@@ -6,20 +6,15 @@ import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/ui/course-card";
 import { Tag } from "@/components/ui/tag";
 import { getT } from "@/features/core/i18n/server";
-
-// TODO(launch): heroSocialProofPeople and the academy count below are
-// placeholder social proof (no real customers pre-launch) — swap for a real
-// customer sample and figure once they exist. Tracked in docs/rebuild/STATE.md.
-const heroSocialProofPeople = [
-  { name: "Ada L" },
-  { name: "Sam R" },
-  { name: "Kofi M" },
-  { name: "Mei X" },
-  { name: "Jo P" },
-];
+import { api } from "@/integrations/trpc/server";
 
 export async function HeroSection() {
   const { t } = await getT();
+  // Real signed-up academies, and only the ones that opted in to being named
+  // (STATE.md D152). The band renders nothing at all when nobody has — an
+  // empty avatar row saying "0 academies" would be worse than no band.
+  // The figure itself is inflated by design: see showcase-count.ts and D153.
+  const showcase = await (await api()).testimonials.showcase();
 
   const highlights = [
     t("landing.hero.highlights.free"),
@@ -66,16 +61,24 @@ export async function HeroSection() {
             ))}
           </ul>
 
-          <div className="mt-8 flex items-center justify-center gap-3 border-border/60 border-t pt-8 lg:justify-start">
-            <AvatarGroup items={heroSocialProofPeople} />
-            <p className="text-muted-foreground text-sm">
-              <span className="font-display font-bold text-foreground">
-                {t("landing.hero.socialProof.count")}
-              </span>{" "}
-              {t("landing.hero.socialProof.suffix")}{" "}
-              <span className="text-yellow-400">★★★★★</span>
-            </p>
-          </div>
+          {showcase.academies.length > 0 && (
+            <div className="mt-8 flex items-center justify-center gap-3 border-border/60 border-t pt-8 lg:justify-start">
+              <AvatarGroup
+                items={showcase.academies.map((academy) => ({
+                  name: academy.name,
+                  imageUrl: academy.imageUrl ?? undefined,
+                }))}
+              />
+              <p className="text-muted-foreground text-sm">
+                <span className="font-display font-bold text-foreground">
+                  {t("landing.hero.socialProof.count", {
+                    count: showcase.academyCount,
+                  })}
+                </span>{" "}
+                {t("landing.hero.socialProof.suffix")}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="relative mx-auto hidden w-full max-w-sm lg:block">

@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatCard } from "@/components/ui/stat-card";
 import { Tag } from "@/components/ui/tag";
 import { useTranslation } from "@/features/core/i18n/client";
+import { TestimonialPromptCard } from "@/features/marketing/testimonials/admin";
 import { EnrollmentStatusTag } from "@/features/system/learning-flow/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -95,6 +96,8 @@ export function DashboardOverview() {
           </Tag>
         )}
       </div>
+
+      <TestimonialPromptCard isAdmin={organization?.role === "admin"} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard

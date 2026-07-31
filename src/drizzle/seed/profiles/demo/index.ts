@@ -11,6 +11,7 @@ import {
   seedDemoMeetingAccountFixture,
   seedDemoSessionsForGroup,
 } from "./groups";
+import { seedDemoTestimonial } from "./showcase";
 import {
   seedDemoAttendance,
   seedDemoCertificate,
@@ -195,6 +196,8 @@ export async function seedDemoProfile() {
       });
     }
   }
+
+  await seedDemoTestimonial(organization.id);
 
   const usage = await countOrganizationUsage(db, organization.id);
   await db

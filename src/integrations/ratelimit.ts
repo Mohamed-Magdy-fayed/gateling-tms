@@ -93,6 +93,19 @@ export const googleFormReadRatelimit = new Ratelimit({
 });
 
 /**
+ * Submitting a testimonial writes text and an image that are destined for
+ * Gateling's own public landing page. Moderation is what actually stops it
+ * being published, but an unmetered endpoint still lets one org churn the
+ * moderation queue (and its storage budget) as fast as it can post. Keyed per
+ * organization — writing your academy's feedback is a rare, deliberate act.
+ */
+export const testimonialSubmitRatelimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(10, "60 m"),
+  prefix: "ratelimit:testimonial-submit",
+});
+
+/**
  * Trusts `x-forwarded-for`/`x-real-ip` as set by the platform's own edge
  * network (per `06-workflow.md` §5, this app deploys on Vercel) — Vercel's
  * routing layer overwrites these headers with the real client IP before a

@@ -1,6 +1,7 @@
 import { organizationsRouter } from "@/features/core/organizations/server";
 import { uploadsRouter } from "@/features/core/uploads/server";
 import { contactRouter } from "@/features/marketing/server/router";
+import { testimonialsRouter } from "@/features/marketing/testimonials/server";
 import { answersRouter } from "@/features/system/assessments/answers/server";
 import { formsRouter } from "@/features/system/assessments/forms/server";
 import { googleImportRouter } from "@/features/system/assessments/google-import/server";
@@ -28,6 +29,7 @@ export const appRouter = createTRPCRouter({
   organizations: organizationsRouter,
   uploads: uploadsRouter,
   contact: contactRouter,
+  testimonials: testimonialsRouter,
   courses: coursesRouter,
   levels: levelsRouter,
   lectures: lecturesRouter,

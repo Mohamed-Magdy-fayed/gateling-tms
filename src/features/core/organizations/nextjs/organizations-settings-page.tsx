@@ -29,6 +29,7 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import { PublicShowcaseCard } from "@/features/marketing/testimonials/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import type { OrganizationMemberRow } from "../server/queries";
 import {
@@ -182,6 +183,10 @@ export function OrganizationsSettingsPage() {
       ) : null}
 
       <PlanUsageCard />
+
+      {/* Admin-only: `testimonials.status` is orgAdminProcedure, and speaking
+          publicly for the academy is the owner's call, not any member's. */}
+      {canManage ? <PublicShowcaseCard /> : null}
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

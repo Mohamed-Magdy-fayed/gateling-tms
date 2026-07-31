@@ -8,6 +8,7 @@ export async function SiteFooter() {
   const quickLinks = [
     { href: "/features", label: t("landing.header.features") },
     { href: "/pricing", label: t("landing.header.pricing") },
+    { href: "/testimonials", label: t("testimonials.page.eyebrow") },
     { href: "/get-started", label: t("landing.header.getStarted") },
     { href: "/auth/sign-in", label: t("landing.header.signIn") },
   ];

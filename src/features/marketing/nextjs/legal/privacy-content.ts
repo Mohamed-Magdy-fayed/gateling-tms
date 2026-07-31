@@ -43,6 +43,15 @@ export const privacyContent: LocalizedLegalContent = {
         ],
       },
       {
+        title: "What we publish on our website, and only with your permission",
+        paragraphs: [
+          "Nothing about your organization appears on Gateling's public website unless an admin of that organization turns it on. Both settings live under Organization settings → Public showcase, and both are off by default.",
+          "Showcase: if enabled, we publish your academy's name and the profile photo of the account that owns it in a visitor-facing band on our home page.",
+          "Feedback: if you write feedback and tick “Allow Gateling to publish this”, we may publish the words you wrote, the name and role you typed into the form, the photo you attached if you attached one, and your academy's name. Our team reviews it before it appears, and reviews it again after any edit.",
+          "You can withdraw either permission at any time from the same screen, which removes the content from our website. Published pages may still be held for a while in search-engine caches and other archives we don't control.",
+        ],
+      },
+      {
         title: "Data retention",
         paragraphs: [
           "We keep your data for as long as your account or organization stays active. Contact us if you'd like your data deleted.",
@@ -114,6 +123,15 @@ export const privacyContent: LocalizedLegalContent = {
         title: "مشاركة البيانات",
         paragraphs: [
           "نحن لا نبيع معلوماتك. نشارك البيانات فقط مع مزوّدي الخدمة الذين يشغّلون المنصة نيابة عنا: مزوّدي قاعدة البيانات والاستضافة، ومزوّد تخزين الملفات، ومزوّد البريد الإلكتروني — وجميعهم ملزمون باستخدام بياناتك فقط لتقديم خدمتهم لنا. عند إطلاق الحصص المباشرة، ستتم مشاركة بيانات الجلسات أيضًا مع onMeeting لاستضافة جلسات الفيديو.",
+        ],
+      },
+      {
+        title: "ما ننشره على موقعنا، وبإذنك وحدك",
+        paragraphs: [
+          "لا يظهر أي شيء عن مؤسستك على موقع Gateling العام إلا إذا فعّله أحد مسؤولي تلك المؤسسة. يوجد الإعدادان معًا ضمن إعدادات المؤسسة ← الظهور العلني، وكلاهما معطّل افتراضيًا.",
+          "الظهور العلني: عند تفعيله، ننشر اسم أكاديميتك وصورة الملف الشخصي للحساب المالك لها في شريط يراه الزوار على صفحتنا الرئيسية.",
+          "الآراء: إذا كتبت رأيك ووضعت علامة على «أسمح لجيتلينج بنشر هذا»، فقد ننشر ما كتبته، والاسم والمسمى الوظيفي اللذين أدخلتهما في النموذج، والصورة التي أرفقتها إن وُجدت، واسم أكاديميتك. يراجعه فريقنا قبل ظهوره، ويعيد مراجعته بعد أي تعديل.",
+          "يمكنك سحب أي من الإذنين في أي وقت من الشاشة نفسها، وهو ما يزيل المحتوى من موقعنا. وقد تظل الصفحات المنشورة محفوظة لبعض الوقت في ذاكرات محركات البحث وأرشيفات أخرى لا نتحكم فيها.",
         ],
       },
       {
