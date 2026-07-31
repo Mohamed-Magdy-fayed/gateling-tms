@@ -86,48 +86,73 @@ export async function updateAnswer(
   ctx: OrgTRPCContext,
   input: AnswerUpdateInput,
 ) {
-  // The question's type decides whether `isCorrect` is the caller's to set,
-  // and the input only carries the answer id — so read them together.
-  const [target] = await ctx.db
-    .select({ id: AnswersTable.id, questionType: QuestionsTable.type })
-    .from(AnswersTable)
-    .innerJoin(QuestionsTable, eq(QuestionsTable.id, AnswersTable.questionId))
-    .where(
-      and(
-        eq(AnswersTable.id, input.id),
-        eq(AnswersTable.organizationId, ctx.organizationId),
-      ),
-    );
+  return ctx.db.transaction(async (trx) => {
+    // The input only carries the answer id, but the question's type is what
+    // decides whether `isCorrect` is the caller's to set.
+    const [target] = await trx
+      .select({ questionId: AnswersTable.questionId })
+      .from(AnswersTable)
+      .where(
+        and(
+          eq(AnswersTable.id, input.id),
+          eq(AnswersTable.organizationId, ctx.organizationId),
+        ),
+      );
 
-  if (!target) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: ctx.t("errors.notFound"),
-    });
-  }
+    if (!target) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
 
-  const [updated] = await ctx.db
-    .update(AnswersTable)
-    .set({
-      text: input.text,
-      isCorrect: resolveIsCorrect(target.questionType, input.isCorrect),
-    })
-    .where(
-      and(
-        eq(AnswersTable.id, input.id),
-        eq(AnswersTable.organizationId, ctx.organizationId),
-      ),
-    )
-    .returning({ id: AnswersTable.id });
+    // Reading the type and writing the answer must not be two independent
+    // statements: a concurrent `updateQuestion` switching the question to (or
+    // away from) `short_answer` in between would leave this row normalized
+    // against a type it no longer has. `updateQuestion` is a plain UPDATE, but
+    // it still blocks on this row lock, so the two serialize — same lock
+    // `createAnswer` already takes for its `order` allocation.
+    const [question] = await trx
+      .select({ type: QuestionsTable.type })
+      .from(QuestionsTable)
+      .where(
+        and(
+          eq(QuestionsTable.id, target.questionId),
+          eq(QuestionsTable.organizationId, ctx.organizationId),
+        ),
+      )
+      .for("update");
 
-  if (!updated) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: ctx.t("errors.notFound"),
-    });
-  }
+    if (!question) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
 
-  return { updated: true };
+    const [updated] = await trx
+      .update(AnswersTable)
+      .set({
+        text: input.text,
+        isCorrect: resolveIsCorrect(question.type, input.isCorrect),
+      })
+      .where(
+        and(
+          eq(AnswersTable.id, input.id),
+          eq(AnswersTable.organizationId, ctx.organizationId),
+        ),
+      )
+      .returning({ id: AnswersTable.id });
+
+    if (!updated) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: ctx.t("errors.notFound"),
+      });
+    }
+
+    return { updated: true };
+  });
 }
 
 export async function deleteAnswer(
