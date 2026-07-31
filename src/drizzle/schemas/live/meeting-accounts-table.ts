@@ -1,9 +1,10 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   pgEnum,
   pgTable,
   unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -71,6 +72,17 @@ export const MeetingAccountsTable = pgTable(
   (table) => [
     index("meeting_accounts_organization_id_idx").on(table.organizationId),
     index("meeting_accounts_status_idx").on(table.status),
+    // A room's real identity, enforced rather than assumed: connecting the
+    // same onMeeting account twice — a retry, a rotated password, a second
+    // admin — must refresh the row it already has, not add a second one.
+    // Duplicates would double the org's apparent concurrent capacity and leave
+    // half its sessions pointing at credentials the reconnect superseded.
+    //
+    // Partial, over live rows only, so a disconnected room can be reconnected
+    // later without colliding with its own tombstone.
+    uniqueIndex("meeting_accounts_organization_id_room_code_unique")
+      .on(table.organizationId, table.roomCode)
+      .where(sql`${table.deletedAt} is null`),
     // Lets `sessions` hang a composite (organizationId, meetingAccountId) FK
     // off this pair, so a session can never point at another org's room.
     unique("meeting_accounts_organization_id_id_unique").on(

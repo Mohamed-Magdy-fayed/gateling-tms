@@ -100,4 +100,17 @@ describe("meeting_accounts table", () => {
   test("carries organizationId, like every tenant-owned table", () => {
     expect(Object.keys(MeetingAccountsTable)).toContain("organizationId");
   });
+
+  // Reconnecting the same account has to land on the row it already has —
+  // duplicates would double the org's apparent concurrent capacity. The
+  // guarantee is the partial unique index the upsert conflicts against, so the
+  // columns it is keyed on must both exist and be non-null.
+  test("has the columns the room-identity key is built from", () => {
+    const columns = Object.keys(MeetingAccountsTable);
+
+    expect(columns).toContain("roomCode");
+    expect(columns).toContain("deletedAt");
+    expect(MeetingAccountsTable.roomCode.notNull).toBe(true);
+    expect(MeetingAccountsTable.organizationId.notNull).toBe(true);
+  });
 });

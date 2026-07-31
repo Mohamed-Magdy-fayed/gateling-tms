@@ -92,6 +92,33 @@ describe("requestApiKeys", () => {
     );
   });
 
+  // The password's secrecy boundary is every exit path, not just the happy
+  // one. A provider outage answers with something this app didn't write, and
+  // the message it produces must still be its own.
+  test("a provider outage throws without echoing the submitted password", async () => {
+    stubFetch([{ status: 502, body: "<html>Bad Gateway</html>" }]);
+
+    await expect(
+      requestApiKeys("teacher@example.com", "hunter2"),
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof OnMeetingApiError &&
+        !error.message.includes("hunter2"),
+    );
+  });
+
+  test("a malformed success body throws without echoing the password", async () => {
+    stubFetch([{ body: envelope({ nonsense: "hunter2" }) }]);
+
+    await expect(
+      requestApiKeys("teacher@example.com", "hunter2"),
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof OnMeetingApiError &&
+        !error.message.includes("hunter2"),
+    );
+  });
+
   test("a response missing a key is refused rather than stored half-empty", async () => {
     stubFetch([{ body: envelope({ api_key: "k", account_id: "a" }) }]);
 

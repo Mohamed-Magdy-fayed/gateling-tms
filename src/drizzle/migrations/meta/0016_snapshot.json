@@ -1,5 +1,5 @@
 {
-  "id": "891e1f7c-1ef2-4f80-a0cd-370f65d2e724",
+  "id": "48279eec-d922-40c7-9478-098e6f67aaa0",
   "prevId": "0ad65455-22d1-42c4-80a6-ffae3c49d431",
   "version": "7",
   "dialect": "postgresql",
@@ -3836,6 +3836,28 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "meeting_accounts_organization_id_room_code_unique": {
+          "name": "meeting_accounts_organization_id_room_code_unique",
+          "columns": [
+            {
+              "expression": "organizationId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "roomCode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"meeting_accounts\".\"deletedAt\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}

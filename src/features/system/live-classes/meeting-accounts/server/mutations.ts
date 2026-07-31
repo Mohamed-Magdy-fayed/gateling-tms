@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { MeetingAccountsTable } from "@/drizzle/schema";
 import { encryptToken } from "@/integrations/oauth/token-crypto";
 import {
@@ -75,7 +75,15 @@ export async function connectMeetingAccount(
 
   // One transaction: a partial connect would leave some rooms usable and
   // others invisible, with no way for the admin to tell which.
-  const created = await ctx.db.transaction(async (tx) =>
+  //
+  // An **upsert**, not a plain insert. Connecting the same onMeeting account
+  // twice is ordinary — a retry after a network blip, a rotated password, a
+  // second admin doing what the first already did — and each of those must
+  // refresh the room it already has. Inserting again would double the org's
+  // apparent concurrent capacity while leaving half its sessions bound to
+  // credentials this call just superseded. The conflict target is the partial
+  // unique index on (organizationId, roomCode) over live rows.
+  const written = await ctx.db.transaction(async (tx) =>
     tx
       .insert(MeetingAccountsTable)
       .values(
@@ -92,10 +100,36 @@ export async function connectMeetingAccount(
           updatedBy: actor,
         })),
       )
+      .onConflictDoUpdate({
+        target: [
+          MeetingAccountsTable.organizationId,
+          MeetingAccountsTable.roomCode,
+        ],
+        targetWhere: isNull(MeetingAccountsTable.deletedAt),
+        set: {
+          name: sql`excluded."name"`,
+          // onMeeting is the authority on what a room is called; a rename
+          // there should show up here on the next connect.
+          roomName: sql`excluded."roomName"`,
+          accountId: sql`excluded."accountId"`,
+          apiKey: sql`excluded."apiKey"`,
+          apiSecret: sql`excluded."apiSecret"`,
+          // Reconnecting is exactly how an admin fixes a room whose
+          // credentials stopped working, so it clears the error rather than
+          // leaving a healthy room still labelled broken.
+          status: "active" as const,
+          lastError: null,
+          updatedBy: actor,
+          updatedAt: new Date(),
+        },
+      })
       .returning({ id: MeetingAccountsTable.id }),
   );
 
-  return { connected: created.length };
+  // Rooms the account no longer lists are deliberately left as they are:
+  // sessions reference them, and this app cannot tell "that room was
+  // cancelled" from "that response was incomplete".
+  return { connected: written.length };
 }
 
 export async function renameMeetingAccount(

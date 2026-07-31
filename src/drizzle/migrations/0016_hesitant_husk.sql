@@ -21,4 +21,5 @@ CREATE TABLE "meeting_accounts" (
 --> statement-breakpoint
 ALTER TABLE "meeting_accounts" ADD CONSTRAINT "meeting_accounts_organizationId_organizations_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "meeting_accounts_organization_id_idx" ON "meeting_accounts" USING btree ("organizationId");--> statement-breakpoint
-CREATE INDEX "meeting_accounts_status_idx" ON "meeting_accounts" USING btree ("status");
+CREATE INDEX "meeting_accounts_status_idx" ON "meeting_accounts" USING btree ("status");--> statement-breakpoint
+CREATE UNIQUE INDEX "meeting_accounts_organization_id_room_code_unique" ON "meeting_accounts" USING btree ("organizationId","roomCode") WHERE "meeting_accounts"."deletedAt" is null;
