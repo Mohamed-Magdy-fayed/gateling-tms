@@ -57,7 +57,7 @@ Sessions are Redis, not Postgres — no sessions table.
 ### Live classes (SOURCE `src\drizzle\schemas\online-lectures\`)
 | Table | SOURCE file | Changes |
 |---|---|---|
-| `meeting_accounts` | `zoom-clients-table.ts` | already had `organizationId` — keep. **Renamed from SOURCE's `zoom_clients` (D142)**, and onMeeting-only: one row per **room**, holding encrypted `apiKey`/`apiSecret` + `accountId` + `roomCode`. SOURCE's dual-provider `isZoom` flag and its Zoom OAuth columns are gone with the Zoom integration |
+| `meeting_accounts` | `zoom-clients-table.ts` | already had `organizationId` — keep. **Renamed from SOURCE's `zoom_clients` (D142)**, and onMeeting-only: one row per **room**, holding encrypted `apiKey`/`apiSecret` + `accountId` + `roomCode`. SOURCE's dual-provider `isZoom` flag and its Zoom OAuth columns are gone with the Zoom integration. **A room's identity is `(organizationId, roomCode)`, enforced by a partial unique index over non-deleted rows**, so a reconnect upserts the existing row instead of creating a duplicate that would double the org's apparent concurrent capacity |
 | `sessions` | `zoom-sessions-table.ts` | **+ organizationId**; FK group; generated from schedule by Inngest. **Renamed from SOURCE's `zoom_sessions` (STATE.md D80)** — a class session exists whether or not the org ever connects a meeting account, so live delivery is one optional channel Phase 6 layers on top. Its meeting columns (`meetingAccountId`, `meetingNumber`, `joinUrl`, `startUrl`) are filled **on demand when the class starts**, not at generation time (D143) |
 | `session_students` | `session-student-table.ts` | **+ organizationId**; attendance records |
 

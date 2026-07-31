@@ -57,7 +57,7 @@ Three environments, fully separated env vars (no sharing, no fallbacks across en
 | Firebase bucket | dev bucket | dev bucket (or preview folder) | prod bucket |
 | Inngest | `inngest-cli dev` (keyless) | Inngest preview env keys | Inngest prod keys |
 | Google OAuth | dev app credentials + localhost redirect URIs | dev credentials + preview redirect URIs | prod app credentials |
-| onMeeting | per-org, connected in-app — the only deployment-level value is `ONMEETING_CREDENTIALS_ENCRYPTION_KEY`, different per environment | same | same |
+| onMeeting | per-org, connected in-app; `ONMEETING_CREDENTIALS_ENCRYPTION_KEY` unique to dev | same setup; key unique to preview | same setup; key unique to production |
 | Env vars live in | `.env` (gitignored; `.env.example` committed) | Vercel env vars, **Preview** scope | Vercel env vars, **Production** scope |
 
 Setup happens in Phase 0 (Vercel project + Neon project + env scaffolding); credentials Mohamed provides are tracked in `STATE.md` → "Environment / credentials needed".

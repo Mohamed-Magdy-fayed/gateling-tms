@@ -56,7 +56,7 @@ Base URL `https://onmeeting.co/v2`. Successful responses wrap the payload as
 | `POST /auth/token` | `{api_key, api_secret}` → `{token}`, the bearer for everything else |
 | `GET /user/rooms` | the account's rooms — `room_code`, `room_name`, capacity, subscription end, status |
 | `POST /meeting` | `{topic, room_code, join_before_host, recording, alert}` → `{id, meeting_no, ...}` |
-| `GET /meeting/{meeting_no}` | → `{join_url, start_url}` |
+| `GET /meeting/{meeting_no}` | → `{join_url, start_url}` — **both stored exactly as returned** |
 | `GET /user/meetings` | rooms with their meetings — not used by this app |
 
 Every response is **Zod-parsed** on the way in (`src/integrations/onmeeting/`).
@@ -65,6 +65,14 @@ shape change would have surfaced as an unexplained crash deep in a mutation.
 
 Provider errors are never forwarded to the client verbatim and never logged
 raw — same rule as Gemini (D138) and Google.
+
+**The provider's `join_url` is authoritative.** `GET /meeting/{meeting_no}`
+returns both URLs and both are persisted as returned. The
+`https://onmeeting.co/j/{meeting_no}` form — which the legacy client built by
+hand for its meeting list — exists here only as a **fallback for the create
+response**, which carries a meeting number but no URLs. If onMeeting ever
+changes that link shape, a stored `join_url` keeps working where a constructed
+one would not.
 
 ## 4. Connect flow
 
@@ -92,6 +100,24 @@ admin opens "Connect onMeeting account"
   at a time (§5), so rooms are the real unit of capacity — an org running three
   concurrent classes needs three rooms, and the session scheduler picks between
   them exactly as the Zoom version picked between connected accounts.
+- **A room's identity is `(organizationId, roomCode)`, enforced in the
+  database** by a partial unique index over rows that aren't soft-deleted. This
+  is what makes reconnecting safe: connecting the same onMeeting account twice
+  — a retry, a rotated password, a second admin doing it — **updates the
+  existing row** (fresh credentials, current room name, back to `active`, error
+  cleared) instead of inserting a duplicate that would double the apparent
+  capacity and leave half the sessions pointing at stale keys. The index is
+  partial so a disconnected room can be reconnected later without colliding
+  with its own tombstone.
+- **A room that disappears from `/user/rooms` is left alone, not deleted.**
+  Sessions reference rooms, and the app can't tell "this room was cancelled"
+  from "this response was incomplete". Reconnecting refreshes what it sees; it
+  never retires what it doesn't.
+- **Credentials that stop decrypting** (a rotated
+  `ONMEETING_CREDENTIALS_ENCRYPTION_KEY`) surface as a failed call, which moves
+  that room to `status: "error"` with the reason. Reconnecting is the fix, and
+  because reconnect is an update keyed on the room, it repairs the same row
+  rather than leaving a broken one beside a working one.
 
 ## 5. Sessions and meetings
 
