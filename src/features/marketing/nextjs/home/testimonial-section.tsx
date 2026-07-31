@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getT } from "@/features/core/i18n/server";
+import { getPublicTestimonials } from "@/features/marketing/nextjs/testimonials/public-data";
 import { TestimonialCard } from "@/features/marketing/nextjs/testimonials/testimonial-card";
-import { api } from "@/integrations/trpc/server";
 
 /**
  * Real feedback from real academies, or nothing at all.
@@ -14,9 +14,7 @@ import { api } from "@/integrations/trpc/server";
  */
 export async function TestimonialSection() {
   const { t } = await getT();
-  const testimonials = await (await api()).testimonials.listPublic({
-    limit: 2,
-  });
+  const testimonials = await getPublicTestimonials(2);
 
   if (testimonials.length === 0) return null;
 

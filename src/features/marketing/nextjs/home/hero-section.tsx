@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/ui/course-card";
 import { Tag } from "@/components/ui/tag";
 import { getT } from "@/features/core/i18n/server";
-import { api } from "@/integrations/trpc/server";
+import { getPublicShowcase } from "@/features/marketing/nextjs/testimonials/public-data";
 
 export async function HeroSection() {
   const { t } = await getT();
@@ -14,7 +14,7 @@ export async function HeroSection() {
   // (STATE.md D152). The band renders nothing at all when nobody has — an
   // empty avatar row saying "0 academies" would be worse than no band.
   // The figure itself is inflated by design: see showcase-count.ts and D153.
-  const showcase = await (await api()).testimonials.showcase();
+  const showcase = await getPublicShowcase();
 
   const highlights = [
     t("landing.hero.highlights.free"),
