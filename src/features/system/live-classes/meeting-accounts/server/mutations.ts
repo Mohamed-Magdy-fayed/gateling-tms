@@ -198,14 +198,26 @@ export async function recordMeetingAccountFailure(
   id: string,
   reason: string,
 ) {
-  await ctx.db
-    .update(MeetingAccountsTable)
-    .set({
-      status: "error",
-      lastError: reason.slice(0, MAX_STORED_ERROR_LENGTH),
-      updatedBy: actorLabel(ctx),
-    })
-    .where(scopedTo(ctx, id));
+  try {
+    await ctx.db
+      .update(MeetingAccountsTable)
+      .set({
+        status: "error",
+        lastError: reason.slice(0, MAX_STORED_ERROR_LENGTH),
+        updatedBy: actorLabel(ctx),
+      })
+      .where(scopedTo(ctx, id));
+  } catch (error) {
+    // Swallowed on purpose, and the only place in this module where that is
+    // right: every caller is already handling a failure, and letting this
+    // one escape would replace the real reason a class wouldn't start with a
+    // database error about the bookkeeping. Logged so it isn't invisible.
+    console.error("Failed to record meeting-account failure", {
+      organizationId: ctx.organizationId,
+      meetingAccountId: id,
+      error,
+    });
+  }
 }
 
 const MAX_STORED_ERROR_LENGTH = 512;

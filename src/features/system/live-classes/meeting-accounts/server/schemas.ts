@@ -20,7 +20,7 @@ export const connectMeetingAccountSchema = z.object({
     .string()
     .trim()
     .min(1, translationKey("forms.validation.required"))
-    .max(200, translationKey("forms.validation.max256")),
+    .max(200, translationKey("forms.validation.max200")),
   email: z.email(translationKey("auth.validation.invalidEmail")),
   password: z.string().min(1, translationKey("forms.validation.required")),
 });

@@ -92,7 +92,10 @@ export function MeetingAccountsPage() {
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />
         </div>
-      ) : meetingAccounts.length === 0 ? (
+      ) : listQuery.isError ? null : meetingAccounts.length === 0 ? (
+        // A failed load leaves `rows` empty, which is not the same fact as
+        // "this org has connected nothing" — showing both messages would have
+        // the page contradict itself about something the admin can't check.
         <Card>
           <CardContent>
             <EmptyState

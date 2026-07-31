@@ -59,6 +59,7 @@ export default {
       required: "This field is required.",
       max32: "Must be at most 32 characters.",
       max128: "Must be at most 128 characters.",
+      max200: "Must be at most 200 characters.",
       max256: "Must be at most 256 characters.",
       max500: "Must be at most 500 characters.",
       max2000: "Must be at most 2000 characters.",
@@ -1086,7 +1087,9 @@ export default {
     password: "onMeeting password",
     passwordDescription: "Used once, never saved.",
     roomLabel: "Room: {room}",
-    connectedRooms: "Connected {count} room(s).",
+    connectedRooms: dt("Connected {count:plural}.", {
+      plural: { count: { one: "{?} room", other: "{?} rooms" } },
+    }),
     connectFailed: "Could not connect the onMeeting account.",
     disconnect: "Disconnect",
     disconnectTitle: "Disconnect this room?",

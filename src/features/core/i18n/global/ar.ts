@@ -59,6 +59,7 @@ export default {
       required: "هذا الحقل مطلوب.",
       max32: "يجب ألا يتجاوز 32 حرفًا.",
       max128: "يجب ألا يتجاوز 128 حرفًا.",
+      max200: "يجب ألا يتجاوز 200 حرف.",
       max256: "يجب ألا يتجاوز 256 حرفًا.",
       max500: "يجب ألا يتجاوز 500 حرف.",
       max2000: "يجب ألا يتجاوز 2000 حرفًا.",
@@ -1042,7 +1043,18 @@ export default {
     password: "كلمة مرور onMeeting",
     passwordDescription: "تُستخدم مرة واحدة ولا تُحفظ.",
     roomLabel: "الغرفة: {room}",
-    connectedRooms: "تم ربط {count} غرفة.",
+    connectedRooms: dt("تم ربط {count:plural}.", {
+      plural: {
+        count: {
+          zero: "لا غرف",
+          one: "غرفة واحدة",
+          two: "غرفتين",
+          few: "{?} غرف",
+          many: "{?} غرفة",
+          other: "{?} غرفة",
+        },
+      },
+    }),
     connectFailed: "تعذّر ربط حساب onMeeting.",
     disconnect: "فصل",
     disconnectTitle: "فصل هذه الغرفة؟",
