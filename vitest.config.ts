@@ -18,7 +18,11 @@ export default defineConfig({
     },
   },
   test: {
-    // Unit tests only — e2e/ belongs to Playwright.
+    // Unit tests only — e2e/ belongs to Playwright, and tests/integration/
+    // needs a live database, so it has its own config and script
+    // (`npm run test:isolation`). Excluding it keeps `npm test` runnable with
+    // nothing but the repo checked out.
     include: ["tests/**/*.test.ts"],
+    exclude: ["tests/integration/**"],
   },
 });

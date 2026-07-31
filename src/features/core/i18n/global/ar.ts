@@ -1436,7 +1436,7 @@ export default {
       },
     },
     logos: {
-      eyebrow: "موثوق به من أكاديميات في كل مكان",
+      eyebrow: "أكاديميات تعمل على جيتلينج",
     },
     testimonial: {
       eyebrow: "ماذا تقول الأكاديميات",

@@ -1465,7 +1465,7 @@ export default {
       },
     },
     logos: {
-      eyebrow: "Trusted by academies everywhere",
+      eyebrow: "Academies running on Gateling",
     },
     testimonial: {
       eyebrow: "What academies say",
