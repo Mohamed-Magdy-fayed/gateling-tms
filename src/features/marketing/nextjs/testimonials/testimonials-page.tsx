@@ -2,12 +2,12 @@ import { MessageSquareQuoteIcon } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getT } from "@/features/core/i18n/server";
 import { CtaBanner } from "@/features/marketing/nextjs/components/cta-banner";
+import { getPublicTestimonials } from "@/features/marketing/nextjs/testimonials/public-data";
 import { TestimonialCard } from "@/features/marketing/nextjs/testimonials/testimonial-card";
-import { api } from "@/integrations/trpc/server";
 
 export async function TestimonialsPage() {
   const { t } = await getT();
-  const testimonials = await (await api()).testimonials.listPublic({});
+  const testimonials = await getPublicTestimonials();
 
   return (
     <>

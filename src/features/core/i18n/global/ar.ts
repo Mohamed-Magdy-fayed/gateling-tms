@@ -1430,7 +1430,20 @@ export default {
         priceLabel: "مجاني",
       },
       socialProof: {
-        count: dt("أكثر من {count:number} أكاديمية", {}),
+        // Plural-aware: Arabic takes a different noun form per count band, and
+        // the displayed figure is small enough to land in several of them.
+        count: dt("أكثر من {count:plural}", {
+          plural: {
+            count: {
+              zero: "أكاديمية",
+              one: "أكاديمية واحدة",
+              two: "أكاديميتين",
+              few: "{?} أكاديميات",
+              many: "{?} أكاديمية",
+              other: "{?} أكاديمية",
+            },
+          },
+        }),
         suffix: "تُدرّس بالفعل على جيتلينج",
       },
     },

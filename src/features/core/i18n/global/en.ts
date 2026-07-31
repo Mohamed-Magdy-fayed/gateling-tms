@@ -1905,7 +1905,8 @@ export default {
       writeCta: "Write feedback",
       editCta: "Edit feedback",
       statusNone: "You haven't sent us feedback yet.",
-      statusPrivate: "Saved, and kept private — only the Gateling team sees it.",
+      statusPrivate:
+        "Saved, and kept private — only the Gateling team sees it.",
       statusPending: "Waiting for review before it appears publicly.",
       statusApproved: "Published on the Gateling website.",
     },
