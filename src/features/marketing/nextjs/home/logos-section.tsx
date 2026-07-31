@@ -1,5 +1,5 @@
 import { getT } from "@/features/core/i18n/server";
-import { api } from "@/integrations/trpc/server";
+import { getPublicShowcase } from "@/features/marketing/nextjs/testimonials/public-data";
 
 /**
  * The names of real academies that consented to be named, or nothing.
@@ -12,7 +12,7 @@ import { api } from "@/integrations/trpc/server";
  */
 export async function LogosSection() {
   const { t } = await getT();
-  const showcase = await (await api()).testimonials.showcase();
+  const showcase = await getPublicShowcase();
 
   if (showcase.academies.length === 0) return null;
 
