@@ -15,6 +15,7 @@ export default {
     certificates: "الشهادات",
     liveClasses: "الحصص المباشرة",
     zoomConnections: "اتصالات Zoom",
+    meetingRooms: "غرف الاجتماعات",
     settings: "الإعدادات",
     assessments: "التقييمات",
   },
@@ -58,6 +59,7 @@ export default {
       required: "هذا الحقل مطلوب.",
       max32: "يجب ألا يتجاوز 32 حرفًا.",
       max128: "يجب ألا يتجاوز 128 حرفًا.",
+      max200: "يجب ألا يتجاوز 200 حرف.",
       max256: "يجب ألا يتجاوز 256 حرفًا.",
       max500: "يجب ألا يتجاوز 500 حرف.",
       max2000: "يجب ألا يتجاوز 2000 حرفًا.",
@@ -1022,6 +1024,61 @@ export default {
     errors: {
       notConfigured:
         "لم يتم إعداد Zoom على هذا النظام بعد. اطلب من المشغّل إضافة بيانات اعتماد Zoom.",
+    },
+  },
+  meetingAccounts: {
+    title: "غرف الاجتماعات",
+    subtitle:
+      "اربط حساب onMeeting الذي تُقام عليه حصصك. كل غرفة فيه تصبح غرفة يمكنك عقد حصة داخلها. الجدولة تعمل بدونه — تبقى الحصص بدون رابط حتى تربط حسابًا.",
+    connect: "ربط onMeeting",
+    connectAction: "ربط الحساب",
+    connectDescription:
+      "سجّل الدخول بحساب onMeeting الخاص بك، وستصبح كل غرفه متاحة للحصص.",
+    passwordNotice:
+      "تُستخدم كلمة مرور onMeeting مرة واحدة للحصول على مفتاح وصول، ولا يحفظها Gateling-TMS إطلاقًا.",
+    name: "اسم الاتصال",
+    nameDescription: "لفريقك، مثل «الحساب الرئيسي» أو «الحصص المسائية».",
+    email: "بريد onMeeting",
+    emailDescription: "البريد الذي تسجّل به الدخول إلى onMeeting.",
+    password: "كلمة مرور onMeeting",
+    passwordDescription: "تُستخدم مرة واحدة ولا تُحفظ.",
+    roomLabel: "الغرفة: {room}",
+    connectedRooms: dt("تم ربط {count:plural}.", {
+      plural: {
+        count: {
+          zero: "لا غرف",
+          one: "غرفة واحدة",
+          two: "غرفتين",
+          few: "{?} غرف",
+          many: "{?} غرفة",
+          other: "{?} غرفة",
+        },
+      },
+    }),
+    connectFailed: "تعذّر ربط حساب onMeeting.",
+    disconnect: "فصل",
+    disconnectTitle: "فصل هذه الغرفة؟",
+    disconnectDescription:
+      "سيتم فصل «{name}». تبقى الحصص المجدولة كما هي، لكن لن يمكن بدء حصة جديدة في هذه الغرفة. يظل مفتاح الوصول صالحًا لدى onMeeting — غيّره من هناك إن أردت إبطاله.",
+    disconnected: "تم فصل الغرفة.",
+    disconnectFailed: "تعذّر فصل الغرفة.",
+    loadFailed: "تعذّر تحميل غرف الاجتماعات.",
+    emptyTitle: "لا يوجد حساب onMeeting مرتبط",
+    emptyDescription: "اربط حسابًا لتصبح غرفه متاحة لحصصك المجدولة.",
+    status: {
+      active: "مرتبط",
+      error: "يحتاج إلى مراجعة",
+    },
+    errors: {
+      notConfigured:
+        "لم يتم إعداد onMeeting على هذا النظام بعد. اطلب من المشغّل ضبط مفتاح تشفير onMeeting.",
+      rejected:
+        "لم يقبل onMeeting هذا البريد وكلمة المرور. تحقّق منهما وحاول مرة أخرى.",
+      noRooms: "لا توجد غرف في حساب onMeeting هذا، فلا مكان لعقد حصة فيه بعد.",
+      rateLimited: "محاولات ربط كثيرة. انتظر قليلًا قبل المحاولة مجددًا.",
+      providerRateLimited:
+        "يقيّد onMeeting هذا الحساب حاليًا. حاول مرة أخرى بعد قليل.",
+      unavailable: "تعذّر الوصول إلى onMeeting. حاول مرة أخرى بعد قليل.",
     },
   },
   googleImport: {

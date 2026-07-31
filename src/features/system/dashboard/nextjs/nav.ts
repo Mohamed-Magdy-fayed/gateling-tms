@@ -29,7 +29,8 @@ export type SystemNavItem = {
     | "nav.enrollments"
     | "nav.certificates"
     | "nav.liveClasses"
-    | "nav.zoomConnections";
+    | "nav.zoomConnections"
+    | "nav.meetingRooms";
   Icon: LucideIcon;
 };
 
@@ -88,8 +89,12 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     Icon: VideoIcon,
   },
   {
-    href: "/live-classes/zoom-clients",
-    translationKey: "nav.zoomConnections",
+    // The Zoom equivalent (`/live-classes/zoom-clients`) is deliberately no
+    // longer in the sidebar: Zoom is being deleted in the next segment
+    // (STATE.md D142), and shipping two "connections" entries for one window
+    // would be more confusing than the page briefly being URL-only.
+    href: "/live-classes/meeting-accounts",
+    translationKey: "nav.meetingRooms",
     Icon: PlugZapIcon,
   },
 ];

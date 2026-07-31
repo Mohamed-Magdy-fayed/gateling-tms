@@ -6,8 +6,16 @@ export default defineConfig({
   // can import modules that use the `@/` alias (e.g. schemas.ts pulling in
   // the i18n dictionary for translation keys) without rewriting every
   // import to a relative path.
+  // `server-only` is a build-time guard: its whole job is to throw when a
+  // client bundle imports it, and vitest is neither. Stubbing it lets modules
+  // that legitimately carry the marker — the onMeeting client handles a
+  // password, so it must — still be unit-tested, instead of forcing the choice
+  // between "testable" and "can't be imported into a client component".
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "server-only": path.resolve(__dirname, "./tests/stubs/server-only.ts"),
+    },
   },
   test: {
     // Unit tests only — e2e/ belongs to Playwright.
