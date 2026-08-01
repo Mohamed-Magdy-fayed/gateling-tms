@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   AnswersTable,
+  FormBlocksTable,
   FormSectionsTable,
   FormsTable,
   QuestionsTable,
@@ -106,11 +107,16 @@ export async function getForm(ctx: OrgTRPCContext, id: string) {
   return form;
 }
 
-// The full builder/preview tree in one round trip (sections -> questions ->
-// answers, all ordered) — the preview/test-submit UI renders straight from
-// this rather than issuing the same waterfall of per-level `list` calls the
-// admin builder's expandable cards use, since a read-only preview needs the
-// whole thing at once anyway.
+// The full builder/preview tree in one round trip (sections -> questions +
+// content blocks -> answers, all ordered) — the preview/test-submit UI renders
+// straight from this rather than issuing the same waterfall of per-level `list`
+// calls the admin builder's expandable cards use, since a read-only preview
+// needs the whole thing at once anyway.
+//
+// Questions and blocks come back as separate arrays sharing one `order`
+// sequence; the renderer interleaves them. Merging them here would mean
+// inventing a union row shape that every consumer then has to narrow, and the
+// two are genuinely different things — one is answered, the other is read.
 export async function getFormTree(ctx: OrgTRPCContext, id: string) {
   await getForm(ctx, id);
 
@@ -128,6 +134,9 @@ export async function getFormTree(ctx: OrgTRPCContext, id: string) {
             orderBy: asc(AnswersTable.order),
           },
         },
+      },
+      blocks: {
+        orderBy: asc(FormBlocksTable.order),
       },
     },
   });

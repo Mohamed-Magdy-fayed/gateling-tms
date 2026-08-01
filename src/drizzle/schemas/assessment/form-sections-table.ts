@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { OrganizationsTable } from "@/drizzle/schemas/auth";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
+import { FormBlocksTable } from "./form-blocks-table";
 import { FormsTable } from "./forms-table";
 import { QuestionsTable } from "./questions-table";
 
@@ -53,6 +54,7 @@ export const formSectionsRelations = relations(
       references: [FormsTable.id],
     }),
     questions: many(QuestionsTable),
+    blocks: many(FormBlocksTable),
   }),
 );
 

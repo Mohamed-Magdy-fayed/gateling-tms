@@ -14,46 +14,43 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { type Answer, isTextQuestion, type QuestionType } from "@/drizzle/schema";
+import type { FormBlock } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
-type AnswerDeleteDialogProps = {
-  answer: Answer | null;
+type BlockDeleteDialogProps = {
+  block: FormBlock | null;
   onDeleted?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
-  questionType: QuestionType;
 };
 
-export function AnswerDeleteDialog({
-  answer,
+export function BlockDeleteDialog({
+  block,
   onDeleted,
   onOpenChange,
   open,
-  questionType,
-}: AnswerDeleteDialogProps) {
-  const isShortAnswer = isTextQuestion(questionType);
+}: BlockDeleteDialogProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const deleteMut = useMutation(trpc.answers.delete.mutationOptions());
+  const deleteMut = useMutation(trpc.blocks.delete.mutationOptions());
   const [pending, setPending] = useState(false);
 
   async function handleConfirm() {
-    if (!answer) return;
+    if (!block) return;
 
     setPending(true);
     try {
       await toast
-        .promise(deleteMut.mutateAsync({ id: answer.id }), {
+        .promise(deleteMut.mutateAsync({ id: block.id }), {
           loading: t("common.loading"),
-          success: t("answers.deleted"),
+          success: t("blocks.deleted"),
           error: (err) =>
-            err instanceof Error ? err.message : t("answers.deleteFailed"),
+            err instanceof Error ? err.message : t("blocks.deleteFailed"),
         })
         .unwrap();
-      await queryClient.invalidateQueries({ queryKey: trpc.answers.pathKey() });
+      await queryClient.invalidateQueries({ queryKey: trpc.blocks.pathKey() });
       onDeleted?.();
       onOpenChange(false);
     } catch {
@@ -67,21 +64,9 @@ export function AnswerDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t(
-              isShortAnswer
-                ? "answers.shortAnswer.deleteTitle"
-                : "answers.deleteTitle",
-            )}
-          </AlertDialogTitle>
+          <AlertDialogTitle>{t("blocks.deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {answer
-              ? t(
-                  isShortAnswer
-                    ? "answers.shortAnswer.deleteDescription"
-                    : "answers.deleteDescription",
-                )
-              : ""}
+            {block ? t("blocks.deleteDescription") : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

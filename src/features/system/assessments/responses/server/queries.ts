@@ -5,6 +5,7 @@ import {
   FormResponsesTable,
   FormSectionsTable,
   FormsTable,
+  isTextQuestion,
   UsersTable,
 } from "@/drizzle/schema";
 import { type ScorableQuestion, sumQuestionPoints } from "./scoring";
@@ -109,7 +110,7 @@ export async function getGradingSheet(ctx: OrgTRPCContext, responseId: string) {
   const questions = await getScorableQuestions(ctx, response.formId);
 
   const items = questions
-    .filter((question) => question.type === "short_answer")
+    .filter((question) => isTextQuestion(question.type))
     .map((question) => ({
       questionId: question.id,
       questionText: question.text,

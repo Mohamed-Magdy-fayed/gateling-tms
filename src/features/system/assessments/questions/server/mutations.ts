@@ -1,6 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
-import { FormSectionsTable, QuestionsTable } from "@/drizzle/schema";
+import { and, eq } from "drizzle-orm";
+import { QuestionsTable } from "@/drizzle/schema";
+import {
+  lockSection,
+  moveSectionItem,
+  nextItemOrder,
+} from "@/features/system/assessments/sections/server/reorder";
 import type {
   QuestionDeleteInput,
   QuestionMoveInput,
@@ -14,37 +19,16 @@ export async function createQuestion(
   input: QuestionMutationInput,
 ) {
   return ctx.db.transaction(async (trx) => {
-    // Locks the section row for the rest of the transaction so two
-    // concurrent creates against the same section can't both observe the
-    // same `order` allocation and insert duplicates — same pattern as
-    // sections/server/mutations.ts's createSection.
-    const [section] = await trx
-      .select({ id: FormSectionsTable.id })
-      .from(FormSectionsTable)
-      .where(
-        and(
-          eq(FormSectionsTable.id, input.sectionId),
-          eq(FormSectionsTable.organizationId, ctx.organizationId),
-        ),
-      )
-      .for("update");
-
-    if (!section) {
+    // The order sequence is shared with the section's content blocks, so both
+    // the lock and the allocation live in `sections/server/reorder.ts` — a
+    // question and a block created at the same moment must not be handed the
+    // same position.
+    if (!(await lockSection(trx, ctx.organizationId, input.sectionId))) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: ctx.t("errors.notFound"),
       });
     }
-
-    // `max(order) + 1` rather than `count()` — deleting a question never
-    // renumbers its surviving siblings, so a plain count of remaining rows
-    // can collide with an order value a surviving row already holds.
-    const [{ value: maxOrder }] = await trx
-      .select({
-        value: sql<number>`coalesce(max(${QuestionsTable.order}), -1)`,
-      })
-      .from(QuestionsTable)
-      .where(eq(QuestionsTable.sectionId, input.sectionId));
 
     const [question] = await trx
       .insert(QuestionsTable)
@@ -52,9 +36,13 @@ export async function createQuestion(
         organizationId: ctx.organizationId,
         sectionId: input.sectionId,
         text: input.text,
+        description: input.description || null,
         type: input.type,
         points: input.points,
-        order: Number(maxOrder) + 1,
+        isRequired: input.isRequired,
+        imageUrl: input.imageUrl || null,
+        imageAlt: input.imageAlt || null,
+        order: await nextItemOrder(trx, input.sectionId),
       })
       .returning({ id: QuestionsTable.id });
 
@@ -68,7 +56,15 @@ export async function updateQuestion(
 ) {
   const [updated] = await ctx.db
     .update(QuestionsTable)
-    .set({ text: input.text, type: input.type, points: input.points })
+    .set({
+      text: input.text,
+      description: input.description || null,
+      type: input.type,
+      points: input.points,
+      isRequired: input.isRequired,
+      imageUrl: input.imageUrl || null,
+      imageAlt: input.imageAlt || null,
+    })
     .where(
       and(
         eq(QuestionsTable.id, input.id),
@@ -113,96 +109,11 @@ export async function deleteQuestion(
   return { deleted: true };
 }
 
-// Swaps `order` with the adjacent sibling in the same section rather than
-// renumbering the whole list — same reasoning as sections/server/mutations.ts's
-// moveSection. Locking the section row also serializes this against
-// createQuestion's order allocation for the same section.
+// Moves the question among *all* of the section's items — its neighbour may be
+// a content block, since the two share one order sequence.
 export async function moveQuestion(
   ctx: OrgTRPCContext,
   input: QuestionMoveInput,
 ) {
-  return ctx.db.transaction(async (trx) => {
-    // Only resolves which section to lock — its `order` isn't trusted yet,
-    // since a concurrent move on this exact question could still land
-    // between this read and the lock below.
-    const pre = await trx.query.QuestionsTable.findFirst({
-      where: and(
-        eq(QuestionsTable.id, input.id),
-        eq(QuestionsTable.organizationId, ctx.organizationId),
-      ),
-      columns: { sectionId: true },
-    });
-
-    if (!pre) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: ctx.t("errors.notFound"),
-      });
-    }
-
-    const [section] = await trx
-      .select({ id: FormSectionsTable.id })
-      .from(FormSectionsTable)
-      .where(
-        and(
-          eq(FormSectionsTable.id, pre.sectionId),
-          eq(FormSectionsTable.organizationId, ctx.organizationId),
-        ),
-      )
-      .for("update");
-
-    if (!section) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: ctx.t("errors.notFound"),
-      });
-    }
-
-    // Re-read now that the section row is locked, so `current.order` is
-    // authoritative — a concurrent move could have changed it between the
-    // pre-lock read above and this point.
-    const current = await trx.query.QuestionsTable.findFirst({
-      where: and(
-        eq(QuestionsTable.id, input.id),
-        eq(QuestionsTable.organizationId, ctx.organizationId),
-      ),
-      columns: { id: true, sectionId: true, order: true },
-    });
-
-    if (!current) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: ctx.t("errors.notFound"),
-      });
-    }
-
-    const neighbor = await trx.query.QuestionsTable.findFirst({
-      where: and(
-        eq(QuestionsTable.sectionId, current.sectionId),
-        eq(QuestionsTable.organizationId, ctx.organizationId),
-        input.direction === "up"
-          ? lt(QuestionsTable.order, current.order)
-          : gt(QuestionsTable.order, current.order),
-      ),
-      orderBy:
-        input.direction === "up"
-          ? desc(QuestionsTable.order)
-          : asc(QuestionsTable.order),
-      columns: { id: true, order: true },
-    });
-
-    // Already first/last — nothing to swap with, not an error.
-    if (!neighbor) return { moved: false };
-
-    await trx
-      .update(QuestionsTable)
-      .set({ order: neighbor.order })
-      .where(eq(QuestionsTable.id, current.id));
-    await trx
-      .update(QuestionsTable)
-      .set({ order: current.order })
-      .where(eq(QuestionsTable.id, neighbor.id));
-
-    return { moved: true };
-  });
+  return moveSectionItem(ctx, { ...input, kind: "question" });
 }

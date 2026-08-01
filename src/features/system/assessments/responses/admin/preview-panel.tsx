@@ -24,7 +24,7 @@ export function PreviewPanel({ form }: { form: Form }) {
   const {
     drafts,
     toggleChoice,
-    setShortAnswerText,
+    setTextAnswer,
     reset,
     toSubmittableAnswers,
   } = useAnswerDrafts();
@@ -91,7 +91,7 @@ export function PreviewPanel({ form }: { form: Form }) {
         sections={sections ?? []}
         drafts={drafts}
         onToggleChoice={toggleChoice}
-        onSetShortAnswerText={setShortAnswerText}
+        onSetTextAnswer={setTextAnswer}
       />
 
       <Button
