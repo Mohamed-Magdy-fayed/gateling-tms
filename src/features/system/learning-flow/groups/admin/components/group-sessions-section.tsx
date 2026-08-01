@@ -1,9 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { CalendarDaysIcon } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CalendarDaysIcon, RefreshCwIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -31,6 +35,15 @@ type GroupSessionsSectionProps = {
 /** How often to re-check while generation is expected but hasn't landed. */
 const PENDING_POLL_MS = 3000;
 
+/**
+ * How long to keep calling generation "pending" before calling it stuck.
+ *
+ * A queued regeneration lands in seconds. Polling past that was the bug this
+ * card used to have: with the queue unreachable it spun on "generating…"
+ * forever, which reads as progress and gives nobody anything to do about it.
+ */
+const PENDING_TIMEOUT_MS = 30_000;
+
 export function GroupSessionsSection({
   groupId,
   hasSchedule,
@@ -39,32 +52,123 @@ export function GroupSessionsSection({
 }: GroupSessionsSectionProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  // `sessions.byGroup`, not a groups-owned query: these rows carry the Zoom
-  // join links, and the rules for who may see a host link live with the rest
-  // of the meeting code (live-classes/sessions).
+  // `sessions.byGroup`, not a groups-owned query: these rows carry the
+  // onMeeting join links, and the rules for who may see a host link live with
+  // the rest of the meeting code (live-classes/sessions).
   const { data, isLoading } = useQuery({
     ...trpc.sessions.byGroup.queryOptions({ groupId }),
-    // Generation runs through Inngest, so an empty list right after saving a
-    // schedule means "not yet", not "never". Poll until the first session
-    // shows up, then stop — no reason to keep hitting the server once the
-    // list is populated or the group has no slots to generate from.
+    // Generation usually runs through Inngest, so an empty list right after
+    // saving a schedule means "not yet", not "never".
     refetchInterval: (query) => {
       const rows = query.state.data?.rows;
       return hasSchedule && rows && rows.length === 0 ? PENDING_POLL_MS : false;
     },
   });
 
-  // An empty list means two very different things depending on whether any
-  // slots exist. Telling someone who just saved a schedule to "add a slot"
-  // reads as though their save was lost.
-  const isPending = hasSchedule && data?.rows.length === 0;
+  const hasRows = (data?.rows.length ?? 0) > 0;
+  const isWaiting = hasSchedule && !hasRows && !isLoading;
+
+  // Timed rather than counted from `refetchInterval`: that callback runs
+  // during render, where a state update is not allowed.
+  const [hasWaitedTooLong, setHasWaitedTooLong] = useState(false);
+  useEffect(() => {
+    if (!isWaiting) {
+      setHasWaitedTooLong(false);
+      return;
+    }
+
+    const timer = setTimeout(
+      () => setHasWaitedTooLong(true),
+      PENDING_TIMEOUT_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [isWaiting]);
+
+  const regenerateMut = useMutation(
+    trpc.groups.regenerateSessions.mutationOptions(),
+  );
+
+  async function handleRegenerate() {
+    try {
+      const result = await regenerateMut.mutateAsync({ id: groupId });
+      // Zero written with a schedule set means the slots expand to nothing —
+      // every occurrence already in the past, or slots the expander rejects.
+      // Reporting success would send the user back to a still-empty list.
+      toast.success(
+        t(
+          result.written > 0
+            ? "groups.sessions.regenerated"
+            : "groups.sessions.regeneratedEmpty",
+        ),
+      );
+      setHasWaitedTooLong(false);
+      await queryClient.invalidateQueries({
+        queryKey: trpc.sessions.pathKey(),
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("groups.sessions.regenerateFailed"),
+      );
+    }
+  }
+
+  // An empty list means three different things. Telling someone who just saved
+  // a schedule to "add a slot" reads as though their save was lost, and
+  // telling someone whose generation never ran that it is still working reads
+  // as though waiting will fix it.
+  const emptyState = () => {
+    if (isWaiting && !hasWaitedTooLong) {
+      return (
+        <EmptyState
+          icon={<Spinner />}
+          title={t("groups.sessions.pending")}
+          description={t("groups.sessions.lead")}
+        />
+      );
+    }
+
+    if (isWaiting) {
+      return (
+        <EmptyState
+          icon={<CalendarDaysIcon />}
+          title={t("groups.sessions.stuckTitle")}
+          description={t("groups.sessions.stuckDescription")}
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        icon={<CalendarDaysIcon />}
+        title={t("groups.sessions.emptyTitle")}
+        description={t("groups.sessions.emptyDescription")}
+      />
+    );
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t("groups.sessions.title")}</CardTitle>
         <CardDescription>{t("groups.sessions.lead")}</CardDescription>
+        {hasSchedule ? (
+          <CardAction>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={regenerateMut.isPending}
+              onClick={() => void handleRegenerate()}
+            >
+              <RefreshCwIcon className="size-3.5" />
+              {t("groups.sessions.regenerate")}
+            </Button>
+          </CardAction>
+        ) : null}
       </CardHeader>
 
       <CardContent>
@@ -72,25 +176,15 @@ export function GroupSessionsSection({
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
-        ) : isPending ? (
-          <EmptyState
-            icon={<Spinner />}
-            title={t("groups.sessions.pending")}
-            description={t("groups.sessions.lead")}
-          />
-        ) : !data || data.rows.length === 0 ? (
-          <EmptyState
-            icon={<CalendarDaysIcon />}
-            title={t("groups.sessions.emptyTitle")}
-            description={t("groups.sessions.emptyDescription")}
-          />
-        ) : (
+        ) : hasRows ? (
           <SessionList
-            sessions={data.rows}
-            hasActiveMeetingAccount={data.hasActiveMeetingAccount}
+            sessions={data?.rows ?? []}
+            hasActiveMeetingAccount={data?.hasActiveMeetingAccount ?? false}
             timeZone={timeZone}
             canOpenRegister={canOpenRegister}
           />
+        ) : (
+          emptyState()
         )}
       </CardContent>
     </Card>

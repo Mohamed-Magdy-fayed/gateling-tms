@@ -19,6 +19,13 @@ export const env = createEnv({
     // inngest-cli dev works keyless locally; prod needs both (Phase 1 close-out).
     INNGEST_SIGNING_KEY: z.string().min(1).optional(),
     INNGEST_EVENT_KEY: z.string().min(1).optional(),
+    // Read by the Inngest SDK itself, declared here only so the deployment
+    // guard below can see it. `.env` sets it to 1 for local dev.
+    INNGEST_DEV: z.string().min(1).optional(),
+    // Set by Vercel on every build and every runtime instance, and by nothing
+    // else — the one reliable "this is a deployment, not a laptop" signal.
+    // NODE_ENV can't stand in: `npm run preview` is a production build too.
+    VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
 
     // Used to build absolute links (email verification, OAuth redirect).
     // Optional here so dev/build never needs them set — defaulted to
@@ -108,6 +115,26 @@ if (
 ) {
   throw new Error(
     "INNGEST_SIGNING_KEY and INNGEST_EVENT_KEY are required in production.",
+  );
+}
+
+// Fail closed the other way too: INNGEST_DEV points the SDK at a local dev
+// server (http://localhost:8288) instead of Inngest Cloud. Copied into a
+// Vercel scope it makes every `inngest.send` fail silently — no function ever
+// runs, and the only symptom is work that never happens (D163/D165).
+//
+// Keyed on VERCEL_ENV, not NODE_ENV: `npm run preview` (and therefore the
+// whole Playwright suite) is a production build running against local `.env`,
+// where INNGEST_DEV=1 is correct. "0" and "false" are the SDK's own explicit
+// opt-outs and stay allowed.
+const INNGEST_DEV_OPT_OUT = new Set(["0", "false"]);
+if (
+  (env.VERCEL_ENV === "preview" || env.VERCEL_ENV === "production") &&
+  env.INNGEST_DEV &&
+  !INNGEST_DEV_OPT_OUT.has(env.INNGEST_DEV.trim().toLowerCase())
+) {
+  throw new Error(
+    "INNGEST_DEV must not be set on a Vercel deployment — it routes events to a local dev server.",
   );
 }
 

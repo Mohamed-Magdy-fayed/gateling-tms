@@ -131,6 +131,17 @@ export const groupStudentImportCommitInput = z.object({
   rows: z.array(z.record(z.string(), z.string())).min(1).max(MAX_IMPORT_ROWS),
 });
 
+/**
+ * How a save generated the group's sessions. Lives here rather than beside the
+ * mutation that produces it because the form dialog reads it too, and this is
+ * the one module in the feature both sides already import.
+ *
+ * `inline` is not an error — the sessions exist, the queue just wasn't the one
+ * that wrote them. Only `failed` means the group has a schedule and no
+ * sessions, and only that warrants telling the user anything.
+ */
+export type SessionRegenerationMode = "queued" | "inline" | "failed";
+
 export type ListGroupsInput = z.infer<typeof listGroupsInput>;
 export type GroupStudentImportRow = z.infer<typeof groupStudentImportRowSchema>;
 export type GroupStudentImportPreviewInput = z.infer<

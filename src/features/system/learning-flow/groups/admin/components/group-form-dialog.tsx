@@ -29,6 +29,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import {
   type GroupMutationInput,
   groupMutationSchema,
+  type SessionRegenerationMode,
 } from "@/features/system/learning-flow/groups/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
 import { GroupScheduleEditor } from "./group-schedule-editor";
@@ -107,7 +108,10 @@ export function GroupFormDialog({
     defaultValues,
     validators: { onSubmit: groupMutationSchema },
     onSubmit: async ({ value }) => {
-      const action: Promise<{ sessionsQueued: boolean; id?: string }> =
+      const action: Promise<{
+        sessions: SessionRegenerationMode;
+        id?: string;
+      }> =
         isEdit && group
           ? updateMut.mutateAsync({ id: group.id, ...value })
           : createMut.mutateAsync(value);
@@ -122,10 +126,11 @@ export function GroupFormDialog({
           })
           .unwrap();
 
-        // The group itself saved; only the session generation enqueue failed.
-        // Say so plainly rather than letting the roster look scheduled when
-        // no sessions will appear.
-        if (!result.sessionsQueued) {
+        // The group itself saved but neither the queue nor the inline fallback
+        // could generate its sessions. Say so plainly rather than letting the
+        // roster look scheduled when no sessions will appear — the group's
+        // "regenerate" action is the retry.
+        if (result.sessions === "failed") {
           toast.warning(t("groups.sessionsQueueFailed"));
         }
 
