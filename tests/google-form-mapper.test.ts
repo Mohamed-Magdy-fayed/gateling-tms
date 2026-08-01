@@ -1,4 +1,9 @@
 import { describe, expect, test } from "vitest";
+import type {
+  MappedBlock,
+  MappedQuestion,
+  MappedSection,
+} from "../src/features/system/assessments/google-import/lib/map-google-form";
 import { mapGoogleForm } from "../src/features/system/assessments/google-import/lib/map-google-form";
 import type { GoogleForm } from "../src/integrations/google/forms";
 
@@ -41,6 +46,15 @@ function choiceItem(
 
 const noteCodes = (mapped: ReturnType<typeof mapGoogleForm>) =>
   mapped.notes.map((note) => note.code);
+
+/** Questions and content blocks share one ordered list per section. */
+function questionsOf(section: MappedSection): MappedQuestion[] {
+  return section.items.filter((item) => item.kind === "question");
+}
+
+function blocksOf(section: MappedSection): MappedBlock[] {
+  return section.items.filter((item) => item.kind === "block");
+}
 
 describe("mapGoogleForm — structure", () => {
   test("puts items before the first page break in a section named after the form", () => {
@@ -107,8 +121,8 @@ describe("mapGoogleForm — structure", () => {
       }),
     );
 
-    expect(mapped.sections[0].questions.map((q) => q.order)).toEqual([0, 1]);
-    expect(mapped.sections[1].questions.map((q) => q.order)).toEqual([0]);
+    expect(questionsOf(mapped.sections[0]).map((q) => q.order)).toEqual([0, 1]);
+    expect(questionsOf(mapped.sections[1]).map((q) => q.order)).toEqual([0]);
   });
 
   test("maps an empty form to no sections and no questions", () => {
@@ -145,7 +159,7 @@ describe("mapGoogleForm — question types", () => {
     const mapped = mapGoogleForm(
       form({ items: [choiceItem("Capital?", "RADIO", ["Cairo", "Giza"])] }),
     );
-    const question = mapped.sections[0].questions[0];
+    const question = questionsOf(mapped.sections[0])[0];
 
     expect(question.type).toBe("single_choice");
     expect(question.answers).toEqual([
@@ -160,7 +174,7 @@ describe("mapGoogleForm — question types", () => {
       form({ items: [choiceItem("Pick all", "CHECKBOX", ["A", "B"])] }),
     );
 
-    expect(mapped.sections[0].questions[0].type).toBe("multiple_choice");
+    expect(questionsOf(mapped.sections[0])[0].type).toBe("multiple_choice");
   });
 
   test("DROP_DOWN becomes single choice and is flagged as converted", () => {
@@ -168,7 +182,7 @@ describe("mapGoogleForm — question types", () => {
       form({ items: [choiceItem("Level", "DROP_DOWN", ["A1", "A2"])] }),
     );
 
-    expect(mapped.sections[0].questions[0].type).toBe("single_choice");
+    expect(questionsOf(mapped.sections[0])[0].type).toBe("single_choice");
     expect(noteCodes(mapped)).toEqual(["convertedDropdown"]);
   });
 
@@ -183,14 +197,14 @@ describe("mapGoogleForm — question types", () => {
         ],
       }),
     );
-    const question = mapped.sections[0].questions[0];
+    const question = questionsOf(mapped.sections[0])[0];
 
     expect(question.type).toBe("short_answer");
     expect(question.answers).toEqual([]);
     expect(mapped.notes).toEqual([]);
   });
 
-  test("a paragraph question also becomes a short answer, flagged", () => {
+  test("a paragraph question becomes a long answer, not a downgraded short one", () => {
     const mapped = mapGoogleForm(
       form({
         items: [
@@ -202,8 +216,9 @@ describe("mapGoogleForm — question types", () => {
       }),
     );
 
-    expect(mapped.sections[0].questions[0].type).toBe("short_answer");
-    expect(noteCodes(mapped)).toEqual(["convertedParagraph"]);
+    expect(questionsOf(mapped.sections[0])[0].type).toBe("long_answer");
+    // Nothing was lost, so nothing is flagged — this used to be a downgrade.
+    expect(mapped.notes).toEqual([]);
   });
 
   test("a linear scale becomes one answer per step, with the end labels kept", () => {
@@ -226,7 +241,7 @@ describe("mapGoogleForm — question types", () => {
         ],
       }),
     );
-    const question = mapped.sections[0].questions[0];
+    const question = questionsOf(mapped.sections[0])[0];
 
     expect(question.type).toBe("single_choice");
     expect(question.answers.map((answer) => answer.text)).toEqual([
@@ -238,54 +253,109 @@ describe("mapGoogleForm — question types", () => {
   });
 
   test.each([
-    ["dateQuestion", { dateQuestion: {} }],
-    ["timeQuestion", { timeQuestion: {} }],
-    ["fileUploadQuestion", { fileUploadQuestion: {} }],
-    ["ratingQuestion", { ratingQuestion: {} }],
-  ])("skips an unsupported %s and lists it", (_label, question) => {
+    ["dateQuestion", { dateQuestion: {} }, "date"],
+    ["timeQuestion", { timeQuestion: {} }, "time"],
+  ] as const)("imports a %s as its own type", (_label, question, type) => {
     const mapped = mapGoogleForm(
-      form({ items: [{ title: "Unsupported", questionItem: { question } }] }),
+      form({ items: [{ title: "When?", questionItem: { question } }] }),
     );
 
-    expect(mapped.questionCount).toBe(0);
-    expect(mapped.notes).toEqual([
-      { id: 0, code: "skippedUnsupported", title: "Unsupported" },
-    ]);
+    expect(questionsOf(mapped.sections[0])[0].type).toBe(type);
+    expect(mapped.notes).toEqual([]);
   });
 
-  test("skips a grid, which is several questions in one Google item", () => {
+  test("a star rating becomes one answer per step, like a scale", () => {
     const mapped = mapGoogleForm(
       form({
         items: [
           {
-            title: "Rate each teacher",
-            questionGroupItem: { questions: [{}, {}] },
+            title: "Rate the teacher",
+            questionItem: { question: { ratingQuestion: { ratingScaleLevel: 5 } } },
+          },
+        ],
+      }),
+    );
+    const question = questionsOf(mapped.sections[0])[0];
+
+    expect(question.type).toBe("single_choice");
+    expect(question.answers.map((answer) => answer.text)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+    expect(noteCodes(mapped)).toEqual(["convertedRating"]);
+  });
+
+  // There is no upload path in a response, so importing this would create a
+  // question nobody can answer.
+  test("still skips a file upload, and lists it", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Upload your CV",
+            questionItem: { question: { fileUploadQuestion: {} } },
           },
         ],
       }),
     );
 
     expect(mapped.questionCount).toBe(0);
-    expect(noteCodes(mapped)).toEqual(["skippedGrid"]);
+    expect(mapped.notes).toEqual([
+      { id: 0, code: "skippedUnsupported", title: "Upload your CV" },
+    ]);
   });
 
-  test("lists text, image and video items as content rather than questions", () => {
+  test("a grid becomes one question per row, sharing the column options", () => {
     const mapped = mapGoogleForm(
       form({
         items: [
-          { title: "Read this first", textItem: {} },
-          { title: "Diagram", imageItem: {} },
-          { title: "Intro clip", videoItem: {} },
+          {
+            title: "Rate each teacher",
+            questionGroupItem: {
+              questions: [
+                { rowQuestion: { title: "Mr Adel" }, required: true },
+                { rowQuestion: { title: "Ms Hoda" } },
+              ],
+              grid: {
+                columns: {
+                  type: "RADIO",
+                  options: [{ value: "Good" }, { value: "Bad" }],
+                },
+              },
+            },
+          },
+        ],
+      }),
+    );
+    const questions = questionsOf(mapped.sections[0]);
+
+    expect(questions.map((question) => question.text)).toEqual([
+      "Rate each teacher — Mr Adel",
+      "Rate each teacher — Ms Hoda",
+    ]);
+    expect(questions.map((question) => question.order)).toEqual([0, 1]);
+    expect(questions[0].isRequired).toBe(true);
+    expect(questions[0].answers.map((answer) => answer.text)).toEqual([
+      "Good",
+      "Bad",
+    ]);
+    expect(noteCodes(mapped)).toEqual(["convertedGrid"]);
+  });
+
+  test("skips a grid with no columns rather than producing answerless rows", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          { title: "Broken grid", questionGroupItem: { questions: [{}, {}] } },
         ],
       }),
     );
 
     expect(mapped.questionCount).toBe(0);
-    expect(noteCodes(mapped)).toEqual([
-      "skippedContent",
-      "skippedContent",
-      "skippedContent",
-    ]);
+    expect(noteCodes(mapped)).toEqual(["skippedUnsupported"]);
   });
 
   test("skips a scale with no bounds rather than failing the whole form", () => {
@@ -338,7 +408,7 @@ describe("mapGoogleForm — question types", () => {
       }),
     );
 
-    expect(mapped.sections[0].questions[0].answers).toHaveLength(1);
+    expect(questionsOf(mapped.sections[0])[0].answers).toHaveLength(1);
     expect(noteCodes(mapped)).toEqual(["droppedOtherOption"]);
   });
 
@@ -347,7 +417,239 @@ describe("mapGoogleForm — question types", () => {
       form({ items: [choiceItem("", "RADIO", ["A"])] }),
     );
 
-    expect(mapped.sections[0].questions[0].text).toBe("Untitled");
+    expect(questionsOf(mapped.sections[0])[0].text).toBe("Untitled");
+  });
+});
+
+/**
+ * The gap Mohamed reported: a real comprehension form is a video, an image and
+ * three passages that its questions are *about*, and all of it used to be
+ * listed under "Not imported as-is".
+ */
+describe("mapGoogleForm — content items", () => {
+  test("a text item becomes a text block keeping its heading and prose", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Read this first",
+            description: "  The Nile is the longest river in Africa.  ",
+            textItem: {},
+          },
+        ],
+      }),
+    );
+    const block = blocksOf(mapped.sections[0])[0];
+
+    expect(block.blockKind).toBe("text");
+    expect(block.title).toBe("Read this first");
+    expect(block.body).toBe("The Nile is the longest river in Africa.");
+    expect(mapped.blockCount).toBe(1);
+    expect(mapped.notes).toEqual([]);
+  });
+
+  test("an image item keeps Google's URL as a pending source, not as media", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Diagram",
+            imageItem: {
+              image: {
+                contentUri: "https://lh3.googleusercontent.com/abc",
+                altText: "A river delta",
+              },
+            },
+          },
+        ],
+      }),
+    );
+    const block = blocksOf(mapped.sections[0])[0];
+
+    expect(block.blockKind).toBe("image");
+    // `contentUri` expires, so nothing may render it — the media job copies
+    // the bytes into this app's own storage and fills `mediaUrl` in.
+    expect(block.mediaUrl).toBeNull();
+    expect(block.sourceUrl).toBe("https://lh3.googleusercontent.com/abc");
+    expect(block.mediaAlt).toBe("A river delta");
+  });
+
+  test.each([
+    ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"],
+    ["https://youtu.be/dQw4w9WgXcQ"],
+    ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
+  ])("a video item at %s becomes an embeddable block", (youtubeUri) => {
+    const mapped = mapGoogleForm(
+      form({ items: [{ title: "Intro clip", videoItem: { video: { youtubeUri } } }] }),
+    );
+    const block = blocksOf(mapped.sections[0])[0];
+
+    expect(block.blockKind).toBe("video");
+    // nocookie because that is what the CSP's frame-src allows, and it sets no
+    // advertising cookies on a page students are told to open for a class.
+    expect(block.mediaUrl).toBe(
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+    );
+    expect(block.sourceUrl).toBeNull();
+  });
+
+  test("leaves out a video whose link isn't a recognisable YouTube id", () => {
+    // The id is what ends up in an iframe src, so a crafted "youtube.com" path
+    // must not become an arbitrary embed.
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Suspicious",
+            videoItem: { video: { youtubeUri: "https://youtube.com/@evil" } },
+          },
+        ],
+      }),
+    );
+
+    expect(mapped.blockCount).toBe(0);
+    expect(noteCodes(mapped)).toEqual(["skippedUnsupported"]);
+  });
+
+  test("keeps content and questions in the order the form had them", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          { title: "Passage", description: "…", textItem: {} },
+          choiceItem("Q1", "RADIO", ["A"]),
+          { title: "Diagram", imageItem: { image: { contentUri: "u" } } },
+          choiceItem("Q2", "RADIO", ["B"]),
+        ],
+      }),
+    );
+
+    expect(
+      mapped.sections[0].items.map((item) =>
+        item.kind === "question" ? item.text : item.title,
+      ),
+    ).toEqual(["Passage", "Q1", "Diagram", "Q2"]);
+    expect(mapped.sections[0].items.map((item) => item.order)).toEqual([
+      0, 1, 2, 3,
+    ]);
+  });
+
+  test("a section of nothing but content is kept", () => {
+    // It is usually the passage the *next* section's questions are about.
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          { title: "Context", pageBreakItem: {} },
+          { title: "Read this", description: "…", textItem: {} },
+        ],
+      }),
+    );
+
+    expect(mapped.sections).toHaveLength(1);
+    expect(mapped.sections[0].title).toBe("Context");
+    expect(mapped.blockCount).toBe(1);
+  });
+});
+
+describe("mapGoogleForm — question metadata", () => {
+  test("carries help text and the required flag", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Your name",
+            description: "  As it appears on your ID.  ",
+            questionItem: { question: { textQuestion: {}, required: true } },
+          },
+        ],
+      }),
+    );
+    const question = questionsOf(mapped.sections[0])[0];
+
+    expect(question.description).toBe("As it appears on your ID.");
+    expect(question.isRequired).toBe(true);
+  });
+
+  test("carries an image attached to the question", () => {
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "What shape is this?",
+            questionItem: {
+              question: { textQuestion: {} },
+              image: { contentUri: "https://lh3.googleusercontent.com/x", altText: "A triangle" },
+            },
+          },
+        ],
+      }),
+    );
+    const question = questionsOf(mapped.sections[0])[0];
+
+    expect(question.imageSourceUrl).toBe("https://lh3.googleusercontent.com/x");
+    expect(question.imageAlt).toBe("A triangle");
+  });
+
+  test("keeps a quiz's accepted answers for a typed question", () => {
+    // These used to be dropped outright, without even a note — yet accepted
+    // wordings are exactly what `evaluateShortAnswer` grades against.
+    const mapped = mapGoogleForm(
+      form({
+        settings: { quizSettings: { isQuiz: true } },
+        items: [
+          {
+            title: "Capital of Egypt?",
+            questionItem: {
+              question: {
+                textQuestion: {},
+                grading: {
+                  pointValue: 2,
+                  correctAnswers: {
+                    answers: [{ value: "Cairo" }, { value: "El Qahira" }],
+                  },
+                },
+              },
+            },
+          },
+        ],
+      }),
+    );
+    const question = questionsOf(mapped.sections[0])[0];
+
+    expect(question.points).toBe(2);
+    expect(question.answers).toEqual([
+      { text: "Cairo", isCorrect: true, order: 0 },
+      { text: "El Qahira", isCorrect: true, order: 1 },
+    ]);
+  });
+
+  test("notes an answer option's picture and per-answer feedback", () => {
+    const mapped = mapGoogleForm(
+      form({
+        settings: { quizSettings: { isQuiz: true } },
+        items: [
+          {
+            title: "Which one?",
+            questionItem: {
+              question: {
+                choiceQuestion: {
+                  type: "RADIO",
+                  options: [
+                    { value: "A", image: { contentUri: "u" } },
+                    { value: "B" },
+                  ],
+                },
+                grading: { whenWrong: {} },
+              },
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(noteCodes(mapped)).toEqual([
+      "droppedQuestionFeedback",
+      "droppedOptionImage",
+    ]);
   });
 });
 
@@ -364,7 +666,7 @@ describe("mapGoogleForm — quiz grading", () => {
         ],
       }),
     );
-    const question = mapped.sections[0].questions[0];
+    const question = questionsOf(mapped.sections[0])[0];
 
     expect(question.points).toBe(5);
     expect(question.answers.map((answer) => answer.isCorrect)).toEqual([
@@ -388,7 +690,7 @@ describe("mapGoogleForm — quiz grading", () => {
     );
 
     expect(
-      mapped.sections[0].questions[0].answers.map((a) => a.isCorrect),
+      questionsOf(mapped.sections[0])[0].answers.map((a) => a.isCorrect),
     ).toEqual([true, false, true]);
   });
 
@@ -434,7 +736,7 @@ describe("mapGoogleForm — quiz grading", () => {
       }),
     );
 
-    expect(mapped.sections[0].questions[0].points).toBe(1);
+    expect(questionsOf(mapped.sections[0])[0].points).toBe(1);
   });
 
   test("gives every question one point when the form isn't a quiz", () => {
@@ -444,6 +746,6 @@ describe("mapGoogleForm — quiz grading", () => {
       form({ items: [choiceItem("Q", "RADIO", ["A"], { points: 7 })] }),
     );
 
-    expect(mapped.sections[0].questions[0].points).toBe(1);
+    expect(questionsOf(mapped.sections[0])[0].points).toBe(1);
   });
 });

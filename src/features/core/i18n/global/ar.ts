@@ -1132,11 +1132,23 @@ export default {
         },
       },
     }),
+    blocksCount: dt("{count:plural}", {
+      plural: {
+        count: {
+          zero: "لا محتوى",
+          one: "عنصر محتوى واحد",
+          two: "عنصرا محتوى",
+          few: "{?} عناصر محتوى",
+          many: "{?} عنصر محتوى",
+          other: "{?} عنصر محتوى",
+        },
+      },
+    }),
     quizDetected:
       "هذا اختبار Google — سيتم استيراد الدرجات والإجابات الصحيحة أيضًا.",
     notImportedTitle: "لم يُستورد كما هو",
     notImportedDescription:
-      "بقية النموذج تُستورد كما هي. هذه العناصر إمّا تغيّر شكلها أو استُبعدت — يمكنك إضافتها يدويًا في المُنشئ.",
+      "بقية النموذج تُستورد كما هي، بما في ذلك نصوصه وصوره وفيديوهاته. هذه العناصر تغيّر شكلها أو استُبعدت — يمكنك إضافتها يدويًا في المُنشئ.",
     nothingToImport:
       "لا يحتوي هذا النموذج على أسئلة يمكن لـ Gateling استيرادها. لم يتم إنشاء أي شيء.",
     targetTitle: "وجهة التقييم",
@@ -1147,13 +1159,14 @@ export default {
     note: {
       convertedDropdown: "قائمة منسدلة — استُوردت كسؤال اختيار واحد: {title}",
       convertedScale: "مقياس خطي — استُورد كخيار لكل درجة: {title}",
-      convertedParagraph: "إجابة طويلة — استُوردت كإجابة قصيرة: {title}",
+      convertedRating: "تقييم بالنجوم — استُورد كخيار لكل درجة: {title}",
+      convertedGrid: "شبكة — استُوردت كسؤال لكل صف: {title}",
       skippedUnsupported: "لا يمكن استيراد هذا النوع من الأسئلة: {title}",
-      skippedGrid: "لا يمكن استيراد أسئلة الشبكة: {title}",
-      skippedContent:
-        "النصوص والصور والفيديوهات ليست أسئلة، لذا استُبعدت: {title}",
       skippedEmptyChoice: "لا توجد خيارات إجابة لاستيرادها: {title}",
       droppedOtherOption: "خيار «أخرى» النصي الحر مستبعد: {title}",
+      droppedOptionImage: "الصور المرفقة بخيارات الإجابة مستبعدة: {title}",
+      droppedQuestionFeedback:
+        "الملاحظات التي تظهر بعد الإجابة مستبعدة: {title}",
       unmatchedCorrectAnswer:
         "إجابة صحيحة لا تطابق أيًا من الخيارات، لذا لم تُعلَّم: {title}",
       truncatedTitle: "تم اختصار العنوان ليناسب الحد المسموح: {title}",

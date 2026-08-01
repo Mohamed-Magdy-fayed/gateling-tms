@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import {
   AnswersTable,
+  FormBlocksTable,
   FormSectionsTable,
   FormsTable,
   QuestionsTable,
@@ -103,11 +104,13 @@ export async function importGoogleForm(
     );
 
     const questions = sections.flatMap(({ id: sectionId, section }) =>
-      section.questions.map((question) => ({
-        id: crypto.randomUUID(),
-        sectionId,
-        question,
-      })),
+      section.items
+        .filter((item) => item.kind === "question")
+        .map((question) => ({
+          id: crypto.randomUUID(),
+          sectionId,
+          question,
+        })),
     );
 
     await trx.insert(QuestionsTable).values(
@@ -116,11 +119,35 @@ export async function importGoogleForm(
         organizationId,
         sectionId,
         text: question.text,
+        description: question.description,
         type: question.type,
         points: question.points,
+        isRequired: question.isRequired,
+        imageSourceUrl: question.imageSourceUrl,
+        imageAlt: question.imageAlt,
         order: question.order,
       })),
     );
+
+    const blocks = sections.flatMap(({ id: sectionId, section }) =>
+      section.items
+        .filter((item) => item.kind === "block")
+        .map((block) => ({
+          organizationId,
+          sectionId,
+          kind: block.blockKind,
+          title: block.title,
+          body: block.body,
+          mediaUrl: block.mediaUrl,
+          sourceUrl: block.sourceUrl,
+          mediaAlt: block.mediaAlt,
+          order: block.order,
+        })),
+    );
+
+    // A form of nothing but questions has no blocks at all, and an empty
+    // VALUES list is a syntax error. Same for the answers below.
+    if (blocks.length > 0) await trx.insert(FormBlocksTable).values(blocks);
 
     const answers = questions.flatMap(({ id: questionId, question }) =>
       question.answers.map((answer) => ({
@@ -132,12 +159,14 @@ export async function importGoogleForm(
       })),
     );
 
-    // A form of nothing but short-answer questions has no answer rows at all,
-    // and an empty VALUES list is a syntax error.
     if (answers.length > 0) await trx.insert(AnswersTable).values(answers);
   });
 
-  return { id: formId, questionCount: mapped.questionCount };
+  return {
+    id: formId,
+    questionCount: mapped.questionCount,
+    blockCount: mapped.blockCount,
+  };
 }
 
 /** Shared by both paths so they can never disagree about what they accept. */
