@@ -1155,11 +1155,16 @@ export default {
     questionsCount: dt("{count:plural}", {
       plural: { count: { one: "{?} question", other: "{?} questions" } },
     }),
+    blocksCount: dt("{count:plural}", {
+      plural: {
+        count: { one: "{?} piece of content", other: "{?} pieces of content" },
+      },
+    }),
     quizDetected:
       "This is a Google quiz — point values and correct answers come across too.",
     notImportedTitle: "Not imported as-is",
     notImportedDescription:
-      "Everything else on the form comes across. These items either changed shape or were left out — you can add them by hand in the builder.",
+      "Everything else on the form comes across, including its text, images and videos. These items changed shape or were left out — you can add them by hand in the builder.",
     nothingToImport:
       "This form has no questions Gateling can import. Nothing was created.",
     targetTitle: "Where it goes",
@@ -1171,13 +1176,15 @@ export default {
       convertedDropdown:
         "Dropdown — imported as a single-choice question: {title}",
       convertedScale: "Linear scale — imported as one choice per step: {title}",
-      convertedParagraph: "Long answer — imported as a short answer: {title}",
+      convertedRating: "Star rating — imported as one choice per step: {title}",
+      convertedGrid: "Grid — imported as one question per row: {title}",
       skippedUnsupported: "This question type can't be imported: {title}",
-      skippedGrid: "Grid questions can't be imported: {title}",
-      skippedContent:
-        "Text, images and videos aren't questions, so they're left out: {title}",
       skippedEmptyChoice: "No answer options to import: {title}",
       droppedOtherOption: 'The "Other" free-text option is left out: {title}',
+      droppedOptionImage:
+        "Pictures on the answer options are left out: {title}",
+      droppedQuestionFeedback:
+        "The feedback shown after answering is left out: {title}",
       unmatchedCorrectAnswer:
         "A correct answer matches none of the options, so it isn't marked: {title}",
       truncatedTitle: "Title shortened to fit: {title}",
