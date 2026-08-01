@@ -3,14 +3,12 @@ import {
   orgContentManagerProcedure,
   orgProcedure,
 } from "@/integrations/trpc/init";
-import {
-  commitGroupStudentImport,
-  previewGroupStudentImport,
-} from "./import";
+import { commitGroupStudentImport, previewGroupStudentImport } from "./import";
 import {
   addGroupStudents,
   createGroup,
   deleteGroup,
+  regenerateGroupSessionsForOrg,
   removeGroupStudent,
   updateGroup,
 } from "./mutations";
@@ -55,6 +53,12 @@ export const groupsRouter = createTRPCRouter({
   delete: orgContentManagerProcedure
     .input(groupDeleteSchema)
     .mutation(async ({ ctx, input }) => deleteGroup(ctx, input)),
+  // Reuses groupDeleteSchema for the same reason `get` does — same {id} shape.
+  regenerateSessions: orgContentManagerProcedure
+    .input(groupDeleteSchema)
+    .mutation(async ({ ctx, input }) =>
+      regenerateGroupSessionsForOrg(ctx, input),
+    ),
   addStudents: orgContentManagerProcedure
     .input(groupAddStudentsSchema)
     .mutation(async ({ ctx, input }) => addGroupStudents(ctx, input)),

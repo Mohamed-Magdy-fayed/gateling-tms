@@ -9,12 +9,14 @@ import {
 } from "@/drizzle/schema";
 import { inngest } from "@/integrations/inngest/client";
 import { groupScheduleChangedEvent } from "@/integrations/inngest/functions/on-group-schedule-changed";
+import { regenerateGroupSessions } from "./regenerate-sessions";
 import type {
   GroupAddStudentsInput,
   GroupDeleteInput,
   GroupMutationInput,
   GroupRemoveStudentInput,
   GroupUpdateInput,
+  SessionRegenerationMode,
 } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -66,16 +68,22 @@ async function assertReferencesBelongToOrg(
 }
 
 /**
- * Session generation is deliberately fire-and-forget: a group with its roster
- * is already useful, and blocking the create on a queue round trip would
- * undercut the instant-onboarding promise. A failed enqueue is logged and
- * surfaced as a warning flag the client can act on, not an error that hides
- * the group that was genuinely created.
+ * Session generation prefers the queue: a group with its roster is already
+ * useful, and blocking the create on the generation transaction would undercut
+ * the instant-onboarding promise.
+ *
+ * But it does not *depend* on the queue. A dropped enqueue used to leave the
+ * group permanently sessionless with nothing but a transient toast to say so,
+ * so a failed send falls through to generating inline — one extra transaction
+ * on the save path, against a group that would otherwise never get its
+ * schedule. Both paths run `regenerateGroupSessions`, which is idempotent, so
+ * a send that actually landed despite reporting failure costs a no-op, not
+ * duplicate rows.
  */
 async function requestSessionRegeneration(
   ctx: OrgTRPCContext,
   groupId: string,
-): Promise<boolean> {
+): Promise<SessionRegenerationMode> {
   try {
     await inngest.send(
       groupScheduleChangedEvent.create({
@@ -83,14 +91,32 @@ async function requestSessionRegeneration(
         groupId,
       }),
     );
-    return true;
+    return "queued";
   } catch (error) {
     console.error("Failed to enqueue group/schedule-changed event", {
       groupId,
       organizationId: ctx.organizationId,
       error,
     });
-    return false;
+  }
+
+  try {
+    await regenerateGroupSessions({
+      db: ctx.db,
+      organizationId: ctx.organizationId,
+      groupId,
+    });
+    return "inline";
+  } catch (error) {
+    // Both paths are dead. The group itself was written and is still useful,
+    // so this stays a warning the client surfaces rather than an error that
+    // hides what did succeed — and `groups.regenerateSessions` is the retry.
+    console.error("Failed to generate group sessions inline", {
+      groupId,
+      organizationId: ctx.organizationId,
+      error,
+    });
+    return "failed";
   }
 }
 
@@ -114,9 +140,9 @@ export async function createGroup(
     })
     .returning({ id: GroupsTable.id });
 
-  const sessionsQueued = await requestSessionRegeneration(ctx, group.id);
+  const sessions = await requestSessionRegeneration(ctx, group.id);
 
-  return { id: group.id, sessionsQueued };
+  return { id: group.id, sessions };
 }
 
 export async function updateGroup(
@@ -154,9 +180,44 @@ export async function updateGroup(
   // Always re-requested rather than diffed against the previous row: the
   // handler is idempotent and only rewrites what actually changed, so a
   // redundant run is cheaper than getting a staleness check subtly wrong.
-  const sessionsQueued = await requestSessionRegeneration(ctx, input.id);
+  const sessions = await requestSessionRegeneration(ctx, input.id);
 
-  return { updated: true, sessionsQueued };
+  return { updated: true, sessions };
+}
+
+/**
+ * Rebuilds a group's sessions on demand.
+ *
+ * The escape hatch for a group whose generation never landed — before this,
+ * the only way to retry was to open the group and re-save it unchanged, which
+ * nobody would guess. Runs the generation directly rather than re-queueing it:
+ * someone pressing this button has already been failed by the queue once, and
+ * is waiting for an answer.
+ */
+export async function regenerateGroupSessionsForOrg(
+  ctx: OrgTRPCContext,
+  input: GroupDeleteInput,
+) {
+  const group = await ctx.db.query.GroupsTable.findFirst({
+    where: and(
+      eq(GroupsTable.id, input.id),
+      eq(GroupsTable.organizationId, ctx.organizationId),
+    ),
+    columns: { id: true },
+  });
+
+  if (!group) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
+  return regenerateGroupSessions({
+    db: ctx.db,
+    organizationId: ctx.organizationId,
+    groupId: input.id,
+  });
 }
 
 // Hard delete — unlike courses/trainees, `groups` carries no soft-delete

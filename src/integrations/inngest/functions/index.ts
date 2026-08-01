@@ -3,6 +3,7 @@ import { onContactMessageSubmitted } from "./on-contact-message-submitted";
 import { onGoogleIntegrationDisconnected } from "./on-google-integration-disconnected";
 import { onGroupScheduleChanged } from "./on-group-schedule-changed";
 import { onOrganizationMemberInvited } from "./on-organization-member-invited";
+import { onSessionBackfillScheduled } from "./on-session-backfill-scheduled";
 import { onUsageReconciliationRequested } from "./on-usage-reconciliation-requested";
 import { onUsageReconciliationScheduled } from "./on-usage-reconciliation-scheduled";
 import { onUserRegistered } from "./on-user-registered";
@@ -20,6 +21,7 @@ export const functions = [
   onOrganizationMemberInvited,
   onContactMessageSubmitted,
   onGroupScheduleChanged,
+  onSessionBackfillScheduled,
   onGoogleIntegrationDisconnected,
   onUsageReconciliationScheduled,
   onUsageReconciliationRequested,

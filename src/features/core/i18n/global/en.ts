@@ -727,7 +727,7 @@ export default {
     courseNotFound: "That course doesn't exist in this organization.",
     teacherNotFound: "That teacher isn't a member of this organization.",
     sessionsQueueFailed:
-      "Group saved, but sessions couldn't be scheduled. Edit the group to try again.",
+      "Group saved, but sessions couldn't be scheduled. Open the group and use Regenerate to try again.",
     slots: {
       title: "Weekly slots",
       addSlot: "Add a slot",
@@ -778,6 +778,14 @@ export default {
       emptyDescription:
         "Add at least one weekly slot and sessions will appear here shortly.",
       pending: "Sessions are being generated…",
+      stuckTitle: "Sessions haven't been generated",
+      stuckDescription:
+        "This group has a weekly schedule but no sessions. Use Regenerate to build them now.",
+      regenerate: "Regenerate",
+      regenerated: "Sessions regenerated.",
+      regeneratedEmpty:
+        "Nothing to generate — check the start date and weekly slots.",
+      regenerateFailed: "Could not regenerate sessions.",
     },
     validation: {
       time: "Use a 24-hour time like 18:00.",

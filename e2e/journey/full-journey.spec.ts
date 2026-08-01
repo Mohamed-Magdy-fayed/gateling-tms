@@ -87,6 +87,21 @@ test("the full product journey: signup through hitting the free-plan limit", asy
     groupUrl = page.url();
   });
 
+  await test.step("5a-ii. The weekly slot actually produces sessions", async () => {
+    // The gap that let a broken generation pipeline ship: every earlier check
+    // stopped at "the group saved". A slot the user can see and no sessions
+    // underneath it is the failure this asserts against — the card polls, so
+    // give it longer than a normal assertion before calling it stuck.
+    // "120 min" is the session rows' duration line, and nothing else on a
+    // group's page renders it.
+    await expect(page.getByText(/^\d+ min$/).first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(
+      page.getByText("Sessions haven't been generated"),
+    ).toBeHidden();
+  });
+
   await test.step("5b. Add students — import from an Excel template", async () => {
     await page.goto("/learning-flow/trainees");
     await page.getByRole("button", { name: "Import", exact: true }).click();
