@@ -3,15 +3,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 /**
  * The db singleton opens a postgres connection at import time and reads
  * DATABASE_URL. Nothing here touches a database — `ctx.db` is a stub and the
- * regeneration itself is mocked — so the module is stubbed rather than
- * configured. `on-group-schedule-changed` pulls it in transitively, just to
- * define the event these mutations send.
+ * generation itself is mocked — so the module is stubbed rather than
+ * configured.
  */
 vi.mock("@/drizzle", () => ({ db: {} }));
 
 const send = vi.fn();
-// `createFunction` is here because importing the mutations reaches the event
-// definition through the function module that also registers the handler.
 vi.mock("@/integrations/inngest/client", () => ({
   inngest: { send, createFunction: vi.fn() },
 }));
@@ -22,10 +19,7 @@ vi.mock(
   () => ({ regenerateGroupSessions }),
 );
 
-const {
-  createGroup,
-  updateGroup,
-} = await import(
+const { createGroup, updateGroup } = await import(
   "../src/features/system/learning-flow/groups/server/mutations"
 );
 
@@ -63,31 +57,26 @@ const input = {
 
 beforeEach(() => {
   send.mockReset();
+  send.mockResolvedValue(undefined);
   regenerateGroupSessions.mockReset();
   regenerateGroupSessions.mockResolvedValue({ removed: 0, written: 12 });
 });
 
 /**
- * The failure this guards against is the one that shipped: the enqueue was
- * fire-and-forget, so a queue the deployment couldn't reach left every new
- * group with a schedule and no sessions, and nothing ever retried.
+ * The failure this guards against is the one that shipped *twice*.
+ *
+ * First the enqueue was fire-and-forget, so a queue the deployment couldn't
+ * reach left every new group with a schedule and no sessions. Then the fix
+ * fell back to inline generation only when `inngest.send` **threw** — which
+ * misses the failure that actually happens (D178): an Inngest app that never
+ * synced still *accepts* the event, so the send succeeds, nothing consumes it,
+ * and the fallback never fires. Generation is inline and unconditional now.
  */
-describe("session generation is not left to the queue alone", () => {
-  test("a reachable queue is used, and nothing runs inline", async () => {
-    send.mockResolvedValue(undefined);
-
+describe("session generation does not depend on the queue", () => {
+  test("creating a group generates its sessions before returning", async () => {
     const result = await createGroup(stubContext(), input);
 
-    expect(result.sessions).toBe("queued");
-    expect(regenerateGroupSessions).not.toHaveBeenCalled();
-  });
-
-  test("creating a group generates inline when the enqueue fails", async () => {
-    send.mockRejectedValue(new Error("connect ECONNREFUSED 127.0.0.1:8288"));
-
-    const result = await createGroup(stubContext(), input);
-
-    expect(result.sessions).toBe("inline");
+    expect(result.sessions).toBe("generated");
     expect(regenerateGroupSessions).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: ORGANIZATION_ID,
@@ -96,34 +85,33 @@ describe("session generation is not left to the queue alone", () => {
     );
   });
 
-  test("a queue that hangs until it times out also falls back", async () => {
-    // The client bounds every request with an AbortSignal (CodeRabbit's round
-    // on PR #60): without it an unresponsive host holds the mutation open
-    // until the platform kills it, and a fallback that only runs after the
-    // request has been killed is not a fallback.
-    send.mockRejectedValue(
-      Object.assign(new Error("The operation was aborted due to timeout"), {
-        name: "TimeoutError",
-      }),
-    );
+  test("editing a schedule regenerates before returning", async () => {
+    const result = await updateGroup(stubContext(), { ...input, id: GROUP_ID });
+
+    expect(result.sessions).toBe("generated");
+    expect(regenerateGroupSessions).toHaveBeenCalledOnce();
+  });
+
+  test("generates even when the queue would have accepted the event", async () => {
+    // This is the D178 shape precisely: the send succeeds, so the old code
+    // reported "queued" and stopped. Nothing may depend on that success.
+    send.mockResolvedValue({ ids: ["evt_1"] });
 
     const result = await createGroup(stubContext(), input);
 
-    expect(result.sessions).toBe("inline");
+    expect(result.sessions).toBe("generated");
     expect(regenerateGroupSessions).toHaveBeenCalledOnce();
   });
 
-  test("editing a schedule generates inline when the enqueue fails", async () => {
-    send.mockRejectedValue(new Error("connect ECONNREFUSED 127.0.0.1:8288"));
+  test("does not enqueue an event on the save path at all", async () => {
+    // The inline run is authoritative and idempotent, so an event here would
+    // only buy a redundant run — and a round trip on every save.
+    await createGroup(stubContext(), input);
 
-    const result = await updateGroup(stubContext(), { ...input, id: GROUP_ID });
-
-    expect(result.sessions).toBe("inline");
-    expect(regenerateGroupSessions).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
   });
 
-  test("only a dead queue *and* a failed inline run report failure", async () => {
-    send.mockRejectedValue(new Error("queue unreachable"));
+  test("a failed generation is reported, not swallowed", async () => {
     regenerateGroupSessions.mockRejectedValue(new Error("database unreachable"));
 
     const result = await createGroup(stubContext(), input);

@@ -203,10 +203,9 @@ accepted with the *event* key — but no function is ever registered, so nothing
 consumes them. There is no error on the sending side and nothing in the UI to
 say so. Verification emails, invitations, contact messages, the nightly sweeps
 and the Google-import media copy all stop, and each one just looks like work
-that never happened. *Queued* session generation stops with them — but sessions
-themselves keep appearing, because `createGroup`/`updateGroup` fall back to
-generating them inline when the enqueue fails (STATE.md D163). That fallback is
-the only one of its kind.
+that never happened. Group sessions are the one exception, and only since
+D179: saving a group generates them inline before the mutation returns, so they
+do not depend on this working. Everything else does.
 
 **This is a live problem as of 2026-08-01** — see STATE.md D178.
 

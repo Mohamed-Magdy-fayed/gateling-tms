@@ -129,7 +129,8 @@ happening at all, and it is why `v1.0.0` is not tagged (STATE.md D178).**
 `/api/inngest` refuses Inngest's sync handshake, so no function is registered:
 no verification emails, no invitations, no contact messages, no nightly sweeps,
 and an imported form's images stay as "still being imported" placeholders
-forever. Group sessions are the one exception — they have an inline fallback.
+forever. Group sessions are the one exception — they are generated inline when
+the group is saved (D179), so they do not depend on Inngest at all.
 
 Fix per `docs/deploy.md` §7 and confirm `PUT /api/inngest → 200` on the next
 deployment **before** demoing anything asynchronous. A signup demo will not

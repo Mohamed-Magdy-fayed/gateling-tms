@@ -7,8 +7,6 @@ import {
   OrganizationMembershipsTable,
   TraineesTable,
 } from "@/drizzle/schema";
-import { inngest } from "@/integrations/inngest/client";
-import { groupScheduleChangedEvent } from "@/integrations/inngest/functions/on-group-schedule-changed";
 import { regenerateGroupSessions } from "./regenerate-sessions";
 import type {
   GroupAddStudentsInput,
@@ -68,50 +66,43 @@ async function assertReferencesBelongToOrg(
 }
 
 /**
- * Session generation prefers the queue: a group with its roster is already
- * useful, and blocking the create on the generation transaction would undercut
- * the instant-onboarding promise.
+ * Generates the group's sessions before the mutation returns.
  *
- * But it does not *depend* on the queue. A dropped enqueue used to leave the
- * group permanently sessionless with nothing but a transient toast to say so,
- * so a failed send falls through to generating inline — one extra transaction
- * on the save path, against a group that would otherwise never get its
- * schedule. Both paths run `regenerateGroupSessions`, which is idempotent, so
- * a send that actually landed despite reporting failure costs a no-op, not
- * duplicate rows.
+ * This deliberately does *not* go through Inngest, and the reason is worth
+ * stating because the first attempt at this fix got it wrong. It used to send
+ * `group/schedule-changed` and fall back to inline generation only when
+ * `inngest.send` **threw** — which does not cover the failure that actually
+ * happens in production (D178). When the Inngest app has never synced, the send
+ * *succeeds*: events are accepted with the event key and simply have no
+ * consumer. The fallback never fired, and the group stayed sessionless — the
+ * exact bug this was meant to fix, surviving the fix.
+ *
+ * Inline is affordable. `regenerateGroupSessions` is one transaction writing at
+ * most `MAX_GENERATED_SESSIONS` rows with no external call inside it — the same
+ * order of cost as the queue round trip it replaces. Weighed against a group
+ * whose schedule silently never materialises, a few milliseconds on save is not
+ * a trade worth making: "instant onboarding" means the user gets a working
+ * class, not that the save returns before the work is done.
+ *
+ * The Inngest path still exists for the nightly backfill, which regenerates
+ * anything that slipped through. It is the safety net now, not the mechanism.
  */
-async function requestSessionRegeneration(
+async function generateSessionsForGroup(
   ctx: OrgTRPCContext,
   groupId: string,
 ): Promise<SessionRegenerationMode> {
-  try {
-    await inngest.send(
-      groupScheduleChangedEvent.create({
-        organizationId: ctx.organizationId,
-        groupId,
-      }),
-    );
-    return "queued";
-  } catch (error) {
-    console.error("Failed to enqueue group/schedule-changed event", {
-      groupId,
-      organizationId: ctx.organizationId,
-      error,
-    });
-  }
-
   try {
     await regenerateGroupSessions({
       db: ctx.db,
       organizationId: ctx.organizationId,
       groupId,
     });
-    return "inline";
+    return "generated";
   } catch (error) {
-    // Both paths are dead. The group itself was written and is still useful,
-    // so this stays a warning the client surfaces rather than an error that
-    // hides what did succeed — and `groups.regenerateSessions` is the retry.
-    console.error("Failed to generate group sessions inline", {
+    // The group itself was written and is still useful, so this stays a
+    // warning the client surfaces rather than an error that hides what did
+    // succeed — and `groups.regenerateSessions` is the retry.
+    console.error("Failed to generate group sessions", {
       groupId,
       organizationId: ctx.organizationId,
       error,
@@ -140,7 +131,7 @@ export async function createGroup(
     })
     .returning({ id: GroupsTable.id });
 
-  const sessions = await requestSessionRegeneration(ctx, group.id);
+  const sessions = await generateSessionsForGroup(ctx, group.id);
 
   return { id: group.id, sessions };
 }
@@ -180,7 +171,7 @@ export async function updateGroup(
   // Always re-requested rather than diffed against the previous row: the
   // handler is idempotent and only rewrites what actually changed, so a
   // redundant run is cheaper than getting a staleness check subtly wrong.
-  const sessions = await requestSessionRegeneration(ctx, input.id);
+  const sessions = await generateSessionsForGroup(ctx, input.id);
 
   return { updated: true, sessions };
 }
