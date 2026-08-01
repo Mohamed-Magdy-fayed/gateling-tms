@@ -127,6 +127,12 @@ Not blockers, but do not let them be discovered mid-demo:
 
 - **Live Classes needs a real onMeeting account.** The seeded session's links
   are fixtures; joining an actual room is not demoable without one.
+- **Inngest is not synced in production (STATE.md D178).** `/api/inngest` refuses
+  Inngest's sync handshake, so no background job runs there: no verification
+  emails, no invitations, no contact messages, no nightly sweeps, and an
+  imported form's images stay as "still being imported" placeholders. Group
+  sessions are the exception — they have an inline fallback. Fix per
+  `docs/deploy.md` §7 before demoing anything asynchronous, or say it out loud.
 - **Google Forms import needs the Cloud setup** in `docs/integrations-google.md`
   (§1–§2) and a listed test user while the consent screen is in Testing mode.
 - **AI short-answer grading needs `GEMINI_API_KEY`.** Without it, grading still
