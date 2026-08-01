@@ -39,29 +39,37 @@ const blockFields = {
 /**
  * A block has to carry *something*. An empty one renders as a gap the author
  * can't see and the respondent can't act on.
+ *
+ * `superRefine` rather than `refine` so the issue lands on the field the author
+ * actually has to fill in — which depends on the kind. A fixed path would put
+ * "add some text" under the body field of an image block, where there is no
+ * body input to fix.
  */
-function hasContent(value: {
-  kind: string;
-  title: string;
-  body: string;
-  mediaUrl: string;
-}) {
-  if (value.kind === "text") return Boolean(value.title || value.body);
-  return Boolean(value.mediaUrl);
-}
+function requireContent(
+  value: { kind: string; title: string; body: string; mediaUrl: string },
+  ctx: z.RefinementCtx,
+) {
+  const isText = value.kind === "text";
+  const hasContent = isText
+    ? Boolean(value.title || value.body)
+    : Boolean(value.mediaUrl);
 
-const contentIssue = {
-  message: translationKey("blocks.validation.empty"),
-  path: ["body"],
-};
+  if (hasContent) return;
+
+  ctx.addIssue({
+    code: "custom",
+    message: translationKey("blocks.validation.empty"),
+    path: [isText ? "body" : "mediaUrl"],
+  });
+}
 
 export const blockMutationSchema = z
   .object({ sectionId: z.uuid(), ...blockFields })
-  .refine(hasContent, contentIssue);
+  .superRefine(requireContent);
 
 export const blockUpdateSchema = z
   .object({ id: z.uuid(), ...blockFields })
-  .refine(hasContent, contentIssue);
+  .superRefine(requireContent);
 
 export const blockDeleteSchema = z.object({
   id: z.uuid(),

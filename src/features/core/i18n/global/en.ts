@@ -1164,9 +1164,9 @@ export default {
       "This is a Google quiz — point values and correct answers come across too.",
     notImportedTitle: "Not imported as-is",
     notImportedDescription:
-      "Everything else on the form comes across, including its text, images and videos. These items changed shape or were left out — you can add them by hand in the builder.",
+      "Everything else on the form comes across, including its text and videos. Images are copied in the background and can occasionally fail — the form says so where one is missing. These items changed shape or were left out; you can add them by hand in the builder.",
     nothingToImport:
-      "This form has no questions Gateling can import. Nothing was created.",
+      "This form has nothing Gateling can import. Nothing was created.",
     targetTitle: "Where it goes",
     targetDescription:
       "Imported assessments are always drafts. Publish from the builder once you've checked them.",

@@ -511,6 +511,33 @@ describe("mapGoogleForm — content items", () => {
     expect(noteCodes(mapped)).toEqual(["skippedUnsupported"]);
   });
 
+  // `questions.imageAlt` and `form_blocks.mediaAlt` are varchar(256) and
+  // Google imposes no such limit — an over-length description would abort the
+  // whole import transaction rather than costing one alt text.
+  test("caps alt text at the column width", () => {
+    const longAlt = "x".repeat(400);
+    const mapped = mapGoogleForm(
+      form({
+        items: [
+          {
+            title: "Diagram",
+            imageItem: { image: { contentUri: "u", altText: longAlt } },
+          },
+          {
+            title: "What shape?",
+            questionItem: {
+              question: { textQuestion: {} },
+              image: { contentUri: "u", altText: longAlt },
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(blocksOf(mapped.sections[0])[0].mediaAlt).toHaveLength(256);
+    expect(questionsOf(mapped.sections[0])[0].imageAlt).toHaveLength(256);
+  });
+
   test("keeps content and questions in the order the form had them", () => {
     const mapped = mapGoogleForm(
       form({

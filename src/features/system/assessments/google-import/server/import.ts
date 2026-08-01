@@ -61,7 +61,11 @@ export async function importGoogleForm(
 
   const mapped = mapGoogleForm(await loadForm(ctx, input.formLink));
 
-  if (mapped.questionCount === 0) {
+  // Content counts as importable now that blocks exist: a form that is nothing
+  // but a passage and a video is the reading material a later assessment asks
+  // about, and refusing it would send the admin to retype it by hand. Only a
+  // form that maps to *nothing* is rejected.
+  if (mapped.questionCount + mapped.blockCount === 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: ctx.t("googleImport.errors.nothingToImport"),
