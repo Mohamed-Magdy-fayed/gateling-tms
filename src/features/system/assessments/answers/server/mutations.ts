@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
 import {
   AnswersTable,
+  isTextQuestion,
   QuestionsTable,
   type QuestionType,
 } from "@/drizzle/schema";
@@ -25,7 +26,7 @@ import type { OrgTRPCContext } from "./types";
  * are not accepted, instead of all becoming accepted wordings.
  */
 function resolveIsCorrect(questionType: QuestionType, requested: boolean) {
-  return questionType === "short_answer" ? true : requested;
+  return isTextQuestion(questionType) ? true : requested;
 }
 
 export async function createAnswer(

@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { Answer, QuestionType } from "@/drizzle/schema";
+import { type Answer, isTextQuestion, type QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -43,7 +43,7 @@ export function AnswersSection({
 
   // Same rows either way; for a short answer they're the wordings the grader
   // accepts rather than choices the student picks from, so only copy differs.
-  const isShortAnswer = questionType === "short_answer";
+  const isShortAnswer = isTextQuestion(questionType);
   const copy = isShortAnswer
     ? {
         title: t("answers.shortAnswer.title"),

@@ -54,8 +54,12 @@ export function QuestionFormDialog({
     () => ({
       sectionId,
       text: question?.text ?? "",
+      description: question?.description ?? "",
       type: question?.type ?? "single_choice",
       points: question?.points ?? 1,
+      isRequired: question?.isRequired ?? false,
+      imageUrl: question?.imageUrl ?? "",
+      imageAlt: question?.imageAlt ?? "",
     }),
     [sectionId, question],
   );
@@ -64,14 +68,10 @@ export function QuestionFormDialog({
     defaultValues,
     validators: { onSubmit: questionMutationSchema },
     onSubmit: async ({ value }) => {
+      const { sectionId: _sectionId, ...fields } = value;
       const action: Promise<unknown> =
         isEdit && question
-          ? updateMut.mutateAsync({
-              id: question.id,
-              text: value.text,
-              type: value.type,
-              points: value.points,
-            })
+          ? updateMut.mutateAsync({ id: question.id, ...fields })
           : createMut.mutateAsync(value);
 
       try {
@@ -144,6 +144,16 @@ export function QuestionFormDialog({
                 )}
               </form.AppField>
 
+              <form.AppField name="description">
+                {(field) => (
+                  <field.TextareaField
+                    label={t("questions.description")}
+                    description={t("questions.descriptionHint")}
+                    rows={2}
+                  />
+                )}
+              </form.AppField>
+
               <div className="grid grid-cols-2 gap-4">
                 <form.AppField name="type">
                   {(field) => (
@@ -163,6 +173,30 @@ export function QuestionFormDialog({
                   )}
                 </form.AppField>
               </div>
+
+              <form.AppField name="isRequired">
+                {(field) => (
+                  <field.BooleanField label={t("questions.required")} />
+                )}
+              </form.AppField>
+
+              <form.AppField name="imageUrl">
+                {(field) => (
+                  <field.ImageField
+                    label={t("questions.image")}
+                    folder="assessments"
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name="imageAlt">
+                {(field) => (
+                  <field.StringField
+                    label={t("questions.imageAlt")}
+                    description={t("questions.imageAltHint")}
+                  />
+                )}
+              </form.AppField>
             </FieldGroup>
           </FieldSet>
         </OverlayFormBody>

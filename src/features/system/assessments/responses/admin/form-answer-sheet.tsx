@@ -3,22 +3,43 @@
 import { useCallback, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuestionType } from "@/drizzle/schema";
+import type { FormBlockKind, QuestionType } from "@/drizzle/schema";
+import { isTextQuestion } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 
 /** The shape `forms.getTree` returns, narrowed to what rendering needs. */
+export type AnswerSheetQuestion = {
+  id: string;
+  text: string;
+  description: string | null;
+  type: QuestionType;
+  points: number;
+  order: number;
+  isRequired: boolean;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  answers: { id: string; text: string }[];
+};
+
+export type AnswerSheetBlock = {
+  id: string;
+  kind: FormBlockKind;
+  title: string | null;
+  body: string | null;
+  mediaUrl: string | null;
+  mediaAlt: string | null;
+  sourceUrl: string | null;
+  order: number;
+};
+
 export type AnswerSheetSection = {
   id: string;
   title: string;
-  questions: {
-    id: string;
-    text: string;
-    type: QuestionType;
-    points: number;
-    answers: { id: string; text: string }[];
-  }[];
+  questions: AnswerSheetQuestion[];
+  blocks: AnswerSheetBlock[];
 };
 
 export type SubmittableAnswer = {
@@ -28,6 +49,12 @@ export type SubmittableAnswer = {
 };
 
 type DraftAnswer = { selectedAnswerIds: string[]; text: string };
+
+/** The `<input type>` each typed question uses. Long answers get a textarea. */
+const TEXT_INPUT_TYPE: Partial<Record<QuestionType, "date" | "time">> = {
+  date: "date",
+  time: "time",
+};
 
 /**
  * In-progress answers for one pass over a form.
@@ -61,7 +88,8 @@ export function useAnswerDrafts() {
     [],
   );
 
-  const setShortAnswerText = useCallback((questionId: string, text: string) => {
+  /** Every typed answer — short, long, date and time all store one string. */
+  const setTextAnswer = useCallback((questionId: string, text: string) => {
     setDrafts((prev) => ({
       ...prev,
       [questionId]: { selectedAnswerIds: [], text },
@@ -89,17 +117,195 @@ export function useAnswerDrafts() {
   return {
     drafts,
     toggleChoice,
-    setShortAnswerText,
+    setTextAnswer,
     reset,
     toSubmittableAnswers,
   };
+}
+
+function ContentBlock({ block }: { block: AnswerSheetBlock }) {
+  const { t } = useTranslation();
+
+  const heading = block.title ? (
+    <p className="font-medium text-foreground text-sm">{block.title}</p>
+  ) : null;
+
+  if (block.kind === "text") {
+    return (
+      <div className="space-y-1">
+        {heading}
+        {/* Plain text in a JSX expression — React escapes it. `whitespace-pre-line`
+            keeps the author's paragraph breaks without any HTML being involved. */}
+        {block.body ? (
+          <p className="whitespace-pre-line text-muted-foreground text-sm">
+            {block.body}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  // An imported image whose fetch hasn't landed yet, or one that couldn't be
+  // fetched at all. Both say so rather than rendering a broken image.
+  if (!block.mediaUrl) {
+    return (
+      <div className="space-y-1">
+        {heading}
+        <p className="text-muted-foreground text-xs italic">
+          {t(block.sourceUrl ? "blocks.mediaPending" : "blocks.mediaFailed")}
+        </p>
+      </div>
+    );
+  }
+
+  if (block.kind === "image") {
+    return (
+      <div className="space-y-1">
+        {heading}
+        {/* biome-ignore lint/performance/noImgElement: an arbitrary
+            org-uploaded storage URL, not a build-time known asset */}
+        <img
+          src={block.mediaUrl}
+          alt={block.mediaAlt ?? ""}
+          loading="lazy"
+          className="max-h-96 w-full rounded-md object-contain"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {heading}
+      <div className="aspect-video w-full overflow-hidden rounded-md">
+        <iframe
+          src={block.mediaUrl}
+          title={block.title ?? t("blocks.kindOptions.video")}
+          loading="lazy"
+          allowFullScreen
+          className="size-full"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Its own component so the suppression has somewhere to attach. */
+function QuestionImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    // biome-ignore lint/performance/noImgElement: an arbitrary org-uploaded storage URL, not a build-time known asset
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      className="max-h-72 rounded-md object-contain"
+    />
+  );
+}
+
+type QuestionFieldProps = {
+  drafts: Record<string, DraftAnswer>;
+  idPrefix: string;
+  onSetTextAnswer: (questionId: string, text: string) => void;
+  onToggleChoice: (
+    questionId: string,
+    answerId: string,
+    exclusive: boolean,
+  ) => void;
+  question: AnswerSheetQuestion;
+};
+
+function QuestionField({
+  drafts,
+  idPrefix,
+  onSetTextAnswer,
+  onToggleChoice,
+  question,
+}: QuestionFieldProps) {
+  const { t } = useTranslation();
+  const inputType = TEXT_INPUT_TYPE[question.type];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-foreground text-sm">
+          {question.text}
+          {question.isRequired ? (
+            <span className="ms-1 text-destructive" aria-hidden="true">
+              *
+            </span>
+          ) : null}
+        </span>
+        <Tag color="neutral">
+          {question.points} {t("questions.points")}
+        </Tag>
+      </div>
+
+      {question.description ? (
+        <p className="whitespace-pre-line text-muted-foreground text-xs">
+          {question.description}
+        </p>
+      ) : null}
+
+      {question.imageUrl ? (
+        <QuestionImage src={question.imageUrl} alt={question.imageAlt ?? ""} />
+      ) : null}
+
+      {isTextQuestion(question.type) ? (
+        inputType ? (
+          <Input
+            type={inputType}
+            className="max-w-48"
+            value={drafts[question.id]?.text ?? ""}
+            onChange={(event) =>
+              onSetTextAnswer(question.id, event.target.value)
+            }
+          />
+        ) : (
+          <Textarea
+            rows={question.type === "long_answer" ? 6 : 2}
+            value={drafts[question.id]?.text ?? ""}
+            onChange={(event) =>
+              onSetTextAnswer(question.id, event.target.value)
+            }
+          />
+        )
+      ) : (
+        <div className="space-y-1.5">
+          {question.answers.map((answer) => (
+            <label
+              key={answer.id}
+              htmlFor={`${idPrefix}-${answer.id}`}
+              className="flex items-center gap-2 text-sm"
+            >
+              <Checkbox
+                id={`${idPrefix}-${answer.id}`}
+                checked={
+                  drafts[question.id]?.selectedAnswerIds.includes(answer.id) ??
+                  false
+                }
+                onCheckedChange={() =>
+                  onToggleChoice(
+                    question.id,
+                    answer.id,
+                    question.type === "single_choice",
+                  )
+                }
+              />
+              {answer.text}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 type FormAnswerSheetProps = {
   drafts: Record<string, DraftAnswer>;
   /** Prefix for generated input ids, so two sheets on one page can't collide. */
   idPrefix?: string;
-  onSetShortAnswerText: (questionId: string, text: string) => void;
+  onSetTextAnswer: (questionId: string, text: string) => void;
   onToggleChoice: (
     questionId: string,
     answerId: string,
@@ -111,74 +317,56 @@ type FormAnswerSheetProps = {
 export function FormAnswerSheet({
   drafts,
   idPrefix = "answer",
-  onSetShortAnswerText,
+  onSetTextAnswer,
   onToggleChoice,
   sections,
 }: FormAnswerSheetProps) {
-  const { t } = useTranslation();
-
   return (
     <div className="space-y-4">
       {sections
-        .filter((section) => section.questions.length > 0)
-        .map((section) => (
-          <Card key={section.id}>
-            <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {section.questions.map((question) => (
-                <div key={question.id} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground text-sm">
-                      {question.text}
-                    </span>
-                    <Tag color="neutral">
-                      {question.points} {t("questions.points")}
-                    </Tag>
-                  </div>
+        // A section of nothing but content is still worth showing — it may be
+        // the passage the next section's questions are about.
+        .filter(
+          (section) =>
+            section.questions.length > 0 || section.blocks.length > 0,
+        )
+        .map((section) => {
+          // Questions and blocks share one order sequence, which is what lets
+          // a passage sit between the questions it belongs to.
+          const items = [
+            ...section.questions.map((question) => ({
+              key: question.id,
+              order: question.order,
+              node: (
+                <QuestionField
+                  drafts={drafts}
+                  idPrefix={idPrefix}
+                  onSetTextAnswer={onSetTextAnswer}
+                  onToggleChoice={onToggleChoice}
+                  question={question}
+                />
+              ),
+            })),
+            ...section.blocks.map((block) => ({
+              key: block.id,
+              order: block.order,
+              node: <ContentBlock block={block} />,
+            })),
+          ].sort((a, b) => a.order - b.order);
 
-                  {question.type === "short_answer" ? (
-                    <Textarea
-                      rows={2}
-                      value={drafts[question.id]?.text ?? ""}
-                      onChange={(event) =>
-                        onSetShortAnswerText(question.id, event.target.value)
-                      }
-                    />
-                  ) : (
-                    <div className="space-y-1.5">
-                      {question.answers.map((answer) => (
-                        <label
-                          key={answer.id}
-                          htmlFor={`${idPrefix}-${answer.id}`}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <Checkbox
-                            id={`${idPrefix}-${answer.id}`}
-                            checked={
-                              drafts[question.id]?.selectedAnswerIds.includes(
-                                answer.id,
-                              ) ?? false
-                            }
-                            onCheckedChange={() =>
-                              onToggleChoice(
-                                question.id,
-                                answer.id,
-                                question.type === "single_choice",
-                              )
-                            }
-                          />
-                          {answer.text}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+          return (
+            <Card key={section.id}>
+              <CardHeader>
+                <CardTitle>{section.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {items.map((item) => (
+                  <div key={item.key}>{item.node}</div>
+                ))}
+              </CardContent>
+            </Card>
+          );
+        })}
     </div>
   );
 }

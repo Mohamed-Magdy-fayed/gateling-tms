@@ -7,14 +7,26 @@ export const listQuestionsInput = z.object({
 });
 
 // Shared between create and update so the two schemas can't silently drift.
+//
+// The optional fields are `""`-or-value rather than `.optional()`: TanStack
+// Form needs a validator whose input type matches its form values exactly, so
+// an empty text input has to be a valid value here and gets normalized to null
+// by the mutation — same reasoning as groups' `optionalReference`.
 const questionFields = {
   text: z
     .string()
     .trim()
     .min(1, translationKey("forms.validation.required"))
     .max(2000, translationKey("forms.validation.max2000")),
+  description: z
+    .string()
+    .trim()
+    .max(2000, translationKey("forms.validation.max2000")),
   type: z.enum(questionTypeValues),
   points: z.number().int().min(0).max(1000),
+  isRequired: z.boolean(),
+  imageUrl: z.union([z.url(), z.literal("")]),
+  imageAlt: z.string().trim().max(256, translationKey("forms.validation.max256")),
 };
 
 export const questionMutationSchema = z.object({

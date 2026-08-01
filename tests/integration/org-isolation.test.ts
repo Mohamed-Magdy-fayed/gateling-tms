@@ -7,6 +7,7 @@ import {
   CoursesTable,
   EnrollmentLevelsTable,
   EnrollmentsTable,
+  FormBlocksTable,
   FormResponsesTable,
   FormSectionsTable,
   FormsTable,
@@ -45,9 +46,9 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *
  * Directly addressed by a route in this file:
  *   courses, levels, lectures, trainees, groups, group_students, enrollments,
- *   forms, form_sections, questions, answers, form_responses, placement_tests,
- *   certificates, meeting_accounts, sessions, session_students, testimonials,
- *   google_integrations
+ *   forms, form_sections, questions, form_blocks, answers, form_responses,
+ *   placement_tests, certificates, meeting_accounts, sessions,
+ *   session_students, testimonials, google_integrations
  *
  * Reachable only through a parent, and covered by that parent's refusal:
  *   enrollment_levels  → `enrollments.levels` (takes the enrollment id)
@@ -55,7 +56,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *     input at all; it is covered by asserting A's member list never contains
  *     B's admin.
  *
- * That is all 21. A new tenant-owned table must be added here in the same
+ * That is all 22. A new tenant-owned table must be added here in the same
  * change that adds the table.
  */
 
@@ -196,6 +197,13 @@ describe("cross-tenant reads by id", () => {
     await expectDeniedOrEmpty(
       orgA.caller.questions.list({ sectionId: dataB.sectionId }),
       "questions.list",
+    );
+  });
+
+  test("blocks.list refuses another org's section", async () => {
+    await expectDeniedOrEmpty(
+      orgA.caller.blocks.list({ sectionId: dataB.sectionId }),
+      "blocks.list",
     );
   });
 
@@ -521,6 +529,14 @@ describe("cross-tenant writes are refused and change nothing", () => {
       "questions.delete",
     );
     expect(await rowCount(QuestionsTable, dataB.questionId)).toBe(1);
+  });
+
+  test("blocks.delete leaves another org's content block alone", async () => {
+    await expectTenantRefusal(
+      orgA.caller.blocks.delete({ id: dataB.blockId }),
+      "blocks.delete",
+    );
+    expect(await rowCount(FormBlocksTable, dataB.blockId)).toBe(1);
   });
 
   test("answers.delete leaves another org's answer alone", async () => {

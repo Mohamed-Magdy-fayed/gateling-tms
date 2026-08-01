@@ -47,8 +47,7 @@ function stubContext() {
       insert: () => ({ values: () => ({ returning }) }),
       update: () => ({ set: () => ({ where: () => ({ returning }) }) }),
     },
-    // biome-ignore lint/suspicious/noExplicitAny: a hand-built stub of the org
-    // context, narrowed to what these two mutations actually reach for.
+    // biome-ignore lint/suspicious/noExplicitAny: a hand-built stub of the org context, narrowed to what these two mutations actually reach for
   } as any;
 }
 

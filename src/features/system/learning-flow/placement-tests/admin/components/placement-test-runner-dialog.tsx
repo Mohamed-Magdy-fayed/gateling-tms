@@ -60,7 +60,7 @@ export function PlacementTestRunnerDialog({
   const {
     drafts,
     toggleChoice,
-    setShortAnswerText,
+    setTextAnswer,
     reset,
     toSubmittableAnswers,
   } = useAnswerDrafts();
@@ -123,7 +123,7 @@ export function PlacementTestRunnerDialog({
               drafts={drafts}
               idPrefix={`placement-${placementTestId}`}
               onToggleChoice={toggleChoice}
-              onSetShortAnswerText={setShortAnswerText}
+              onSetTextAnswer={setTextAnswer}
             />
           ) : (
             <EmptyState
