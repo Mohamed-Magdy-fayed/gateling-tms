@@ -97,6 +97,23 @@ describe("session generation is not left to the queue alone", () => {
     );
   });
 
+  test("a queue that hangs until it times out also falls back", async () => {
+    // The client bounds every request with an AbortSignal (CodeRabbit's round
+    // on PR #60): without it an unresponsive host holds the mutation open
+    // until the platform kills it, and a fallback that only runs after the
+    // request has been killed is not a fallback.
+    send.mockRejectedValue(
+      Object.assign(new Error("The operation was aborted due to timeout"), {
+        name: "TimeoutError",
+      }),
+    );
+
+    const result = await createGroup(stubContext(), input);
+
+    expect(result.sessions).toBe("inline");
+    expect(regenerateGroupSessions).toHaveBeenCalledOnce();
+  });
+
   test("editing a schedule generates inline when the enqueue fails", async () => {
     send.mockRejectedValue(new Error("connect ECONNREFUSED 127.0.0.1:8288"));
 

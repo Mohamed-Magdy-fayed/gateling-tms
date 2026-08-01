@@ -54,14 +54,22 @@ export function GroupSessionsSection({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  // Declared before the query so the refetch predicate can read it: giving up
+  // has to stop the polling, not just change what is rendered.
+  const [hasWaitedTooLong, setHasWaitedTooLong] = useState(false);
+
   // `sessions.byGroup`, not a groups-owned query: these rows carry the
   // onMeeting join links, and the rules for who may see a host link live with
   // the rest of the meeting code (live-classes/sessions).
   const { data, isLoading } = useQuery({
     ...trpc.sessions.byGroup.queryOptions({ groupId }),
     // Generation usually runs through Inngest, so an empty list right after
-    // saving a schedule means "not yet", not "never".
+    // saving a schedule means "not yet", not "never" — but only for as long as
+    // waiting is still plausible. A group whose generation is genuinely broken
+    // would otherwise refetch every 3s for as long as the tab stays open.
     refetchInterval: (query) => {
+      if (hasWaitedTooLong) return false;
+
       const rows = query.state.data?.rows;
       return hasSchedule && rows && rows.length === 0 ? PENDING_POLL_MS : false;
     },
@@ -72,7 +80,6 @@ export function GroupSessionsSection({
 
   // Timed rather than counted from `refetchInterval`: that callback runs
   // during render, where a state update is not allowed.
-  const [hasWaitedTooLong, setHasWaitedTooLong] = useState(false);
   useEffect(() => {
     if (!isWaiting) {
       setHasWaitedTooLong(false);
@@ -96,14 +103,19 @@ export function GroupSessionsSection({
       // Zero written with a schedule set means the slots expand to nothing —
       // every occurrence already in the past, or slots the expander rejects.
       // Reporting success would send the user back to a still-empty list.
+      const wroteRows = result.written > 0;
       toast.success(
         t(
-          result.written > 0
+          wroteRows
             ? "groups.sessions.regenerated"
             : "groups.sessions.regeneratedEmpty",
         ),
       );
-      setHasWaitedTooLong(false);
+      // Only a run that produced something justifies waiting again. Resetting
+      // unconditionally would put the "generating…" spinner back for another
+      // 30 seconds, contradicting the toast that just said there was nothing
+      // to generate.
+      if (wroteRows) setHasWaitedTooLong(false);
       await queryClient.invalidateQueries({
         queryKey: trpc.sessions.pathKey(),
       });
