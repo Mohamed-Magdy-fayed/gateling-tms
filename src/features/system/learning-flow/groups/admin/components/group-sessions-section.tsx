@@ -61,7 +61,7 @@ export function GroupSessionsSection({
   // `sessions.byGroup`, not a groups-owned query: these rows carry the
   // onMeeting join links, and the rules for who may see a host link live with
   // the rest of the meeting code (live-classes/sessions).
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     ...trpc.sessions.byGroup.queryOptions({ groupId }),
     // Generation usually runs through Inngest, so an empty list right after
     // saving a schedule means "not yet", not "never" — but only for as long as
@@ -76,22 +76,32 @@ export function GroupSessionsSection({
   });
 
   const hasRows = (data?.rows.length ?? 0) > 0;
-  const isWaiting = hasSchedule && !hasRows && !isLoading;
+  // A failed request is not "still generating": with nothing cached, an error
+  // leaves `data` undefined and `isLoading` false, which would otherwise read
+  // as pending and then as stuck.
+  const isWaiting = hasSchedule && !hasRows && !isLoading && !isError;
 
   // Timed rather than counted from `refetchInterval`: that callback runs
   // during render, where a state update is not allowed.
+  //
+  // `hasWaitedTooLong` is a dependency so that clearing it — which Regenerate
+  // does — actually re-arms the timer. Without it the effect would not re-run
+  // while `isWaiting` stayed true, and polling would resume with nothing left
+  // to ever stop it.
   useEffect(() => {
     if (!isWaiting) {
       setHasWaitedTooLong(false);
       return;
     }
 
+    if (hasWaitedTooLong) return;
+
     const timer = setTimeout(
       () => setHasWaitedTooLong(true),
       PENDING_TIMEOUT_MS,
     );
     return () => clearTimeout(timer);
-  }, [isWaiting]);
+  }, [isWaiting, hasWaitedTooLong]);
 
   const regenerateMut = useMutation(
     trpc.groups.regenerateSessions.mutationOptions(),
@@ -188,6 +198,14 @@ export function GroupSessionsSection({
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
+        ) : isError ? (
+          // Said plainly rather than folded into the empty state: the sessions
+          // may well exist and simply not have been readable this time.
+          <EmptyState
+            icon={<CalendarDaysIcon />}
+            title={t("groups.sessions.loadFailedTitle")}
+            description={t("groups.sessions.loadFailedDescription")}
+          />
         ) : hasRows ? (
           <SessionList
             sessions={data?.rows ?? []}

@@ -58,7 +58,7 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
           </Alert>
         )}
 
-        {preview.questionCount === 0 ? (
+        {preview.questionCount + preview.blockCount === 0 ? (
           <Alert variant="warning">
             <InfoIcon />
             <AlertDescription>

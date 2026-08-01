@@ -140,6 +140,8 @@ export async function seedTenantData(tenant: TenantFixture) {
       kind: "text",
       title: "Isolation Passage",
       body: "Fixture",
+      // Questions and blocks share one order sequence per section.
+      order: 0,
     })
     .returning({ id: FormBlocksTable.id });
 
@@ -150,6 +152,7 @@ export async function seedTenantData(tenant: TenantFixture) {
       sectionId: section.id,
       text: "Isolation question?",
       type: "single_choice",
+      order: 1,
     })
     .returning({ id: QuestionsTable.id });
 

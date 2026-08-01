@@ -62,6 +62,17 @@ describe("questionMutationSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  // These parse as absolute URLs, so `z.url()` alone lets them through — and
+  // the answer sheet renders `imageUrl` straight into an `src` attribute.
+  test.each(["javascript:alert(1)", "data:text/html,<script>alert(1)</script>"])(
+    "rejects the executable scheme %s",
+    (imageUrl) => {
+      expect(
+        questionMutationSchema.safeParse({ ...base, imageUrl }).success,
+      ).toBe(false);
+    },
+  );
+
   test("rejects a blank question text", () => {
     const result = questionMutationSchema.safeParse({ ...base, text: "   " });
     expect(result.success).toBe(false);

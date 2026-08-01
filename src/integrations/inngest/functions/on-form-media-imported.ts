@@ -1,10 +1,11 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { eventType } from "inngest";
 import { z } from "zod";
 
 import { db } from "@/drizzle";
 import {
   FormBlocksTable,
+  FormSectionsTable,
   OrganizationsTable,
   QuestionsTable,
 } from "@/drizzle/schema";
@@ -99,6 +100,23 @@ async function listPendingMedia(
   organizationId: string,
   formId: string,
 ): Promise<{ media: PendingMedia[]; hasMore: boolean }> {
+  // The section ids are resolved first, scoped by organization as well as
+  // form: the raw `IN (SELECT … FROM form_sections)` this replaces hardcoded
+  // both the table and the quoted column name that the Drizzle schema owns,
+  // and left the tenancy check to the outer query alone.
+  const sections = await db
+    .select({ id: FormSectionsTable.id })
+    .from(FormSectionsTable)
+    .where(
+      and(
+        eq(FormSectionsTable.formId, formId),
+        eq(FormSectionsTable.organizationId, organizationId),
+      ),
+    );
+
+  const sectionIds = sections.map((section) => section.id);
+  if (sectionIds.length === 0) return { media: [], hasMore: false };
+
   const [blocks, questions] = await Promise.all([
     db
       .select({ id: FormBlocksTable.id, sourceUrl: FormBlocksTable.sourceUrl })
@@ -107,9 +125,7 @@ async function listPendingMedia(
         and(
           eq(FormBlocksTable.organizationId, organizationId),
           isNotNull(FormBlocksTable.sourceUrl),
-          sql`${FormBlocksTable.sectionId} IN (
-            SELECT id FROM form_sections WHERE "formId" = ${formId}
-          )`,
+          inArray(FormBlocksTable.sectionId, sectionIds),
         ),
       )
       .limit(MAX_MEDIA_PER_QUERY),
@@ -123,9 +139,7 @@ async function listPendingMedia(
         and(
           eq(QuestionsTable.organizationId, organizationId),
           isNotNull(QuestionsTable.imageSourceUrl),
-          sql`${QuestionsTable.sectionId} IN (
-            SELECT id FROM form_sections WHERE "formId" = ${formId}
-          )`,
+          inArray(QuestionsTable.sectionId, sectionIds),
         ),
       )
       .limit(MAX_MEDIA_PER_QUERY),
@@ -164,6 +178,23 @@ async function listPendingMedia(
 class PermanentMediaFailure extends Error {}
 
 /**
+ * `uploadImageBuffer` rejects with a `BAD_REQUEST` TRPCError when the type is
+ * not allowed, the bytes exceed the cap, or they don't match the declared
+ * type. None of those improve on a retry — re-thrown as-is they would have
+ * Inngest re-download the same image on every attempt and then fail the run
+ * with the pending URL still set.
+ */
+function asPermanentIfRejected(error: unknown): never {
+  const code = (error as { code?: string } | undefined)?.code;
+  if (code === "BAD_REQUEST") {
+    throw new PermanentMediaFailure(
+      error instanceof Error ? error.message : "Upload rejected the image",
+    );
+  }
+  throw error;
+}
+
+/**
  * Copies one image into this app's own storage.
  *
  * Returns "failed" only for failures that will never succeed; everything else
@@ -186,17 +217,27 @@ async function copyMedia(
 
     let url: string;
     let bytes: number;
+    let claimed: boolean;
     try {
       ({ url, bytes } = await uploadImageBuffer(
         buffer,
         mimeType,
         `orgs/${organizationId}/assessments`,
-      ));
+      ).catch(asPermanentIfRejected));
 
-      await claimMedia(organizationId, media, url);
+      claimed = await claimMedia(organizationId, media, url);
     } catch (error) {
       await releaseStorage(organizationId, buffer.length);
       throw error;
+    }
+
+    // Nobody is pointing at what was just uploaded: the author edited the
+    // block or question while the copy was in flight, so their choice stands
+    // and this copy is waste. Give the bytes back rather than charging the org
+    // for an object no row references.
+    if (!claimed) {
+      await releaseStorage(organizationId, buffer.length);
+      return "failed";
     }
 
     // The reservation was made on the downloaded length; the upload reports
@@ -234,9 +275,9 @@ async function claimMedia(
   organizationId: string,
   media: PendingMedia,
   url: string,
-) {
+): Promise<boolean> {
   if (media.table === "block") {
-    await db
+    const claimed = await db
       .update(FormBlocksTable)
       .set({ mediaUrl: url, sourceUrl: null })
       .where(
@@ -245,11 +286,13 @@ async function claimMedia(
           eq(FormBlocksTable.organizationId, organizationId),
           eq(FormBlocksTable.sourceUrl, media.sourceUrl),
         ),
-      );
-    return;
+      )
+      .returning({ id: FormBlocksTable.id });
+
+    return claimed.length > 0;
   }
 
-  await db
+  const claimed = await db
     .update(QuestionsTable)
     .set({ imageUrl: url, imageSourceUrl: null })
     .where(
@@ -258,7 +301,10 @@ async function claimMedia(
         eq(QuestionsTable.organizationId, organizationId),
         eq(QuestionsTable.imageSourceUrl, media.sourceUrl),
       ),
-    );
+    )
+    .returning({ id: QuestionsTable.id });
+
+  return claimed.length > 0;
 }
 
 async function clearSource(organizationId: string, media: PendingMedia) {

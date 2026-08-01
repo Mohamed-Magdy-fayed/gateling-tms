@@ -72,6 +72,21 @@ describe("blockMutationSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  // `z.url()` alone accepts these — they parse as absolute URLs — and the
+  // answer sheet renders `mediaUrl` straight into an `src` attribute.
+  test.each([
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "vbscript:msgbox(1)",
+  ])("rejects the executable scheme %s", (mediaUrl) => {
+    const result = blockMutationSchema.safeParse({
+      ...base,
+      kind: "image",
+      mediaUrl,
+    });
+    expect(result.success).toBe(false);
+  });
+
   test("rejects an unknown kind", () => {
     const result = blockMutationSchema.safeParse({
       ...base,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { formBlockKindValues } from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
+import { mediaUrlSchema } from "@/features/system/assessments/lib/media-url";
 
 export const listBlocksInput = z.object({
   sectionId: z.uuid(),
@@ -29,7 +30,7 @@ const blockFields = {
     .string()
     .trim()
     .max(4000, translationKey("forms.validation.max4000")),
-  mediaUrl: z.union([z.url(), z.literal("")]),
+  mediaUrl: mediaUrlSchema,
   mediaAlt: z
     .string()
     .trim()

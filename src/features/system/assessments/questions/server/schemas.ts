@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { questionTypeValues } from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
+import { mediaUrlSchema } from "@/features/system/assessments/lib/media-url";
 
 export const listQuestionsInput = z.object({
   sectionId: z.uuid(),
@@ -25,7 +26,7 @@ const questionFields = {
   type: z.enum(questionTypeValues),
   points: z.number().int().min(0).max(1000),
   isRequired: z.boolean(),
-  imageUrl: z.union([z.url(), z.literal("")]),
+  imageUrl: mediaUrlSchema,
   imageAlt: z.string().trim().max(256, translationKey("forms.validation.max256")),
 };
 

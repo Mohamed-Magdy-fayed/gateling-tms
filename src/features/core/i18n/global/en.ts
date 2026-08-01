@@ -64,6 +64,7 @@ export default {
       max1024: "Must be at most 1024 characters.",
       max2000: "Must be at most 2000 characters.",
       max4000: "Must be at most 4000 characters.",
+      url: "Must be a web address starting with http:// or https://.",
     },
     imageUpload: {
       success: "Image uploaded.",
@@ -787,6 +788,9 @@ export default {
       regeneratedEmpty:
         "Nothing to generate — check the start date and weekly slots.",
       regenerateFailed: "Could not regenerate sessions.",
+      loadFailedTitle: "Couldn't load sessions",
+      loadFailedDescription:
+        "The list couldn't be read just now. Reload the page to try again.",
     },
     validation: {
       time: "Use a 24-hour time like 18:00.",

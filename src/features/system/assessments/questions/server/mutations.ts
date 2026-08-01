@@ -64,6 +64,10 @@ export async function updateQuestion(
       isRequired: input.isRequired,
       imageUrl: input.imageUrl || null,
       imageAlt: input.imageAlt || null,
+      // Editing the image takes ownership of it. Left set, a media copy still
+      // in flight from an import would land afterwards and overwrite what the
+      // admin just chose.
+      imageSourceUrl: null,
     })
     .where(
       and(
