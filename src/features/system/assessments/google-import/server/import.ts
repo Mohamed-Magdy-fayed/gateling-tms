@@ -15,6 +15,8 @@ import {
   mapGoogleForm,
 } from "@/features/system/assessments/google-import/lib";
 import { fetchGoogleForm, GoogleApiError } from "@/integrations/google";
+import { inngest } from "@/integrations/inngest/client";
+import { formMediaImportedEvent } from "@/integrations/inngest/functions/on-form-media-imported";
 import {
   googleFormReadRatelimit,
   isRateLimited,
@@ -162,11 +164,53 @@ export async function importGoogleForm(
     if (answers.length > 0) await trx.insert(AnswersTable).values(answers);
   });
 
+  await requestMediaCopy(organizationId, formId, mapped);
+
   return {
     id: formId,
     questionCount: mapped.questionCount,
     blockCount: mapped.blockCount,
   };
+}
+
+/**
+ * Asks the media job to copy the form's images out of Google's temporary URLs.
+ *
+ * Sent after the transaction commits, never inside it: the handler reads the
+ * rows it is meant to work on, and an uncommitted transaction has none.
+ *
+ * Deliberately not fatal. The assessment is already written and usable — only
+ * its pictures are outstanding, and the answer sheet says as much — so a queue
+ * that can't be reached must not turn a successful import into an error the
+ * admin has to redo. Unlike group sessions (D163), there is no inline fallback
+ * worth having: copying a dozen images through two external services is the
+ * exact work an admin shouldn't be made to wait on, and re-importing the form
+ * is a real recovery path.
+ */
+async function requestMediaCopy(
+  organizationId: string,
+  formId: string,
+  mapped: MappedForm,
+) {
+  const hasPendingMedia = mapped.sections.some((section) =>
+    section.items.some((item) =>
+      item.kind === "block" ? item.sourceUrl : item.imageSourceUrl,
+    ),
+  );
+
+  if (!hasPendingMedia) return;
+
+  try {
+    await inngest.send(
+      formMediaImportedEvent.create({ organizationId, formId }),
+    );
+  } catch (error) {
+    console.error("Failed to enqueue assessment/form-media-imported event", {
+      organizationId,
+      formId,
+      error,
+    });
+  }
 }
 
 /** Shared by both paths so they can never disagree about what they accept. */

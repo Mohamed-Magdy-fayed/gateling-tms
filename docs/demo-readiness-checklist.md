@@ -80,7 +80,7 @@ zero-master-data promise is about an empty org.
 | 6. Import students from the downloaded template, with two invalid rows reported and the rest committed | ☐ |
 | 7. Assign students to the group | ☐ |
 | 8. Sessions generated from the weekly schedule (now also asserted by the full-journey e2e — if the card settles on "Sessions haven’t been generated", generation never ran: press **Regenerate**. If that reports "Nothing to generate", the start date or the weekly slots are the problem, not the queue) | ☐ |
-| 9. Build a quiz (or import a Google Form) and take it | ☐ |
+| 9. Build a quiz (or import a Google Form) and take it — an imported form's passages, images and video should appear in place, and its images turn from "still being imported" into real pictures once the media job runs | ☐ |
 | 10. Placement test → review → assigned level | ☐ |
 | 11. Progress → complete → certificate; then hit a free-plan limit and read the message | ☐ |
 

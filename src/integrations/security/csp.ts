@@ -21,7 +21,23 @@
 const IMAGE_HOSTS = [
   "https://storage.googleapis.com",
   "https://lh3.googleusercontent.com",
+  // YouTube's thumbnail host, for the poster frame of an embedded video block.
+  "https://i.ytimg.com",
 ] as const;
+
+/**
+ * Hosts allowed to be framed. A form can carry a video block, which is a
+ * YouTube embed and cannot be anything else: the mapper only ever writes a
+ * `youtube-nocookie.com/embed/{id}` URL, with the id validated against
+ * `^[\w-]{11}$`, and this directive is the second lock on that — an
+ * `<iframe src>` written any other way is refused by the browser.
+ *
+ * `youtube-nocookie.com` rather than `youtube.com` because students are told
+ * to open these pages for a class, and the no-cookie host sets no advertising
+ * cookies. Listed explicitly rather than as a blanket `https:`, same as the
+ * image hosts above.
+ */
+const FRAME_HOSTS = ["https://www.youtube-nocookie.com"] as const;
 
 export type CspOptions = {
   nonce: string;
@@ -67,7 +83,7 @@ export function buildContentSecurityPolicy({
     ["img-src", `'self' data: blob: ${IMAGE_HOSTS.join(" ")}`],
     ["font-src", "'self'"],
     ["connect-src", "'self'"],
-    ["frame-src", "'none'"],
+    ["frame-src", FRAME_HOSTS.join(" ")],
     ["object-src", "'none'"],
     ["base-uri", "'self'"],
     ["form-action", "'self'"],

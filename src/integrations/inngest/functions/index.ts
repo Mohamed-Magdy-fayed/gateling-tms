@@ -1,5 +1,6 @@
 import { processTask } from "./example";
 import { onContactMessageSubmitted } from "./on-contact-message-submitted";
+import { onFormMediaImported } from "./on-form-media-imported";
 import { onGoogleIntegrationDisconnected } from "./on-google-integration-disconnected";
 import { onGroupScheduleChanged } from "./on-group-schedule-changed";
 import { onOrganizationMemberInvited } from "./on-organization-member-invited";
@@ -23,6 +24,7 @@ export const functions = [
   onGroupScheduleChanged,
   onSessionBackfillScheduled,
   onGoogleIntegrationDisconnected,
+  onFormMediaImported,
   onUsageReconciliationScheduled,
   onUsageReconciliationRequested,
 ];

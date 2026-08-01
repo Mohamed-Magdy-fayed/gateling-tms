@@ -57,15 +57,24 @@ describe("buildContentSecurityPolicy", () => {
     );
   });
 
-  test("allows images from the two hosts the app actually serves them from", () => {
+  test("allows images only from the hosts the app actually serves them from", () => {
     const imgSrc = directives(production).get("img-src") ?? "";
     expect(imgSrc).toContain("https://storage.googleapis.com");
     expect(imgSrc).toContain("https://lh3.googleusercontent.com");
+    expect(imgSrc).toContain("https://i.ytimg.com");
     // Not a blanket https: — a new host has to be a deliberate edit.
     expect(imgSrc).not.toMatch(/(^|\s)https:($|\s)/);
   });
 
-  test("blocks framing and plugins outright", () => {
+  // A form's video block is a YouTube embed and nothing else. The mapper only
+  // ever writes a nocookie embed URL with a validated id; this is the second
+  // lock on that, enforced by the browser.
+  test("frames only the YouTube no-cookie host", () => {
+    const frameSrc = directives(production).get("frame-src") ?? "";
+    expect(frameSrc).toBe("https://www.youtube-nocookie.com");
+  });
+
+  test("blocks being framed, and plugins, outright", () => {
     const parsed = directives(production);
     expect(parsed.get("frame-ancestors")).toBe("'none'");
     expect(parsed.get("object-src")).toBe("'none'");
