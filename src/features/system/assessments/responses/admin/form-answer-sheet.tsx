@@ -178,11 +178,18 @@ function ContentBlock({ block }: { block: AnswerSheetBlock }) {
     <div className="space-y-1">
       {heading}
       <div className="aspect-video w-full overflow-hidden rounded-md">
+        {/* `sandbox` as well as the CSP: `frame-src` decides which origins may
+            load, not what a loaded frame may then do — without this the embed
+            could navigate the page it sits in. These three are the minimum
+            YouTube playback needs. `allow-same-origin` is safe alongside
+            `allow-scripts` only because the frame is cross-origin to us, so it
+            cannot reach out and drop its own sandbox. */}
         <iframe
           src={block.mediaUrl}
           title={block.title ?? t("blocks.kindOptions.video")}
           loading="lazy"
           allowFullScreen
+          sandbox="allow-scripts allow-same-origin allow-presentation"
           className="size-full"
         />
       </div>
@@ -225,11 +232,23 @@ function QuestionField({
   const { t } = useTranslation();
   const inputType = TEXT_INPUT_TYPE[question.type];
 
+  // A choice question labels each option through its own `<label>`. A typed
+  // one has no such pairing, so the prompt (and the help text under it) are
+  // named here and pointed at from the control — otherwise a screen reader
+  // announces an edit field with nothing to say about it.
+  const promptId = `${idPrefix}-${question.id}-prompt`;
+  const descriptionId = `${idPrefix}-${question.id}-description`;
+  const labelledBy = question.description
+    ? `${promptId} ${descriptionId}`
+    : promptId;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="font-medium text-foreground text-sm">
+        <span id={promptId} className="font-medium text-foreground text-sm">
           {question.text}
+          {/* The asterisk is decoration; `aria-required` on the control is
+              what actually conveys the requirement. */}
           {question.isRequired ? (
             <span className="ms-1 text-destructive" aria-hidden="true">
               *
@@ -242,7 +261,10 @@ function QuestionField({
       </div>
 
       {question.description ? (
-        <p className="whitespace-pre-line text-muted-foreground text-xs">
+        <p
+          id={descriptionId}
+          className="whitespace-pre-line text-muted-foreground text-xs"
+        >
           {question.description}
         </p>
       ) : null}
@@ -256,6 +278,8 @@ function QuestionField({
           <Input
             type={inputType}
             className="max-w-48"
+            aria-labelledby={labelledBy}
+            aria-required={question.isRequired}
             value={drafts[question.id]?.text ?? ""}
             onChange={(event) =>
               onSetTextAnswer(question.id, event.target.value)
@@ -264,6 +288,8 @@ function QuestionField({
         ) : (
           <Textarea
             rows={question.type === "long_answer" ? 6 : 2}
+            aria-labelledby={labelledBy}
+            aria-required={question.isRequired}
             value={drafts[question.id]?.text ?? ""}
             onChange={(event) =>
               onSetTextAnswer(question.id, event.target.value)
@@ -271,7 +297,10 @@ function QuestionField({
           />
         )
       ) : (
-        <div className="space-y-1.5">
+        // The options label themselves; the fieldset is what ties them to the
+        // question. `aria-required` is not valid on a group, so a required
+        // choice question conveys that through the prompt it points at.
+        <fieldset aria-labelledby={labelledBy} className="space-y-1.5">
           {question.answers.map((answer) => (
             <label
               key={answer.id}
@@ -295,7 +324,7 @@ function QuestionField({
               {answer.text}
             </label>
           ))}
-        </div>
+        </fieldset>
       )}
     </div>
   );

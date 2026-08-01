@@ -35,8 +35,9 @@ export const formMediaImportedEvent = eventType("assessment/form-media-imported"
   }),
 });
 
-/** Per run, so one pathological form can't spend an unbounded step budget. */
-const MAX_MEDIA_PER_FORM = 60;
+/** Per query per run, so one pathological form cannot spend an unbounded step
+ * budget in a single execution. Anything beyond it is re-queued. */
+const MAX_MEDIA_PER_QUERY = 60;
 
 /** A stuck download must not hold a step open — same bound as the API client. */
 const FETCH_TIMEOUT_MS = 15_000;
@@ -52,8 +53,9 @@ export const onFormMediaImported = inngest.createFunction(
   async ({ event, step }) => {
     const { organizationId, formId } = event.data;
 
-    const pending = await step.run("list-pending-media", async () =>
-      listPendingMedia(organizationId, formId),
+    const { media: pending, hasMore } = await step.run(
+      "list-pending-media",
+      async () => listPendingMedia(organizationId, formId),
     );
 
     let copied = 0;
@@ -70,6 +72,18 @@ export const onFormMediaImported = inngest.createFunction(
       else failed += 1;
     }
 
+    // A form with more media than one run may claim would otherwise leave the
+    // rest pending against URLs that expire. Re-queued rather than looped so
+    // each batch gets its own step budget — and only when this run actually
+    // settled something, so a batch that can neither copy nor clear can't
+    // re-trigger itself forever.
+    if (hasMore && copied + failed > 0) {
+      await step.sendEvent(
+        "continue-media-import",
+        formMediaImportedEvent.create({ organizationId, formId }),
+      );
+    }
+
     return { pending: pending.length, copied, failed };
   },
 );
@@ -84,7 +98,7 @@ export const onFormMediaImported = inngest.createFunction(
 async function listPendingMedia(
   organizationId: string,
   formId: string,
-): Promise<PendingMedia[]> {
+): Promise<{ media: PendingMedia[]; hasMore: boolean }> {
   const [blocks, questions] = await Promise.all([
     db
       .select({ id: FormBlocksTable.id, sourceUrl: FormBlocksTable.sourceUrl })
@@ -98,7 +112,7 @@ async function listPendingMedia(
           )`,
         ),
       )
-      .limit(MAX_MEDIA_PER_FORM),
+      .limit(MAX_MEDIA_PER_QUERY),
     db
       .select({
         id: QuestionsTable.id,
@@ -114,10 +128,10 @@ async function listPendingMedia(
           )`,
         ),
       )
-      .limit(MAX_MEDIA_PER_FORM),
+      .limit(MAX_MEDIA_PER_QUERY),
   ]);
 
-  return [
+  const media = [
     ...blocks.map((row) => ({
       table: "block" as const,
       id: row.id,
@@ -128,16 +142,34 @@ async function listPendingMedia(
       id: row.id,
       sourceUrl: row.sourceUrl ?? "",
     })),
-  ].filter((media) => media.sourceUrl);
+  ].filter((item) => item.sourceUrl);
+
+  return {
+    media,
+    // Either query filling its page means there is more behind it.
+    hasMore:
+      blocks.length === MAX_MEDIA_PER_QUERY ||
+      questions.length === MAX_MEDIA_PER_QUERY,
+  };
 }
+
+/**
+ * A failure that retrying cannot fix: an untrusted host, an oversized or
+ * non-image body, a full storage plan. These clear the pending URL and move
+ * on. Anything else — a network blip, Firebase being briefly unavailable, the
+ * database refusing a connection — is thrown so Inngest retries the step,
+ * because returning normally marks the step *successful* and it never runs
+ * again.
+ */
+class PermanentMediaFailure extends Error {}
 
 /**
  * Copies one image into this app's own storage.
  *
- * Never throws: a picture that can't be fetched is not a reason to fail the
- * run and retry the whole form. The pending URL is cleared either way, because
- * it expires — leaving it set would keep the answer sheet promising an image
- * that is never going to arrive.
+ * Returns "failed" only for failures that will never succeed; everything else
+ * propagates and is retried. The pending URL is cleared on a permanent failure
+ * because it expires — leaving it set would keep the answer sheet promising an
+ * image that is never going to arrive.
  */
 async function copyMedia(
   organizationId: string,
@@ -145,57 +177,88 @@ async function copyMedia(
 ): Promise<"copied" | "failed"> {
   try {
     const { buffer, mimeType } = await fetchImage(media.sourceUrl);
-    await assertBudget(organizationId, buffer.length);
 
-    const { url, bytes } = await uploadImageBuffer(
-      buffer,
-      mimeType,
-      `orgs/${organizationId}/assessments`,
-    );
+    // Reserved *before* the upload and against the row itself, so two media
+    // jobs for the same organization cannot both read the same total, both
+    // pass, and together exceed the plan. A refund follows if the upload or
+    // the write then fails.
+    await reserveStorage(organizationId, buffer.length);
 
-    await db.transaction(async (trx) => {
-      if (media.table === "block") {
-        await trx
-          .update(FormBlocksTable)
-          .set({ mediaUrl: url, sourceUrl: null })
-          .where(
-            and(
-              eq(FormBlocksTable.id, media.id),
-              eq(FormBlocksTable.organizationId, organizationId),
-            ),
-          );
-      } else {
-        await trx
-          .update(QuestionsTable)
-          .set({ imageUrl: url, imageSourceUrl: null })
-          .where(
-            and(
-              eq(QuestionsTable.id, media.id),
-              eq(QuestionsTable.organizationId, organizationId),
-            ),
-          );
-      }
+    let url: string;
+    let bytes: number;
+    try {
+      ({ url, bytes } = await uploadImageBuffer(
+        buffer,
+        mimeType,
+        `orgs/${organizationId}/assessments`,
+      ));
 
-      await trx
-        .update(OrganizationsTable)
-        .set({
-          storageBytes: sql`${OrganizationsTable.storageBytes} + ${bytes}`,
-        })
-        .where(eq(OrganizationsTable.id, organizationId));
-    });
+      await claimMedia(organizationId, media, url);
+    } catch (error) {
+      await releaseStorage(organizationId, buffer.length);
+      throw error;
+    }
+
+    // The reservation was made on the downloaded length; the upload reports
+    // what it actually stored. They agree today, but settling the difference
+    // keeps the counter honest if that ever stops being true.
+    if (bytes !== buffer.length) {
+      await releaseStorage(organizationId, buffer.length - bytes);
+    }
 
     return "copied";
   } catch (error) {
-    console.error("Failed to copy imported form media", {
+    if (!(error instanceof PermanentMediaFailure)) throw error;
+
+    console.error("Gave up copying imported form media", {
       organizationId,
       table: media.table,
       id: media.id,
-      error,
+      reason: error.message,
     });
 
     await clearSource(organizationId, media);
     return "failed";
   }
+}
+
+/**
+ * Writes the permanent URL, but only while the row still points at the source
+ * this copy started from.
+ *
+ * Without that condition, an author who edited the block while the copy was in
+ * flight — swapped the picture, or turned it into a text block — would have
+ * their edit silently overwritten by the image they had just replaced.
+ */
+async function claimMedia(
+  organizationId: string,
+  media: PendingMedia,
+  url: string,
+) {
+  if (media.table === "block") {
+    await db
+      .update(FormBlocksTable)
+      .set({ mediaUrl: url, sourceUrl: null })
+      .where(
+        and(
+          eq(FormBlocksTable.id, media.id),
+          eq(FormBlocksTable.organizationId, organizationId),
+          eq(FormBlocksTable.sourceUrl, media.sourceUrl),
+        ),
+      );
+    return;
+  }
+
+  await db
+    .update(QuestionsTable)
+    .set({ imageUrl: url, imageSourceUrl: null })
+    .where(
+      and(
+        eq(QuestionsTable.id, media.id),
+        eq(QuestionsTable.organizationId, organizationId),
+        eq(QuestionsTable.imageSourceUrl, media.sourceUrl),
+      ),
+    );
 }
 
 async function clearSource(organizationId: string, media: PendingMedia) {
@@ -236,7 +299,7 @@ async function fetchImage(
   url: string,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
   if (!isFetchableGoogleMediaUrl(url)) {
-    throw new Error("Refusing to fetch media from an untrusted host");
+    throw new PermanentMediaFailure("Media host is not trusted");
   }
 
   const controller = new AbortController();
@@ -249,16 +312,19 @@ async function fetchImage(
       headers: { Accept: ALLOWED_IMAGE_MIME_TYPES.join(", ") },
     });
 
+    // 4xx is the URL itself being wrong or expired and will not improve; 5xx
+    // and network errors are worth another attempt.
     if (!response.ok) {
-      throw new Error(`Media request failed with ${response.status}`);
+      const message = `Media request failed with ${response.status}`;
+      if (response.status < 500) throw new PermanentMediaFailure(message);
+      throw new Error(message);
     }
 
-    // The declared length is a hint, not a fact, so the decoded size is
-    // checked again below — but rejecting on it first avoids downloading
-    // something huge only to throw it away.
+    // A hint, not a fact — an allowed host can omit it or lie — so rejecting
+    // on it only saves the download when it happens to be honest.
     const declaredLength = Number(response.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_IMAGE_BYTES) {
-      throw new Error("Media exceeds the maximum allowed size");
+      throw new PermanentMediaFailure("Media exceeds the maximum allowed size");
     }
 
     const mimeType = (response.headers.get("content-type") ?? "")
@@ -266,34 +332,85 @@ async function fetchImage(
       .trim()
       .toLowerCase();
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (buffer.length > MAX_IMAGE_BYTES) {
-      throw new Error("Media exceeds the maximum allowed size");
-    }
-
     // `uploadImageBuffer` still checks the bytes against the declared type;
     // this only rejects the obviously-wrong before the upload path sees it.
-    return { buffer, mimeType };
+    return { buffer: await readCapped(response), mimeType };
   } finally {
     clearTimeout(timeout);
   }
 }
 
 /**
- * The org's storage cap, checked here rather than through
- * `assertStorageBudget`: that helper throws a localized TRPCError, and there
- * is no request, no locale and nobody to show it to inside a background job.
+ * Reads the body a chunk at a time, giving up the moment it passes the cap.
+ *
+ * `response.arrayBuffer()` would allocate the whole thing first, so a host
+ * that omits or understates `content-length` could exhaust the worker's memory
+ * before any size check ran.
  */
-async function assertBudget(organizationId: string, additionalBytes: number) {
+async function readCapped(response: Response): Promise<Buffer> {
+  if (!response.body) {
+    throw new PermanentMediaFailure("Media response had no body");
+  }
+
+  const chunks: Buffer[] = [];
+  let total = 0;
+
+  for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+    total += chunk.byteLength;
+    if (total > MAX_IMAGE_BYTES) {
+      await response.body.cancel().catch(() => {});
+      throw new PermanentMediaFailure("Media exceeds the maximum allowed size");
+    }
+    chunks.push(Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks, total);
+}
+
+/**
+ * Takes the bytes out of the organization's storage allowance, or refuses.
+ *
+ * One conditional UPDATE rather than read-then-check-then-write: two media
+ * jobs for the same organization would otherwise both read the same total,
+ * both decide there was room, and together go over the plan limit. Postgres
+ * serializes the row update, so exactly one of them loses.
+ */
+async function reserveStorage(organizationId: string, bytes: number) {
   const organization = await db.query.OrganizationsTable.findFirst({
     where: eq(OrganizationsTable.id, organizationId),
-    columns: { plan: true, storageBytes: true },
+    columns: { plan: true },
   });
 
-  if (!organization) throw new Error("Organization no longer exists");
+  if (!organization) {
+    throw new PermanentMediaFailure("Organization no longer exists");
+  }
 
   const limit = PLAN_LIMITS[organization.plan].maxStorageBytes;
-  if (organization.storageBytes + additionalBytes > limit) {
-    throw new Error("Storage limit reached");
+
+  const reserved = await db
+    .update(OrganizationsTable)
+    .set({ storageBytes: sql`${OrganizationsTable.storageBytes} + ${bytes}` })
+    .where(
+      and(
+        eq(OrganizationsTable.id, organizationId),
+        sql`${OrganizationsTable.storageBytes} + ${bytes} <= ${limit}`,
+      ),
+    )
+    .returning({ id: OrganizationsTable.id });
+
+  if (reserved.length === 0) {
+    throw new PermanentMediaFailure("Storage limit reached");
   }
+}
+
+/** Hands reserved bytes back after a failed upload or an overestimate. */
+async function releaseStorage(organizationId: string, bytes: number) {
+  if (bytes <= 0) return;
+
+  await db
+    .update(OrganizationsTable)
+    .set({
+      storageBytes: sql`greatest(${OrganizationsTable.storageBytes} - ${bytes}, 0)`,
+    })
+    .where(eq(OrganizationsTable.id, organizationId));
 }

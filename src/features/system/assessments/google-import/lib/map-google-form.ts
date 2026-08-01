@@ -7,6 +7,8 @@ import type {
 
 /** `varchar(256)` on `forms.title`, `form_sections.title`, `form_blocks.title`. */
 const MAX_TITLE_LENGTH = 256;
+/** `varchar(256)` on `questions.imageAlt` and `form_blocks.mediaAlt`. */
+const MAX_ALT_LENGTH = 256;
 /** `blocks.body` is capped at 4000 by its own schema. */
 const MAX_BODY_LENGTH = 4000;
 const UNTITLED_FALLBACK = "Untitled";
@@ -230,7 +232,7 @@ function mapItem(
     points: resolvePoints(question, isQuiz),
     isRequired: question.required ?? false,
     imageSourceUrl: item.questionItem?.image?.contentUri ?? null,
-    imageAlt: item.questionItem?.image?.altText ?? null,
+    imageAlt: altText(item.questionItem?.image?.altText),
     order,
   };
 
@@ -321,7 +323,7 @@ function mapContentItem(
       // media job fills this in once it has copied the bytes to our storage.
       mediaUrl: null,
       sourceUrl: item.imageItem.image?.contentUri ?? null,
-      mediaAlt: item.imageItem.image?.altText ?? description ?? null,
+      mediaAlt: altText(item.imageItem.image?.altText ?? description),
     };
   }
 
@@ -576,6 +578,16 @@ function noteDroppedFeedback(
   if (grading?.whenRight || grading?.whenWrong || grading?.generalFeedback) {
     notes.add("droppedQuestionFeedback", title);
   }
+}
+
+/**
+ * Alt text for a `varchar(256)` column. Google imposes no such limit, and an
+ * over-length value would abort the whole import transaction rather than
+ * costing one description.
+ */
+function altText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? truncate(trimmed, MAX_ALT_LENGTH) : null;
 }
 
 function truncate(value: string, max: number): string {
