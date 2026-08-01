@@ -201,9 +201,12 @@ registers your functions by calling `/api/inngest` after each deployment. If
 that handshake is rejected, `inngest.send()` still succeeds — events are
 accepted with the *event* key — but no function is ever registered, so nothing
 consumes them. There is no error on the sending side and nothing in the UI to
-say so. Verification emails, invitations, contact messages, session generation,
-the nightly sweeps and the Google-import media copy all stop, and each one just
-looks like work that never happened.
+say so. Verification emails, invitations, contact messages, the nightly sweeps
+and the Google-import media copy all stop, and each one just looks like work
+that never happened. *Queued* session generation stops with them — but sessions
+themselves keep appearing, because `createGroup`/`updateGroup` fall back to
+generating them inline when the enqueue fails (STATE.md D163). That fallback is
+the only one of its kind.
 
 **This is a live problem as of 2026-08-01** — see STATE.md D178.
 
@@ -213,7 +216,7 @@ In Vercel's runtime logs for the production deployment, filter on
 `/api/inngest`. A healthy sync looks like a `PUT` returning 200. A broken one
 looks like this:
 
-```
+```text
 PUT /api/inngest → 400
 GET /api/inngest → 401   Signature validation failed / Invalid signature
 ```
