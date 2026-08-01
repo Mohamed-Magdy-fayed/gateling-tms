@@ -132,15 +132,16 @@ export const groupStudentImportCommitInput = z.object({
 });
 
 /**
- * How a save generated the group's sessions. Lives here rather than beside the
- * mutation that produces it because the form dialog reads it too, and this is
- * the one module in the feature both sides already import.
+ * Whether a save managed to generate the group's sessions. Lives here rather
+ * than beside the mutation that produces it because the form dialog reads it
+ * too, and this is the one module in the feature both sides already import.
  *
- * `inline` is not an error — the sessions exist, the queue just wasn't the one
- * that wrote them. Only `failed` means the group has a schedule and no
- * sessions, and only that warrants telling the user anything.
+ * Only `failed` means the group has a schedule and no sessions, and only that
+ * warrants telling the user anything. There is no longer a "queued" case: the
+ * generation runs inline and is authoritative, because a queued one can be
+ * accepted and then never consumed (D178) without anything saying so.
  */
-export type SessionRegenerationMode = "queued" | "inline" | "failed";
+export type SessionRegenerationMode = "generated" | "failed";
 
 export type ListGroupsInput = z.infer<typeof listGroupsInput>;
 export type GroupStudentImportRow = z.infer<typeof groupStudentImportRowSchema>;

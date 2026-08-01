@@ -121,7 +121,31 @@ All of these green on the commit being demoed:
 | `npm run scan:secrets` | ☐ |
 | `npm run test:e2e` | ☐ |
 
-## F. Known gaps to say out loud when demoing
+## F. Blocking: Inngest is not synced in production
+
+**This one is not a "say it out loud" gap — it stops asynchronous work from
+happening at all, and it is why `v1.0.0` is not tagged (STATE.md D178).**
+
+`/api/inngest` refuses Inngest's sync handshake, so no function is registered:
+no verification emails, no invitations, no contact messages, no nightly sweeps,
+and an imported form's images stay as "still being imported" placeholders
+forever. Group sessions are the one exception — they are generated inline when
+the group is saved (D179), so they do not depend on Inngest at all.
+
+Fix per `docs/deploy.md` §7, then confirm **both** of these before demoing
+anything asynchronous — a 200 alone only says the request was accepted, not
+that the functions registered:
+
+| Check | ☐ |
+|---|---|
+| Vercel runtime logs for the newest production deployment show `PUT /api/inngest → 200`, and **no** `GET /api/inngest → 401 Signature validation failed` | ☐ |
+| Inngest dashboard → **Apps** lists `gateling-tms` as synced, with its functions present and the list not empty | ☐ |
+
+A missing app, an empty function list, or that `400`/`401` pair is a blocker,
+not a warning. A signup demo will not deliver its verification email until both
+rows are ticked.
+
+## G. Known gaps to say out loud when demoing
 
 Not blockers, but do not let them be discovered mid-demo:
 

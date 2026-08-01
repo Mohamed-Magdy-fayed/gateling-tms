@@ -38,9 +38,11 @@ const PENDING_POLL_MS = 3000;
 /**
  * How long to keep calling generation "pending" before calling it stuck.
  *
- * A queued regeneration lands in seconds. Polling past that was the bug this
- * card used to have: with the queue unreachable it spun on "generating…"
- * forever, which reads as progress and gives nobody anything to do about it.
+ * Saving a group now generates its sessions inline, so an empty list is very
+ * rarely "not yet" — the poll survives only for the nightly backfill and for a
+ * group opened while another tab is regenerating it. Polling forever was the
+ * bug this card used to have: it spun on "generating…" indefinitely, which
+ * reads as progress and gives nobody anything to do about it.
  */
 const PENDING_TIMEOUT_MS = 30_000;
 

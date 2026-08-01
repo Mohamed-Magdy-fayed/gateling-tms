@@ -193,3 +193,69 @@ Both `test:isolation` and `test:e2e` need local Docker Postgres running. Only
 creates and tears down its own fixture organizations.
 
 Then walk `docs/demo-readiness-checklist.md`.
+
+## 7. Inngest: confirming the app is actually synced
+
+**Everything asynchronous depends on this, and it fails silently.** Inngest
+registers your functions by calling `/api/inngest` after each deployment. If
+that handshake is rejected, `inngest.send()` still succeeds — events are
+accepted with the *event* key — but no function is ever registered, so nothing
+consumes them. There is no error on the sending side and nothing in the UI to
+say so. Verification emails, invitations, contact messages, the nightly sweeps
+and the Google-import media copy all stop, and each one just looks like work
+that never happened. Group sessions are the one exception, and only since
+D179: saving a group generates them inline before the mutation returns, so they
+do not depend on this working. Everything else does.
+
+**This is a live problem as of 2026-08-01** — see STATE.md D178.
+
+### How to check
+
+In Vercel's runtime logs for the production deployment, filter on
+`/api/inngest`. A healthy sync looks like a `PUT` returning 200. A broken one
+looks like this:
+
+```text
+PUT /api/inngest → 400
+GET /api/inngest → 401   Signature validation failed / Invalid signature
+```
+
+Three of those a couple of seconds apart, right after every deploy, is Inngest
+retrying the handshake and being refused each time.
+
+Cross-check in the Inngest dashboard: **Apps** should list `gateling-tms` as
+synced with all of its functions. If the app is missing, or its function list
+is empty, the handshake is failing.
+
+### What causes it
+
+`INNGEST_SIGNING_KEY` in the Vercel scope does not match the signing key of the
+Inngest **environment** that is calling. The usual reasons:
+
+- The Vercel integration provisioned keys for a different Inngest environment
+  (a branch environment rather than Production, or the reverse).
+- The app was re-created in Inngest, which rotates its signing key.
+- The key was rotated in Inngest and never copied back into Vercel.
+
+### Fixing it
+
+1. Inngest dashboard → the **Production** environment → **Manage → Signing key**.
+2. Compare it with `INNGEST_SIGNING_KEY` in Vercel → Settings → Environment
+   Variables → **Production** scope. They must be the same key, from the same
+   environment.
+3. Correct whichever is wrong, then **redeploy** — the handshake only runs on
+   deployment. Reinstalling the Inngest Vercel integration re-provisions both
+   keys and is usually the quickest route.
+4. Confirm: the next deployment's logs show `PUT /api/inngest → 200`, and the
+   Inngest dashboard lists the app with its functions.
+
+Repeat the same check for the Preview scope, which has its own keys and its own
+Inngest environment.
+
+### Until it is fixed
+
+Group sessions still generate — `createGroup`/`updateGroup` fall back to
+running the generation inline when the queue is unreachable (D163), and the
+nightly backfill would catch the rest *if it ran*. Nothing else has a fallback.
+Most visibly, an imported Google Form's images stay as "still being imported"
+placeholders forever, because `on-form-media-imported` never runs.
