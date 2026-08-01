@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup, FieldSet } from "@/components/ui/field";
-import type { Answer, QuestionType } from "@/drizzle/schema";
+import { type Answer, isTextQuestion, type QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { answerMutationSchema } from "@/features/system/assessments/answers/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
@@ -46,7 +46,7 @@ export function AnswerFormDialog({
   const isEdit = answer != null;
   // For a short answer this row is a wording the grader should accept, not a
   // choice the student picks — see AnswersSection.
-  const isShortAnswer = questionType === "short_answer";
+  const isShortAnswer = isTextQuestion(questionType);
 
   const createMut = useMutation(trpc.answers.create.mutationOptions());
   const updateMut = useMutation(trpc.answers.update.mutationOptions());

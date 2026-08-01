@@ -55,13 +55,6 @@ export async function uploadImage(
   mimeType: string,
   folder = "uploads",
 ): Promise<{ url: string; bytes: number }> {
-  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Unsupported image type",
-    });
-  }
-
   if (
     !base64 ||
     base64.length > MAX_BASE64_LENGTH ||
@@ -74,7 +67,32 @@ export async function uploadImage(
     });
   }
 
-  const buffer = Buffer.from(base64, "base64");
+  return uploadImageBuffer(Buffer.from(base64, "base64"), mimeType, folder);
+}
+
+/**
+ * Upload image bytes that are already decoded.
+ *
+ * The base64 entry point above delegates here, so there is exactly one place
+ * that decides what may be stored: every size check, the mime allowlist and
+ * the byte-signature check apply to both callers. A second upload path is how
+ * a "we validate uploads" claim quietly stops being true.
+ *
+ * Used directly by the Google-import media job, which fetches bytes over the
+ * network rather than receiving them from a browser — round-tripping them
+ * through base64 only to decode them again would be pure waste.
+ */
+export async function uploadImageBuffer(
+  buffer: Buffer,
+  mimeType: string,
+  folder = "uploads",
+): Promise<{ url: string; bytes: number }> {
+  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Unsupported image type",
+    });
+  }
 
   if (!buffer.length || buffer.length > MAX_IMAGE_BYTES) {
     throw new TRPCError({
@@ -105,6 +123,13 @@ export async function uploadImage(
 
   return { url: file.publicUrl(), bytes: buffer.length };
 }
+
+/** The image types `uploadImageBuffer` accepts — the fetcher's Accept header. */
+export const ALLOWED_IMAGE_MIME_TYPES: readonly string[] = [
+  ...ALLOWED_MIME_TYPES,
+];
+
+export { MAX_IMAGE_BYTES };
 
 /**
  * Total bytes stored under one organization's prefix — the truth

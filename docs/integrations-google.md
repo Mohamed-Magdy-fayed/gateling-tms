@@ -159,3 +159,53 @@ cannot be exercised offline. What *can* be checked without credentials:
   building an authorize URL with empty credentials.
 - A non-admin member of the org gets `?googleResult=forbidden` from both
   routes.
+
+## 6. What an import brings across
+
+The mapper (`google-import/lib/map-google-form.ts`) is pure and unit-tested;
+this is what it produces.
+
+| Google | Here |
+|---|---|
+| Section (page break) | `form_sections` row |
+| Multiple choice / checkboxes / dropdown | `single_choice` / `multiple_choice` (dropdown flagged) |
+| Short answer | `short_answer` |
+| Paragraph | `long_answer` |
+| Date / time | `date` / `time` |
+| Linear scale, star rating | `single_choice`, one option per step (flagged) |
+| Grid | one question per row, sharing the column options (flagged) |
+| Text item | `form_blocks` row, kind `text` |
+| Image item | `form_blocks` row, kind `image` — see below |
+| Video item | `form_blocks` row, kind `video`, embedded from `youtube-nocookie.com` |
+| Question help text, required flag, question image | columns on `questions` |
+| Quiz points and correct answers, including typed questions | `points`, `answers.isCorrect` |
+
+Still not imported, and each says so in the preview rather than vanishing: file
+upload questions (a response has no upload path), pictures attached to
+individual answer options, and the feedback Google shows after answering.
+
+### Images are copied, not linked
+
+Google serves form images from a signed, short-lived `contentUri`. Linking it
+would produce pictures that 404 within hours, long after the admin has checked
+the import. So the import stores it in `form_blocks.sourceUrl` /
+`questions.imageSourceUrl` — which nothing renders — and sends
+`assessment/form-media-imported`. That Inngest function downloads each image,
+verifies its bytes, uploads it to `orgs/{organizationId}/assessments`, charges
+`organizations.storageBytes`, and swaps in the permanent URL.
+
+Until it runs, the answer sheet shows "Media is still being imported". If a
+copy fails (unreachable URL, storage cap reached), the pending URL is cleared
+and the block says the media couldn't be imported — re-importing the form is
+the recovery path.
+
+The fetch is host-restricted (`integrations/google/media.ts`): HTTPS only, no
+credentials in the URL, an exact `*.googleusercontent.com` / `*.google.com` /
+`*.gstatic.com` suffix allowlist, and `redirect: "error"` so an allowed host
+cannot redirect the request somewhere else. It is a server-side fetch of an
+externally supplied URL, which is an SSRF shape and is treated as one.
+
+Videos need none of this: a YouTube link doesn't expire, so it is normalised to
+`https://www.youtube-nocookie.com/embed/{id}` at import time, with the id
+checked against `^[\w-]{11}$` because it ends up in an `iframe src`. The CSP's
+`frame-src` allows that one host and nothing else.

@@ -1,4 +1,8 @@
-import type { FormResponseAnswer, QuestionType } from "@/drizzle/schema";
+import {
+  type FormResponseAnswer,
+  isTextQuestion,
+  type QuestionType,
+} from "@/drizzle/schema";
 
 export type ScorableAnswer = {
   id: string;
@@ -128,7 +132,7 @@ export function scoreFormResponse(
   for (const question of questions) {
     const submitted = answers.find((a) => a.questionId === question.id);
 
-    if (question.type === "short_answer") {
+    if (isTextQuestion(question.type)) {
       const outcome = evaluateShortAnswer(question, submitted?.text);
 
       if (outcome.kind === "unanswerable") {

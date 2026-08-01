@@ -25,10 +25,13 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import type { FormSection } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
-import { QuestionsSection } from "@/features/system/assessments/questions/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
-import { SectionDeleteDialog, SectionFormDialog } from "./components";
+import {
+  SectionDeleteDialog,
+  SectionFormDialog,
+  SectionItems,
+} from "./components";
 
 type RowAction = { section: FormSection; variant: "edit" | "delete" } | null;
 
@@ -177,7 +180,7 @@ export function SectionsSection({ formId }: { formId: string }) {
 
                 {isExpanded ? (
                   <CardContent className="px-4 pt-3">
-                    <QuestionsSection sectionId={section.id} />
+                    <SectionItems sectionId={section.id} />
                   </CardContent>
                 ) : null}
               </Card>

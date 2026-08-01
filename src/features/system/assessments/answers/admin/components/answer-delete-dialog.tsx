@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Answer, QuestionType } from "@/drizzle/schema";
+import { type Answer, isTextQuestion, type QuestionType } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -33,7 +33,7 @@ export function AnswerDeleteDialog({
   open,
   questionType,
 }: AnswerDeleteDialogProps) {
-  const isShortAnswer = questionType === "short_answer";
+  const isShortAnswer = isTextQuestion(questionType);
   const { t } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();

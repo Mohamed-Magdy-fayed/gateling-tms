@@ -328,3 +328,46 @@ describe("scoreFormResponse — short answers", () => {
     expect(score).toBe(6);
   });
 });
+
+/**
+ * Long answers, dates and times store and grade exactly like a short answer —
+ * one string, normalised and compared against the accepted wordings. These
+ * cases exist because the scorer used to test `type === "short_answer"`
+ * literally, so adding a type would have silently routed it down the
+ * choice-question branch and scored every answer as wrong.
+ */
+describe("scoreFormResponse — every typed question type", () => {
+  const accepted = [{ id: "a1", text: "Cairo", isCorrect: true }];
+
+  test.each(["short_answer", "long_answer", "date", "time"] as const)(
+    "grades a %s against its accepted wordings",
+    (type) => {
+      const questions: ScorableQuestion[] = [
+        { id: "q1", text: "Where?", type, points: 3, answers: accepted },
+      ];
+
+      expect(
+        scoreFormResponse(questions, [{ questionId: "q1", text: " cairo " }]),
+      ).toBe(3);
+      expect(
+        scoreFormResponse(questions, [{ questionId: "q1", text: "Giza" }]),
+      ).toBe(null);
+    },
+  );
+
+  test("a date answer matches its accepted value exactly", () => {
+    const questions: ScorableQuestion[] = [
+      {
+        id: "q1",
+        text: "When did it open?",
+        type: "date",
+        points: 1,
+        answers: [{ id: "a1", text: "2026-09-01", isCorrect: true }],
+      },
+    ];
+
+    expect(
+      scoreFormResponse(questions, [{ questionId: "q1", text: "2026-09-01" }]),
+    ).toBe(1);
+  });
+});

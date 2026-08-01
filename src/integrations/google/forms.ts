@@ -15,6 +15,18 @@ import { z } from "zod";
  * GoogleForm`) and trusted.
  */
 
+/**
+ * An image anywhere on a form. `contentUri` is a signed, short-lived download
+ * URL — Google's own docs call it temporary — which is why an imported image
+ * is copied into this app's own storage rather than hot-linked.
+ */
+const imageSchema = z.object({
+  contentUri: z.string().optional(),
+  altText: z.string().optional(),
+  /** Where the author originally got it. Informational; never fetched. */
+  sourceUri: z.string().optional(),
+});
+
 const choiceQuestionSchema = z.object({
   // RADIO/CHECKBOX/DROP_DOWN today; a future kind falls through to the
   // mapper's default rather than failing the parse.
@@ -24,6 +36,10 @@ const choiceQuestionSchema = z.object({
       z.object({
         value: z.string().optional(),
         isOther: z.boolean().optional(),
+        // Parsed so the mapper can *say* an option had a picture attached.
+        // There is nowhere to put a per-option image, and dropping one
+        // silently is the thing this schema exists to prevent.
+        image: imageSchema.optional(),
       }),
     )
     .optional(),
@@ -37,6 +53,11 @@ const gradingSchema = z.object({
       answers: z.array(z.object({ value: z.string().optional() })).optional(),
     })
     .optional(),
+  // Per-question feedback. Parsed only so the mapper can note that it exists —
+  // this app has no place to show it.
+  whenRight: z.object({}).optional(),
+  whenWrong: z.object({}).optional(),
+  generalFeedback: z.object({}).optional(),
 });
 
 const questionSchema = z.object({
@@ -57,10 +78,22 @@ const questionSchema = z.object({
       highLabel: z.string().optional(),
     })
     .optional(),
-  dateQuestion: z.object({}).optional(),
-  timeQuestion: z.object({}).optional(),
+  dateQuestion: z
+    .object({
+      includeTime: z.boolean().optional(),
+      includeYear: z.boolean().optional(),
+    })
+    .optional(),
+  timeQuestion: z.object({ duration: z.boolean().optional() }).optional(),
   fileUploadQuestion: z.object({}).optional(),
-  ratingQuestion: z.object({}).optional(),
+  /** Stars/hearts out of `ratingScaleLevel` — a choice among fixed steps. */
+  ratingQuestion: z
+    .object({
+      ratingScaleLevel: z.number().optional(),
+      iconType: z.string().optional(),
+    })
+    .optional(),
+  /** One row of a grid. Its columns live on the group's `grid`. */
   rowQuestion: z.object({ title: z.string().optional() }).optional(),
 });
 
@@ -68,16 +101,42 @@ const itemSchema = z.object({
   itemId: z.string().optional(),
   title: z.string().optional(),
   description: z.string().optional(),
-  questionItem: z.object({ question: questionSchema.optional() }).optional(),
-  // A grid (multiple rows sharing one set of columns) — one Google item that
-  // is really several questions. Not representable in this app's schema.
+  questionItem: z
+    .object({
+      question: questionSchema.optional(),
+      /** An image that is part of the question — a diagram to read off. */
+      image: imageSchema.optional(),
+    })
+    .optional(),
+  // A grid: several row-questions sharing one set of columns. Imported as one
+  // question per row, since that is what it means.
   questionGroupItem: z
-    .object({ questions: z.array(questionSchema).optional() })
+    .object({
+      questions: z.array(questionSchema).optional(),
+      grid: z
+        .object({
+          columns: choiceQuestionSchema.optional(),
+          shuffleQuestions: z.boolean().optional(),
+        })
+        .optional(),
+      image: imageSchema.optional(),
+    })
     .optional(),
   pageBreakItem: z.object({}).optional(),
+  // A text item carries no fields of its own — its content is the item's own
+  // `title` and `description`, both parsed above.
   textItem: z.object({}).optional(),
-  imageItem: z.object({}).optional(),
-  videoItem: z.object({}).optional(),
+  imageItem: z.object({ image: imageSchema.optional() }).optional(),
+  videoItem: z
+    .object({
+      video: z
+        .object({
+          youtubeUri: z.string().optional(),
+        })
+        .optional(),
+      caption: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const googleFormSchema = z.object({
@@ -98,3 +157,4 @@ export const googleFormSchema = z.object({
 export type GoogleForm = z.infer<typeof googleFormSchema>;
 export type GoogleFormItem = z.infer<typeof itemSchema>;
 export type GoogleFormQuestion = z.infer<typeof questionSchema>;
+export type GoogleFormImage = z.infer<typeof imageSchema>;

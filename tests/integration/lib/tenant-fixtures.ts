@@ -5,6 +5,7 @@ import {
   CoursesTable,
   EnrollmentLevelsTable,
   EnrollmentsTable,
+  FormBlocksTable,
   FormResponsesTable,
   FormSectionsTable,
   FormsTable,
@@ -131,6 +132,19 @@ export async function seedTenantData(tenant: TenantFixture) {
     .values({ organizationId, formId: form.id, title: "Isolation Section" })
     .returning({ id: FormSectionsTable.id });
 
+  const [block] = await db
+    .insert(FormBlocksTable)
+    .values({
+      organizationId,
+      sectionId: section.id,
+      kind: "text",
+      title: "Isolation Passage",
+      body: "Fixture",
+      // Questions and blocks share one order sequence per section.
+      order: 0,
+    })
+    .returning({ id: FormBlocksTable.id });
+
   const [question] = await db
     .insert(QuestionsTable)
     .values({
@@ -138,6 +152,7 @@ export async function seedTenantData(tenant: TenantFixture) {
       sectionId: section.id,
       text: "Isolation question?",
       type: "single_choice",
+      order: 1,
     })
     .returning({ id: QuestionsTable.id });
 
@@ -243,6 +258,7 @@ export async function seedTenantData(tenant: TenantFixture) {
 
   return {
     answerId: answer.id,
+    blockId: block.id,
     certificateId: certificate.id,
     courseId: course.id,
     enrollmentId: enrollment.id,

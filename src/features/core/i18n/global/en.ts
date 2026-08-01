@@ -63,6 +63,8 @@ export default {
       max500: "Must be at most 500 characters.",
       max1024: "Must be at most 1024 characters.",
       max2000: "Must be at most 2000 characters.",
+      max4000: "Must be at most 4000 characters.",
+      url: "Must be a web address starting with http:// or https://.",
     },
     imageUpload: {
       success: "Image uploaded.",
@@ -786,6 +788,9 @@ export default {
       regeneratedEmpty:
         "Nothing to generate — check the start date and weekly slots.",
       regenerateFailed: "Could not regenerate sessions.",
+      loadFailedTitle: "Couldn't load sessions",
+      loadFailedDescription:
+        "The list couldn't be read just now. Reload the page to try again.",
     },
     validation: {
       time: "Use a 24-hour time like 18:00.",
@@ -1154,13 +1159,18 @@ export default {
     questionsCount: dt("{count:plural}", {
       plural: { count: { one: "{?} question", other: "{?} questions" } },
     }),
+    blocksCount: dt("{count:plural}", {
+      plural: {
+        count: { one: "{?} piece of content", other: "{?} pieces of content" },
+      },
+    }),
     quizDetected:
       "This is a Google quiz — point values and correct answers come across too.",
     notImportedTitle: "Not imported as-is",
     notImportedDescription:
-      "Everything else on the form comes across. These items either changed shape or were left out — you can add them by hand in the builder.",
+      "Everything else on the form comes across, including its text and videos. Images are copied in the background and can occasionally fail — the form says so where one is missing. These items changed shape or were left out; you can add them by hand in the builder.",
     nothingToImport:
-      "This form has no questions Gateling can import. Nothing was created.",
+      "This form has nothing Gateling can import. Nothing was created.",
     targetTitle: "Where it goes",
     targetDescription:
       "Imported assessments are always drafts. Publish from the builder once you've checked them.",
@@ -1170,13 +1180,15 @@ export default {
       convertedDropdown:
         "Dropdown — imported as a single-choice question: {title}",
       convertedScale: "Linear scale — imported as one choice per step: {title}",
-      convertedParagraph: "Long answer — imported as a short answer: {title}",
+      convertedRating: "Star rating — imported as one choice per step: {title}",
+      convertedGrid: "Grid — imported as one question per row: {title}",
       skippedUnsupported: "This question type can't be imported: {title}",
-      skippedGrid: "Grid questions can't be imported: {title}",
-      skippedContent:
-        "Text, images and videos aren't questions, so they're left out: {title}",
       skippedEmptyChoice: "No answer options to import: {title}",
       droppedOtherOption: 'The "Other" free-text option is left out: {title}',
+      droppedOptionImage:
+        "Pictures on the answer options are left out: {title}",
+      droppedQuestionFeedback:
+        "The feedback shown after answering is left out: {title}",
       unmatchedCorrectAnswer:
         "A correct answer matches none of the options, so it isn't marked: {title}",
       truncatedTitle: "Title shortened to fit: {title}",
@@ -1278,8 +1290,18 @@ export default {
       single_choice: "Single choice",
       multiple_choice: "Multiple choice",
       short_answer: "Short answer",
+      long_answer: "Long answer",
+      date: "Date",
+      time: "Time",
     },
     points: "Points",
+    description: "Help text",
+    descriptionHint: "Shown under the question. Optional.",
+    required: "Answer required",
+    image: "Question image",
+    imageAlt: "Image description",
+    imageAltHint: "Read aloud to anyone using a screen reader.",
+    imagePending: "Image is still being imported…",
     add: "Add question",
     edit: "Edit question",
     addDescription: "Create a new question in this section.",
@@ -1296,6 +1318,39 @@ export default {
     moveUp: "Move up",
     moveDown: "Move down",
     manageAnswers: "Manage answer choices",
+  },
+  blocks: {
+    title: "Content",
+    add: "Add content",
+    edit: "Edit content",
+    addDescription:
+      "Add a passage, an image or a video for respondents to read before answering.",
+    editDescription: "Update this piece of content.",
+    kind: "Kind",
+    kindOptions: {
+      text: "Text",
+      image: "Image",
+      video: "Video",
+    },
+    heading: "Heading",
+    body: "Text",
+    image: "Image",
+    imageAlt: "Image description",
+    imageAltHint: "Read aloud to anyone using a screen reader.",
+    videoUrl: "YouTube link",
+    videoUrlHint: "Paste a YouTube link — it will play inside the form.",
+    mediaPending: "Media is still being imported…",
+    mediaFailed: "This media couldn't be imported.",
+    created: "Content added.",
+    updated: "Content updated.",
+    saveFailed: "Could not save content.",
+    deleteTitle: "Delete content?",
+    deleteDescription: "Remove this piece of content. This can't be undone.",
+    deleted: "Content deleted.",
+    deleteFailed: "Could not delete content.",
+    validation: {
+      empty: "Add some text, an image or a video.",
+    },
   },
   answers: {
     title: "Answer choices",

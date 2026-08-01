@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { FormResponseAnswer } from "@/drizzle/schema";
+import { type FormResponseAnswer, isTextQuestion } from "@/drizzle/schema";
 import {
   matchShortAnswers,
   type ShortAnswerMatchRequest,
@@ -29,7 +29,7 @@ export async function computeShortAnswerVerdicts(
   const requests: ShortAnswerMatchRequest[] = [];
 
   for (const question of questions) {
-    if (question.type !== "short_answer") continue;
+    if (!isTextQuestion(question.type)) continue;
     const submitted = answers.find((a) => a.questionId === question.id);
     const outcome = evaluateShortAnswer(question, submitted?.text);
     if (outcome.kind !== "needsModel") continue;

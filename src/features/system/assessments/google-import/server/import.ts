@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import {
   AnswersTable,
+  FormBlocksTable,
   FormSectionsTable,
   FormsTable,
   QuestionsTable,
@@ -14,6 +15,8 @@ import {
   mapGoogleForm,
 } from "@/features/system/assessments/google-import/lib";
 import { fetchGoogleForm, GoogleApiError } from "@/integrations/google";
+import { inngest } from "@/integrations/inngest/client";
+import { formMediaImportedEvent } from "@/integrations/inngest/functions/on-form-media-imported";
 import {
   googleFormReadRatelimit,
   isRateLimited,
@@ -58,7 +61,11 @@ export async function importGoogleForm(
 
   const mapped = mapGoogleForm(await loadForm(ctx, input.formLink));
 
-  if (mapped.questionCount === 0) {
+  // Content counts as importable now that blocks exist: a form that is nothing
+  // but a passage and a video is the reading material a later assessment asks
+  // about, and refusing it would send the admin to retype it by hand. Only a
+  // form that maps to *nothing* is rejected.
+  if (mapped.questionCount + mapped.blockCount === 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: ctx.t("googleImport.errors.nothingToImport"),
@@ -103,11 +110,13 @@ export async function importGoogleForm(
     );
 
     const questions = sections.flatMap(({ id: sectionId, section }) =>
-      section.questions.map((question) => ({
-        id: crypto.randomUUID(),
-        sectionId,
-        question,
-      })),
+      section.items
+        .filter((item) => item.kind === "question")
+        .map((question) => ({
+          id: crypto.randomUUID(),
+          sectionId,
+          question,
+        })),
     );
 
     await trx.insert(QuestionsTable).values(
@@ -116,11 +125,35 @@ export async function importGoogleForm(
         organizationId,
         sectionId,
         text: question.text,
+        description: question.description,
         type: question.type,
         points: question.points,
+        isRequired: question.isRequired,
+        imageSourceUrl: question.imageSourceUrl,
+        imageAlt: question.imageAlt,
         order: question.order,
       })),
     );
+
+    const blocks = sections.flatMap(({ id: sectionId, section }) =>
+      section.items
+        .filter((item) => item.kind === "block")
+        .map((block) => ({
+          organizationId,
+          sectionId,
+          kind: block.blockKind,
+          title: block.title,
+          body: block.body,
+          mediaUrl: block.mediaUrl,
+          sourceUrl: block.sourceUrl,
+          mediaAlt: block.mediaAlt,
+          order: block.order,
+        })),
+    );
+
+    // A form of nothing but questions has no blocks at all, and an empty
+    // VALUES list is a syntax error. Same for the answers below.
+    if (blocks.length > 0) await trx.insert(FormBlocksTable).values(blocks);
 
     const answers = questions.flatMap(({ id: questionId, question }) =>
       question.answers.map((answer) => ({
@@ -132,12 +165,56 @@ export async function importGoogleForm(
       })),
     );
 
-    // A form of nothing but short-answer questions has no answer rows at all,
-    // and an empty VALUES list is a syntax error.
     if (answers.length > 0) await trx.insert(AnswersTable).values(answers);
   });
 
-  return { id: formId, questionCount: mapped.questionCount };
+  await requestMediaCopy(organizationId, formId, mapped);
+
+  return {
+    id: formId,
+    questionCount: mapped.questionCount,
+    blockCount: mapped.blockCount,
+  };
+}
+
+/**
+ * Asks the media job to copy the form's images out of Google's temporary URLs.
+ *
+ * Sent after the transaction commits, never inside it: the handler reads the
+ * rows it is meant to work on, and an uncommitted transaction has none.
+ *
+ * Deliberately not fatal. The assessment is already written and usable — only
+ * its pictures are outstanding, and the answer sheet says as much — so a queue
+ * that can't be reached must not turn a successful import into an error the
+ * admin has to redo. Unlike group sessions (D163), there is no inline fallback
+ * worth having: copying a dozen images through two external services is the
+ * exact work an admin shouldn't be made to wait on, and re-importing the form
+ * is a real recovery path.
+ */
+async function requestMediaCopy(
+  organizationId: string,
+  formId: string,
+  mapped: MappedForm,
+) {
+  const hasPendingMedia = mapped.sections.some((section) =>
+    section.items.some((item) =>
+      item.kind === "block" ? item.sourceUrl : item.imageSourceUrl,
+    ),
+  );
+
+  if (!hasPendingMedia) return;
+
+  try {
+    await inngest.send(
+      formMediaImportedEvent.create({ organizationId, formId }),
+    );
+  } catch (error) {
+    console.error("Failed to enqueue assessment/form-media-imported event", {
+      organizationId,
+      formId,
+      error,
+    });
+  }
 }
 
 /** Shared by both paths so they can never disagree about what they accept. */

@@ -42,6 +42,11 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
               count: preview.questionCount,
             })}
           </Tag>
+          {preview.blockCount > 0 && (
+            <Tag color="blue">
+              {t("googleImport.blocksCount", { count: preview.blockCount })}
+            </Tag>
+          )}
         </div>
 
         {preview.isQuiz && (
@@ -53,7 +58,7 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
           </Alert>
         )}
 
-        {preview.questionCount === 0 ? (
+        {preview.questionCount + preview.blockCount === 0 ? (
           <Alert variant="warning">
             <InfoIcon />
             <AlertDescription>
@@ -70,7 +75,9 @@ export function GoogleFormPreview({ preview }: { preview: MappedForm }) {
                 </p>
                 <Muted className="ms-6 text-xs">
                   {t("googleImport.questionsCount", {
-                    count: section.questions.length,
+                    count: section.items.filter(
+                      (item) => item.kind === "question",
+                    ).length,
                   })}
                 </Muted>
               </li>
