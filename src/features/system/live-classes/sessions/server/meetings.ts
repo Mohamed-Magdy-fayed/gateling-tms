@@ -273,9 +273,13 @@ async function reserveMeetingAccount(
           // Half-open overlap: a class starting exactly when another ends is
           // not a clash.
           lt(SessionsTable.scheduledAt, endsAt),
+          // `sql.param` with the column attached is what encodes the Date for
+          // the driver. Comparing against a raw expression leaves drizzle with
+          // no column to infer an encoder from, and the unencoded Date reaches
+          // postgres.js as a bind parameter it cannot write.
           gt(
             sql`${SessionsTable.scheduledAt} + (${SessionsTable.durationMinutes} * interval '1 minute')`,
-            session.scheduledAt,
+            sql.param(session.scheduledAt, SessionsTable.scheduledAt),
           ),
         ),
       );

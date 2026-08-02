@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { translationKey } from "@/features/core/i18n/global";
+import { idSchema } from "@/lib/id-schema";
 
 export const listCertificatesInput = z.object({
   page: z.number().int().min(1).default(1),
@@ -8,7 +9,7 @@ export const listCertificatesInput = z.object({
   globalFilter: z.string().optional(),
   // Set by the trainee detail page's certificates section; omitted by the
   // cross-trainee table.
-  traineeId: z.uuid().optional(),
+  traineeId: idSchema.optional(),
 });
 
 /**

@@ -45,7 +45,7 @@ export async function FeaturesPreviewSection() {
   const { t } = await getT();
 
   return (
-    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-16 sm:px-6 lg:px-8 max-w-7xl">
       <div className="mx-auto max-w-2xl text-center">
         <p className="font-bold text-primary text-xs uppercase tracking-wider">
           {t("landing.featuresPreview.eyebrow")}

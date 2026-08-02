@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { translationKey } from "@/features/core/i18n/global";
+import { idSchema } from "@/lib/id-schema";
 
 export const listPlacementTestsInput = z.object({
-  traineeId: z.uuid(),
+  traineeId: idSchema,
 });
 
 export const placementTestMutationSchema = z.object({

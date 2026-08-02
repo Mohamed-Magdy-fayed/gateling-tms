@@ -5,6 +5,7 @@ import {
   MAX_IMPORT_BASE64_LENGTH,
   MAX_IMPORT_ROWS,
 } from "@/features/core/import/lib";
+import { idSchema } from "@/lib/id-schema";
 import { MAX_GENERATED_SESSIONS, MAX_SCHEDULE_SLOTS } from "./schedule";
 
 export const listGroupsInput = z.object({
@@ -46,7 +47,7 @@ export const groupScheduleSlotSchema = z
  * the schema plain lets the client and the server share it instead of
  * maintaining a near-duplicate form-only copy.
  */
-const optionalReference = z.union([z.uuid(), z.literal("")]).nullable();
+const optionalReference = z.union([idSchema, z.literal("")]).nullable();
 
 export const groupMutationSchema = z.object({
   name: z
@@ -87,14 +88,14 @@ export const groupDeleteSchema = z.object({
 export const groupAddStudentsSchema = z.object({
   groupId: z.uuid(),
   traineeIds: z
-    .array(z.uuid())
+    .array(idSchema)
     .min(1, translationKey("forms.validation.required"))
     .max(100, translationKey("groups.validation.tooManyStudents")),
 });
 
 export const groupRemoveStudentSchema = z.object({
   groupId: z.uuid(),
-  traineeId: z.uuid(),
+  traineeId: idSchema,
 });
 
 /**

@@ -4,6 +4,7 @@ import {
   MAX_IMPORT_BASE64_LENGTH,
   MAX_IMPORT_ROWS,
 } from "@/features/core/import/lib";
+import { idSchema } from "@/lib/id-schema";
 
 export const listTraineesInput = z.object({
   page: z.number().int().min(1).default(1),
@@ -31,11 +32,11 @@ export const traineeMutationSchema = z.object({
 });
 
 export const traineeUpdateSchema = traineeMutationSchema.extend({
-  id: z.uuid(),
+  id: idSchema,
 });
 
 export const traineeDeleteSchema = z.object({
-  id: z.uuid(),
+  id: idSchema,
 });
 
 /**

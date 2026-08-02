@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { organizationMembershipRoleValues } from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
+import { idSchema } from "@/lib/id-schema";
 
 const optionalTrimmed = (max: number) =>
   z
@@ -67,16 +68,16 @@ export const acceptInviteSchema = z.object({
 });
 
 export const updateMemberRoleSchema = z.object({
-  userId: z.uuid(),
+  userId: idSchema,
   role: z.enum(organizationMembershipRoleValues),
 });
 
 export const removeMemberSchema = z.object({
-  userId: z.uuid(),
+  userId: idSchema,
 });
 
 export const switchActiveOrganizationSchema = z.object({
-  organizationId: z.uuid(),
+  organizationId: idSchema,
 });
 
 export type OrganizationProfileInput = z.infer<

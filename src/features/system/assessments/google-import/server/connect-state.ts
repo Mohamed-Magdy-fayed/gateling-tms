@@ -2,13 +2,14 @@ import crypto from "node:crypto";
 import { z } from "zod";
 import { env } from "@/data/env/server";
 import type { Cookies } from "@/features/core/auth/types";
+import { idSchema } from "@/lib/id-schema";
 
 const STATE_COOKIE_KEY = "googleConnectState";
 const COOKIE_EXPIRATION_SECONDS = 60 * 10;
 
 const stateCookieSchema = z.object({
   state: z.string().min(1),
-  organizationId: z.uuid(),
+  organizationId: idSchema,
 });
 
 /**

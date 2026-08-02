@@ -17,7 +17,7 @@ export async function LogosSection() {
   if (showcase.academies.length === 0) return null;
 
   return (
-    <section className="mx-auto px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto px-4 py-10 sm:px-6 lg:px-8 max-w-7xl">
       <p className="text-center font-bold text-muted-foreground text-xs uppercase tracking-wider">
         {t("landing.logos.eyebrow")}
       </p>

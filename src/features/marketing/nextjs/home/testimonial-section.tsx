@@ -21,7 +21,7 @@ export async function TestimonialSection() {
   const [featured, ...rest] = testimonials;
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8 max-w-7xl">
       <p className="text-center font-bold text-primary text-xs uppercase tracking-wider">
         {t("landing.testimonial.eyebrow")}
       </p>

@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { idSchema } from "@/lib/id-schema";
 
 export const traineeProgressInput = z.object({
-  traineeId: z.uuid(),
+  traineeId: idSchema,
 });
 
 export const groupProgressInput = z.object({

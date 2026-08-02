@@ -17,7 +17,7 @@ export function CtaBanner({
   footnote,
 }: CtaBannerProps) {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden max-w-7xl mx-auto">
       <div
         aria-hidden
         className="pointer-events-none absolute top-0 left-1/2 size-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-100/60 blur-3xl dark:bg-orange-500/5"

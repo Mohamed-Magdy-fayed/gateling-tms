@@ -32,7 +32,7 @@ export default async function SystemLayout({ children }: PropsWithChildren) {
             <LanguageToggle />
           </div>
         </header>
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 px-4 py-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

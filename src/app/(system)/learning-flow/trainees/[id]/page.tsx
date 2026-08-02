@@ -8,8 +8,6 @@ export default async function TraineeDetailRoute({
   const { id } = await params;
 
   return (
-    <div className="mx-auto px-4 py-8">
       <TraineeDetailPage traineeId={id} />
-    </div>
   );
 }

@@ -76,7 +76,14 @@ export class OAuthClient<T> {
   }
 
   private get redirectUrl() {
-    return new URL(this.provider, oauthRedirectUrlBase);
+    // `new URL(provider, base)` resolves the provider *relative to* the base
+    // and so drops its last path segment: "/api/oauth" + "google" becomes
+    // "/api/google", which matches no route here and no URI in the Google
+    // Cloud console (redirect_uri_mismatch). The callback lives at
+    // `${base}/${provider}` — join the path explicitly.
+    return new URL(
+      `${oauthRedirectUrlBase.replace(/\/+$/, "")}/${this.provider}`,
+    );
   }
 
   createAuthUrl(cookies: Pick<Cookies, "set">) {

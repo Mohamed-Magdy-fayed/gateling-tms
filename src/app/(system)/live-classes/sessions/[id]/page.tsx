@@ -8,8 +8,6 @@ export default async function SessionAttendanceRoute({
   const { id } = await params;
 
   return (
-    <div className="mx-auto px-4 py-8">
       <SessionAttendancePage sessionId={id} />
-    </div>
   );
 }

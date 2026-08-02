@@ -8,6 +8,7 @@ import {
   MAX_IMPORT_BASE64_LENGTH,
   MAX_IMPORT_ROWS,
 } from "@/features/core/import/lib";
+import { idSchema } from "@/lib/id-schema";
 
 export const listEnrollmentsInput = z.object({
   page: z.number().int().min(1).default(1),
@@ -16,7 +17,7 @@ export const listEnrollmentsInput = z.object({
   globalFilter: z.string().optional(),
   // Set by the trainee detail page, which lists only that trainee's
   // enrollments; omitted by the cross-trainee table.
-  traineeId: z.uuid().optional(),
+  traineeId: idSchema.optional(),
   status: z.enum(enrollmentStatusValues).optional(),
 });
 

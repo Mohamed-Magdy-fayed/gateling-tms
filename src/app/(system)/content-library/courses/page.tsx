@@ -2,8 +2,6 @@ import { CoursesTablePage } from "@/features/system/content-library/courses/admi
 
 export default function CoursesPage() {
   return (
-    <div className="mx-auto px-4 py-8">
       <CoursesTablePage />
-    </div>
   );
 }
