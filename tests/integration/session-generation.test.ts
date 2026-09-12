@@ -1,11 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/drizzle";
-import {
-  GroupsTable,
-  MeetingAccountsTable,
-  SessionsTable,
-} from "@/drizzle/schema";
+import { GroupsTable, SessionsTable } from "@/drizzle/schema";
 import { regenerateGroupSessions } from "@/features/system/learning-flow/groups/server/regenerate-sessions";
 import { createTenant, destroyTenant, type TenantFixture } from "./lib/harness";
 
@@ -147,22 +143,10 @@ describe("session generation", () => {
   test("leaves history and started classes alone", async () => {
     const groupId = await createGroupWithSchedule(tenant);
 
-    const [meetingAccount] = await db
-      .insert(MeetingAccountsTable)
-      .values({
-        organizationId: tenant.organizationId,
-        name: "Generation Room",
-        accountId: `generation-${groupId}`,
-        roomCode: `GEN-${groupId.slice(0, 8)}`,
-        roomName: "Generation Room",
-        createdBy: "integration-test",
-      })
-      .returning({ id: MeetingAccountsTable.id });
-
-    // A class that already happened, and a future one somebody is in the
-    // middle of starting. Neither is part of the plan any more — the group's
-    // schedule expands to different instants entirely — but a schedule edit
-    // must not rewrite what happened or delete a class with a live meeting.
+    // A class that already happened, and a future one somebody has started
+    // early. Neither is part of the plan any more — the group's schedule
+    // expands to different instants entirely — but a schedule edit must not
+    // rewrite what happened or delete a class with a live meeting.
     const past = new Date(Date.now() - A_WEEK_MS);
     const claimed = new Date(Date.now() + 3 * A_WEEK_MS + 3_600_000);
 
@@ -179,8 +163,8 @@ describe("session generation", () => {
         groupId,
         scheduledAt: claimed,
         durationMinutes: 90,
-        meetingAccountId: meetingAccount.id,
-        meetingNumber: "generation-fixture",
+        meetingCode: "gen-fixt-ure",
+        joinUrl: "https://meetings.example.test/m/gen-fixt-ure",
       },
     ]);
 
@@ -194,8 +178,9 @@ describe("session generation", () => {
     const times = sessions.map((s) => s.scheduledAt.getTime());
     expect(times).toContain(past.getTime());
     expect(times).toContain(claimed.getTime());
-    expect(sessions.find((s) => s.scheduledAt.getTime() === past.getTime()))
-      .toMatchObject({ durationMinutes: 90, status: "completed" });
+    expect(
+      sessions.find((s) => s.scheduledAt.getTime() === past.getTime()),
+    ).toMatchObject({ durationMinutes: 90, status: "completed" });
   });
 
   test("refuses to regenerate another organization's group", async () => {

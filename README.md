@@ -16,7 +16,7 @@ dependency policy, data model, phase-by-phase steps) lives in
 | [`docs/deploy.md`](docs/deploy.md) | Environments, Vercel env vars, Neon, the deploy step, testimonial moderation, release checklist |
 | [`docs/demo-readiness-checklist.md`](docs/demo-readiness-checklist.md) | Every landing claim mapped to a demo path; walked before a release |
 | [`docs/seeding-and-demo-data.md`](docs/seeding-and-demo-data.md) | The three seed profiles |
-| [`docs/integrations-onmeeting.md`](docs/integrations-onmeeting.md) | Live classes |
+| [`docs/integrations-meetings.md`](docs/integrations-meetings.md) | Live classes on Gateling Meetings |
 | [`docs/integrations-google.md`](docs/integrations-google.md) | Google sign-in and the Forms import |
 | [`docs/integrations-gemini.md`](docs/integrations-gemini.md) | AI-assisted short-answer grading |
 | [`docs/inngest-offload-policy.md`](docs/inngest-offload-policy.md) | What goes to a background job, and why |

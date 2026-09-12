@@ -44,7 +44,7 @@ path is a launch blocker, not a documentation gap.
 | Content Library — resource storage, media files, organization, search | `/content-library/courses` → *English Foundations* → levels, lectures, an uploaded thumbnail, and the search box on the courses table. | ☐ |
 | Learning Flow — course structure, progress, assessments, certificates | `/learning-flow/groups` → *Beginner Batch A*; `/learning-flow/trainees/<id>` → progress; `/assessments` → the seeded quiz; `/learning-flow/certificates` → issued certificates. | ☐ |
 | "Built-in Assessments (or imported from Google Forms)" | `/assessments` builder for built-in. Google import at `/assessments/google` — **reports "not configured" without the Google Cloud setup**; either complete that setup before demoing, or say so out loud. | ☐ |
-| Live Classes — HD video, whiteboard, recording, screen sharing | These are onMeeting's features, delivered by the room the class opens in. `/live-classes/sessions` shows the schedule and the seeded fixture session's host link. **Demonstrating the room itself needs a real onMeeting account — there is no sandbox.** | ☐ |
+| Live Classes — HD video, screen sharing, breakout rooms, students join from a link | These are Gateling Meetings' features, delivered by the room the class opens in. `/live-classes/sessions` shows the schedule and the seeded fixture session's join links. **Demonstrating the room itself needs the Meetings integration pasted into `/settings`** (`docs/integrations-meetings.md` §1). | ☐ |
 | Six premium modules marked "coming soon" | `/features`: each premium card carries the badge and no CTA. | ☐ |
 
 ### Pricing (`/pricing`)
@@ -149,8 +149,9 @@ rows are ticked.
 
 Not blockers, but do not let them be discovered mid-demo:
 
-- **Live Classes needs a real onMeeting account.** The seeded session's links
-  are fixtures; joining an actual room is not demoable without one.
+- **Live Classes needs the Meetings integration configured.** The seeded
+  session's links are fixtures; joining an actual room needs the key and
+  secret pasted into `/settings` on the deployment being demoed.
 - **Google Forms import needs the Cloud setup** in `docs/integrations-google.md`
   (§1–§2) and a listed test user while the consent screen is in Testing mode.
 - **AI short-answer grading needs `GEMINI_API_KEY`.** Without it, grading still

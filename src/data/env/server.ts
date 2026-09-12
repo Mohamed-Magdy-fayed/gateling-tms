@@ -40,8 +40,7 @@ export const env = createEnv({
     // (Phase 7) — one Cloud project, two redirect URIs, one extra scope.
     // GOOGLE_TOKEN_ENCRYPTION_KEY is 32 random bytes, base64-encoded
     // (`openssl rand -base64 32`); it encrypts those per-org OAuth tokens at
-    // rest, and is separate from the onMeeting key so rotating one provider's key
-    // never touches the other's stored tokens — see docs/integrations-google.md.
+    // rest — see docs/integrations-google.md.
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     // Validated here rather than only where it is used: a mistyped key would
@@ -63,23 +62,11 @@ export const env = createEnv({
     SMTP_FROM_EMAIL: z.email().optional(),
     SMTP_FROM_NAME: z.string().min(1).optional(),
 
-    // onMeeting (Phase 6, D142) — the only deployment-level value the
-    // integration needs. There is no app id, client secret or webhook token:
-    // credentials belong to each organization and are obtained in-app by
-    // signing in to onMeeting once (D146). This key encrypts the API
-    // key/secret pair that exchange returns, at rest.
-    // 32 random bytes, base64-encoded (`openssl rand -base64 32`), different
-    // per environment — see docs/integrations-onmeeting.md.
-    // Validated here for the same reason as the Google key: a mistyped value
-    // would otherwise report onMeeting as configured and offer a Connect form
-    // that can only fail after the admin has typed their password into it.
-    ONMEETING_CREDENTIALS_ENCRYPTION_KEY: z
-      .string()
-      .refine((value) => Buffer.from(value, "base64").length === 32, {
-        error:
-          "ONMEETING_CREDENTIALS_ENCRYPTION_KEY must be 32 base64-encoded bytes.",
-      })
-      .optional(),
+    // Gateling Meetings (live classes) is deliberately *not* configured
+    // here. Its API key and webhook secret live in the `settings` table and
+    // are pasted in on the admin settings page, so connecting the integration
+    // is the same flow on every Gateling system and needs no redeploy — see
+    // docs/integrations-meetings.md.
 
     // Grades short-answer questions whose text doesn't match an accepted
     // answer outright — see integrations/gemini. Optional on purpose: with no

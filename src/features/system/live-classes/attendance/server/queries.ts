@@ -12,9 +12,10 @@ import {
 } from "@/drizzle/schema";
 import {
   canHostSession,
-  resolveSessionLinks,
+  isMeetingHost,
+  sessionJoinPath,
 } from "@/features/system/live-classes/sessions/lib/session-links";
-import { hasActiveMeetingAccount } from "@/features/system/live-classes/sessions/server/queries";
+import { isLiveClassesEnabled } from "@/features/system/live-classes/sessions/server/meetings-config";
 import type { OrgTRPCContext } from "./types";
 
 export type AttendanceRow = {
@@ -43,18 +44,22 @@ export type SessionAttendance = {
     groupName: string;
     teacherId: string | null;
     teacherName: string | null;
+    /** The meeting's share link — null until the class has been started. */
     joinUrl: string | null;
-    startUrl: string | null;
     /** Whether a meeting has been created for this class yet (D143). */
     hasMeeting: boolean;
     /** Whether this viewer may start it. */
     canStart: boolean;
+    /** Whether this viewer holds the room's host rights (D143). */
+    isHost: boolean;
+    /** The in-app route that mints this viewer's join link per click. */
+    joinPath: string;
   };
   rows: AttendanceRow[];
   /** Whether this viewer may correct the register (see `router.ts`). */
   canMark: boolean;
-  /** Tells "not started yet" apart from "no room connected" (D102). */
-  hasActiveMeetingAccount: boolean;
+  /** Tells "not started yet" apart from "live classes not set up" (D102). */
+  liveClassesEnabled: boolean;
 };
 
 /**
@@ -79,11 +84,11 @@ export async function getSessionAttendance(
       groupName: GroupsTable.name,
       teacherId: SessionsTable.teacherId,
       teacherName: UsersTable.name,
-      meetingNumber: SessionsTable.meetingNumber,
+      meetingCode: SessionsTable.meetingCode,
       joinUrl: SessionsTable.joinUrl,
       // Selected so the per-viewer decision can be taken per row, never
       // returned raw (STATE.md D103).
-      startUrl: SessionsTable.startUrl,
+      meetingHostUserId: SessionsTable.meetingHostUserId,
     })
     .from(SessionsTable)
     .innerJoin(
@@ -109,15 +114,7 @@ export async function getSessionAttendance(
   }
 
   const rows = await listRegisterRows(ctx, sessionId, session.groupId);
-
-  const links = resolveSessionLinks(
-    { userId: ctx.session.user.id, role: ctx.role },
-    {
-      teacherId: session.teacherId,
-      joinUrl: session.joinUrl,
-      startUrl: session.startUrl,
-    },
-  );
+  const viewer = { userId: ctx.session.user.id, role: ctx.role };
 
   return {
     session: {
@@ -129,17 +126,15 @@ export async function getSessionAttendance(
       groupName: session.groupName,
       teacherId: session.teacherId,
       teacherName: session.teacherName,
-      joinUrl: links.joinUrl,
-      startUrl: links.startUrl,
-      hasMeeting: session.meetingNumber !== null,
-      canStart: canHostSession(
-        { userId: ctx.session.user.id, role: ctx.role },
-        session.teacherId,
-      ),
+      joinUrl: session.joinUrl,
+      hasMeeting: session.meetingCode !== null,
+      canStart: canHostSession(viewer, session.teacherId),
+      isHost: isMeetingHost(viewer, session.meetingHostUserId),
+      joinPath: sessionJoinPath(session.id),
     },
     rows,
     canMark: canMarkAttendance(ctx, session.teacherId),
-    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
+    liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
   };
 }
 
@@ -248,8 +243,8 @@ async function listRegisterRows(
 /**
  * The register belongs to whoever runs the class: the assigned teacher, plus
  * admins, who answer for the org's records as a whole. Deliberately the same
- * set that may hold the onMeeting host link — a teacher covering someone else's
- * class is not the person who marks its register either.
+ * set that may start the class — a teacher covering someone else's class is
+ * not the person who marks its register either.
  */
 export function canMarkAttendance(
   ctx: OrgTRPCContext,

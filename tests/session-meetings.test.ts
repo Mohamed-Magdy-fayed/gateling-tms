@@ -1,19 +1,31 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildSessionsUrl,
+  parseSessionJoinResultCode,
+} from "../src/features/system/live-classes/sessions/lib/join-result";
+import {
+  buildMeetingTitle,
+  buildSessionExternalRef,
+  parseSessionExternalRef,
+  resolveMeetingHostUserId,
+  sessionMeetingIdempotencyKey,
+} from "../src/features/system/live-classes/sessions/lib/meeting-ref";
+import {
   isWithinMeetingWindow,
   MEETING_EARLY_START_MINUTES,
   MEETING_LATE_START_MINUTES,
-  selectAvailableMeetingAccount,
   sessionEndsAt,
 } from "../src/features/system/live-classes/sessions/lib/meeting-window";
 import {
   canHostSession,
-  resolveSessionLinks,
+  isMeetingHost,
+  sessionJoinPath,
 } from "../src/features/system/live-classes/sessions/lib/session-links";
 import { listSessionsInput } from "../src/features/system/live-classes/sessions/server/schemas";
 
 const scheduledAt = new Date("2026-08-03T15:00:00.000Z");
 const durationMinutes = 90;
+const sessionId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 
 describe("meeting window", () => {
   test("session end is its start plus its duration", () => {
@@ -38,7 +50,7 @@ describe("meeting window", () => {
     );
   });
 
-  test("a class three weeks away cannot claim a room today", () => {
+  test("a class three weeks away cannot be started today", () => {
     const longBefore = new Date(scheduledAt.getTime() - 21 * 86_400_000);
 
     expect(
@@ -67,88 +79,137 @@ describe("meeting window", () => {
 });
 
 /**
- * A room hosts one live meeting at a time — the legacy client surfaced the
- * collision as "Another meeting may be ongoing now on this zoom room!", so
- * picking a busy one is a real failure, not a cosmetic one (STATE.md D143).
+ * The handle a session and its Gateling Meetings room share. The webhook that
+ * closes a class only has this to go on, so it has to survive a round trip
+ * and reject anything that isn't ours.
  */
-describe("meeting room selection", () => {
-  test("uses the first connected room when nothing is booked", () => {
-    expect(selectAvailableMeetingAccount(["a", "b"], [])).toBe("a");
+describe("session ↔ meeting reference", () => {
+  test("the external ref round-trips the session id", () => {
+    expect(parseSessionExternalRef(buildSessionExternalRef(sessionId))).toBe(
+      sessionId,
+    );
   });
 
-  test("skips a room already hosting an overlapping class", () => {
-    expect(selectAvailableMeetingAccount(["a", "b"], ["a"])).toBe("b");
+  test("a ref that isn't a session's is ignored, not parsed", () => {
+    expect(parseSessionExternalRef("booking:8812")).toBeNull();
+    expect(parseSessionExternalRef(null)).toBeNull();
+    expect(parseSessionExternalRef(undefined)).toBeNull();
   });
 
-  test("reports no room rather than double-booking one", () => {
-    expect(selectAvailableMeetingAccount(["a", "b"], ["a", "b"])).toBeNull();
+  test("a session ref that doesn't carry a uuid is ignored too", () => {
+    expect(parseSessionExternalRef("session:")).toBeNull();
+    expect(parseSessionExternalRef("session:../etc")).toBeNull();
   });
 
-  test("has nothing to choose from when the org connected no room", () => {
-    expect(selectAvailableMeetingAccount([], [])).toBeNull();
+  test("the idempotency key is stable per session", () => {
+    expect(sessionMeetingIdempotencyKey(sessionId)).toBe(
+      sessionMeetingIdempotencyKey(sessionId),
+    );
+    expect(sessionMeetingIdempotencyKey(sessionId)).toContain(sessionId);
+  });
+
+  test("the meeting title reads as group + date, and stays bounded", () => {
+    expect(buildMeetingTitle("Beginner Batch A", scheduledAt)).toBe(
+      "Beginner Batch A — 2026-08-03",
+    );
+    expect(
+      buildMeetingTitle("x".repeat(500), scheduledAt).length,
+    ).toBeLessThanOrEqual(200);
+  });
+
+  test("the assigned teacher hosts, even when an admin starts the class", () => {
+    expect(resolveMeetingHostUserId("teacher-id", "admin-id")).toBe(
+      "teacher-id",
+    );
+  });
+
+  test("an unassigned class is hosted by whoever starts it", () => {
+    expect(resolveMeetingHostUserId(null, "admin-id")).toBe("admin-id");
   });
 });
 
-describe("session link visibility", () => {
+/**
+ * The join route may only ever put one of these codes in the URL it redirects
+ * back to — never text (STATE.md D47).
+ */
+describe("join result codes", () => {
+  test("a known code round-trips through the agenda URL", () => {
+    const url = buildSessionsUrl("notStarted");
+    const code = new URL(url, "https://tms.example").searchParams.get(
+      "joinResult",
+    );
+
+    expect(parseSessionJoinResultCode(code)).toBe("notStarted");
+  });
+
+  test("anything else is dropped rather than rendered", () => {
+    expect(parseSessionJoinResultCode("<script>")).toBeNull();
+    expect(parseSessionJoinResultCode("")).toBeNull();
+    expect(parseSessionJoinResultCode(null)).toBeNull();
+  });
+});
+
+describe("who may start a class", () => {
   const teacherId = "11111111-1111-4111-8111-111111111111";
   const otherUserId = "22222222-2222-4222-8222-222222222222";
-  const meeting = {
-    teacherId,
-    joinUrl: "https://onmeeting.co/j/123",
-    startUrl: "https://onmeeting.co/s/123?zak=secret",
-  };
 
-  test("the assigned teacher hosts", () => {
+  test("the assigned teacher may", () => {
     expect(
       canHostSession({ userId: teacherId, role: "teacher" }, teacherId),
     ).toBe(true);
   });
 
-  test("an admin hosts any session, assigned or not", () => {
+  test("an admin may start any session, assigned or not", () => {
     expect(
       canHostSession({ userId: otherUserId, role: "admin" }, teacherId),
     ).toBe(true);
   });
 
-  test("another teacher does not get host rights over someone else's class", () => {
+  test("another teacher may not start someone else's class", () => {
     expect(
       canHostSession({ userId: otherUserId, role: "teacher" }, teacherId),
     ).toBe(false);
   });
 
-  test("a student never hosts", () => {
+  test("a student never may", () => {
     expect(
       canHostSession({ userId: otherUserId, role: "student" }, teacherId),
     ).toBe(false);
   });
 
-  test("a teacher with no session assigned to them does not host", () => {
+  test("a teacher with no session assigned to them may not", () => {
     expect(canHostSession({ userId: otherUserId, role: "teacher" }, null)).toBe(
       false,
     );
   });
+});
 
-  // The host link grants control of the meeting to whoever opens it.
-  test("only the host is handed the start url", () => {
-    expect(
-      resolveSessionLinks({ userId: teacherId, role: "teacher" }, meeting),
-    ).toEqual({
-      joinUrl: meeting.joinUrl,
-      startUrl: meeting.startUrl,
-    });
+/**
+ * Host rights on the room itself belong to one account — the one recorded
+ * when the class was started — and Meetings refuses a host link to anyone
+ * else. Distinct from who may *start*: an admin can start a teacher's class
+ * and still join it as a participant.
+ */
+describe("who holds the room's host rights", () => {
+  const teacherId = "11111111-1111-4111-8111-111111111111";
+  const adminId = "22222222-2222-4222-8222-222222222222";
 
-    expect(
-      resolveSessionLinks({ userId: otherUserId, role: "student" }, meeting),
-    ).toEqual({ joinUrl: meeting.joinUrl, startUrl: null });
+  test("the recorded host is the host", () => {
+    expect(isMeetingHost({ userId: teacherId }, teacherId)).toBe(true);
   });
 
-  test("a class nobody has started yet hands out no links at all", () => {
-    expect(
-      resolveSessionLinks(
-        { userId: teacherId, role: "admin" },
-        { teacherId, joinUrl: null, startUrl: null },
-      ),
-    ).toEqual({ joinUrl: null, startUrl: null });
+  test("an admin who didn't start it is not", () => {
+    expect(isMeetingHost({ userId: adminId }, teacherId)).toBe(false);
+  });
+
+  test("a class with no meeting has no host yet", () => {
+    expect(isMeetingHost({ userId: teacherId }, null)).toBe(false);
+  });
+
+  test("the join path is the in-app route, never the meeting's own url", () => {
+    expect(sessionJoinPath(sessionId)).toBe(
+      `/live-classes/sessions/${sessionId}/join`,
+    );
   });
 });
 

@@ -17,14 +17,15 @@ true for a deploy to work, and where to look when one doesn't.
 | Firebase | dev bucket | dev bucket | prod bucket |
 | Inngest | `npm run inngest` (keyless) | Inngest preview keys | Inngest prod keys |
 | Google OAuth | dev credentials, localhost redirect | dev credentials, preview redirect | prod credentials |
-| onMeeting | per-org, connected in-app | same | same |
+| Gateling Meetings | local Meetings stack, or none — set on `/settings` | preview integration on meetings.gateling.com, set on `/settings` | production integration, set on `/settings` |
 | Env vars live in | `.env` (gitignored) | Vercel → **Preview** scope | Vercel → **Production** scope |
 
 **No sharing and no fallbacks across environments.** Encryption keys in
-particular are per-environment: `GOOGLE_TOKEN_ENCRYPTION_KEY` and
-`ONMEETING_CREDENTIALS_ENCRYPTION_KEY` must each be a *different* 32 random
-bytes per environment (`openssl rand -base64 32`), so rotating or leaking one
-environment's key never touches another's stored credentials.
+particular are per-environment: `GOOGLE_TOKEN_ENCRYPTION_KEY` must be a
+*different* 32 random bytes per environment (`openssl rand -base64 32`), so
+rotating or leaking one environment's key never touches another's stored
+credentials. The same goes for the Meetings integration — one per
+environment, each with its own webhook URL and allowed return origin.
 
 ## 2. Vercel environment variables
 
@@ -47,16 +48,18 @@ what each scope must have for a deploy to actually succeed.
 | `REDIS_URL`, `REDIS_TOKEN` | No sessions and no rate limiting. Effectively required. |
 | `SMTP_*` | `sendMail` logs a warning and no-ops — nobody can verify an email or accept an invite. |
 | `FIREBASE_*` | Image upload fails; the nightly storage reconciliation reports a skip rather than failing the run. |
-| `ONMEETING_CREDENTIALS_ENCRYPTION_KEY` | No academy can connect an onMeeting account, so no class can be started. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_TOKEN_ENCRYPTION_KEY` | Google sign-in and the Forms import both report not configured. Setup: `docs/integrations-google.md`. |
 | `GEMINI_API_KEY` | Short-answer grading still awards exact and normalised matches and sends anything ambiguous to the manual-grade dialog. Nothing errors. Setup: `docs/integrations-gemini.md`. |
 | `CONTACT_INBOX_EMAIL` | Contact-form notifications fall back to `SMTP_FROM_EMAIL`/`SMTP_USER`. |
 
 ### Outstanding
 
-- [ ] `ONMEETING_CREDENTIALS_ENCRYPTION_KEY` in **both** Preview and Production.
-- [ ] Delete the four dead `ZOOM_*` values from the Production scope — the
-      integration was removed in Phase 6's onMeeting rebuild (STATE.md D142).
+- [ ] Create the `gateling-tms` integration on meetings.gateling.com and paste
+      its key and secret into `/settings` on **both** Preview and Production (a
+      separate integration each). Not an env var — see
+      `docs/integrations-meetings.md` §1.
+- [ ] Delete `ONMEETING_CREDENTIALS_ENCRYPTION_KEY` and the four dead
+      `ZOOM_*` values from every scope — both integrations are gone.
 
 ## 3. Neon
 

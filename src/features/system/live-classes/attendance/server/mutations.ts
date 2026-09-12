@@ -13,11 +13,11 @@ import type { OrgTRPCContext } from "./types";
 /**
  * The register, as the teacher takes it.
  *
- * This is now the *only* way attendance is recorded (STATE.md D144): onMeeting
- * publishes no webhooks and no participants endpoint, so nothing can observe
- * who was in the room. The record is still stamped `manual`, which keeps the
- * column honest about where the verdict came from and leaves room for an
- * automatic source if onMeeting ever exposes one.
+ * This is the *only* way attendance is recorded (STATE.md D144): students
+ * join Gateling Meetings anonymously by design — its participant log names
+ * only the host — so nothing can observe who was in the room. The record is
+ * still stamped `manual`, which keeps the column honest about where the
+ * verdict came from and leaves room for an automatic source if that changes.
  */
 export async function markAttendance(
   ctx: OrgTRPCContext,

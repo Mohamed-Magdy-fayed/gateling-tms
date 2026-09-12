@@ -195,9 +195,9 @@ export async function seedDemoCertificate(input: {
 
 /**
  * Marks attendance for one already-happened session against one trainee.
- * `source` is always "manual" — which is now the only source there is
- * (STATE.md D144): onMeeting publishes no webhooks, so nothing observes who
- * was in the room and the register is what the teacher says it is.
+ * `source` is always "manual" — the only source there is (STATE.md D144):
+ * students join Gateling Meetings anonymously by design, so nothing can tell
+ * who was in the room and the register is what the teacher says it is.
  */
 export async function seedDemoAttendance(input: {
   organizationId: string;

@@ -15,7 +15,6 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
-  MeetingAccountsTable,
   PlacementTestsTable,
   QuestionsTable,
   SessionStudentsTable,
@@ -47,8 +46,8 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  * Directly addressed by a route in this file:
  *   courses, levels, lectures, trainees, groups, group_students, enrollments,
  *   forms, form_sections, questions, form_blocks, answers, form_responses,
- *   placement_tests, certificates, meeting_accounts, sessions,
- *   session_students, testimonials, google_integrations
+ *   placement_tests, certificates, sessions, session_students,
+ *   testimonials, google_integrations
  *
  * Reachable only through a parent, and covered by that parent's refusal:
  *   enrollment_levels  → `enrollments.levels` (takes the enrollment id)
@@ -56,7 +55,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *     input at all; it is covered by asserting A's member list never contains
  *     B's admin.
  *
- * That is all 22. A new tenant-owned table must be added here in the same
+ * That is all 21. A new tenant-owned table must be added here in the same
  * change that adds the table.
  */
 
@@ -242,13 +241,6 @@ describe("cross-tenant reads by id", () => {
     );
   });
 
-  test("meetingAccounts.get refuses another org's room", async () => {
-    await expectDeniedOrEmpty(
-      orgA.caller.meetingAccounts.get({ id: dataB.meetingAccountId }),
-      "meetingAccounts.get",
-    );
-  });
-
   test("sessions.byGroup refuses another org's group", async () => {
     await expectDeniedOrEmpty(
       orgA.caller.sessions.byGroup({ groupId: dataB.groupId }),
@@ -311,13 +303,6 @@ describe("scoped lists never contain another tenant's rows", () => {
   test("forms.list", async () => {
     const result = await orgA.caller.forms.list(listInput);
     expect(result.rows.map((row) => row.id)).not.toContain(dataB.formId);
-  });
-
-  test("meetingAccounts.list", async () => {
-    const result = await orgA.caller.meetingAccounts.list(listInput);
-    expect(result.rows.map((row) => row.id)).not.toContain(
-      dataB.meetingAccountId,
-    );
   });
 
   test("sessions.list", async () => {
@@ -576,22 +561,6 @@ describe("cross-tenant writes are refused and change nothing", () => {
     expect(await rowCount(CertificatesTable, dataB.certificateId)).toBe(1);
   });
 
-  test("meetingAccounts.rename leaves another org's room alone", async () => {
-    await expectTenantRefusal(
-      orgA.caller.meetingAccounts.rename({
-        id: dataB.meetingAccountId,
-        name: "Hijacked",
-      }),
-      "meetingAccounts.rename",
-    );
-
-    const [room] = await db
-      .select({ name: MeetingAccountsTable.name })
-      .from(MeetingAccountsTable)
-      .where(eq(MeetingAccountsTable.id, dataB.meetingAccountId));
-    expect(room.name).toBe("Isolation Room");
-  });
-
   test("attendance.mark leaves another org's register alone", async () => {
     await expectTenantRefusal(
       orgA.caller.attendance.mark({
@@ -622,6 +591,15 @@ describe("cross-tenant writes are refused and change nothing", () => {
       .from(SessionsTable)
       .where(eq(SessionsTable.id, dataB.sessionId));
     expect(session.joinUrl).toBeNull();
+  });
+
+  // Refused on the session lookup, before anything would be asked of
+  // Gateling Meetings — which is also why this suite needs no MEETINGS_* keys.
+  test("sessions.joinLink refuses another org's session", async () => {
+    await expectTenantRefusal(
+      orgA.caller.sessions.joinLink({ id: dataB.sessionId }),
+      "sessions.joinLink",
+    );
   });
 
   // The submit path is an upsert keyed on the caller's own organizationId, so

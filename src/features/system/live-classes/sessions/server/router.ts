@@ -1,5 +1,5 @@
 import { createTRPCRouter, orgProcedure } from "@/integrations/trpc/init";
-import { startSessionMeeting } from "./meetings";
+import { createSessionJoinLink, startSessionMeeting } from "./meetings";
 import { listGroupSessions, listSessions } from "./queries";
 import {
   listSessionsInput,
@@ -13,8 +13,8 @@ import {
  *
  * Two things are scoped rather than shared, both inside `queries.ts` because
  * they vary per row: a `student` sees only the classes their own trainee
- * record is on, and the host `start_url` goes only to the session's assigned
- * teacher and to admins.
+ * record is on, and `isHost` is true for exactly the member whose account
+ * holds the room's controls.
  */
 export const sessionsRouter = createTRPCRouter({
   list: orgProcedure
@@ -24,7 +24,8 @@ export const sessionsRouter = createTRPCRouter({
     .input(sessionsByGroupSchema)
     .query(async ({ ctx, input }) => listGroupSessions(ctx, input.groupId)),
   /**
-   * Creates the onMeeting meeting for a session, on demand (STATE.md D143).
+   * Creates the Gateling Meetings room for a session, on demand (STATE.md
+   * D143).
    *
    * Left on `orgProcedure` rather than a staff-only procedure because the host
    * rule is per row, not per role: the assigned teacher may start their own
@@ -34,4 +35,15 @@ export const sessionsRouter = createTRPCRouter({
   startMeeting: orgProcedure
     .input(sessionIdSchema)
     .mutation(async ({ ctx, input }) => startSessionMeeting(ctx, input.id)),
+  /**
+   * Mints this member's signed link into the room — one per click, never
+   * stored. The browser reaches it through the
+   * `/live-classes/sessions/[id]/join` route, which invokes this procedure via
+   * the server-side caller and redirects, so a plain `<a>` is all the UI
+   * needs and every rule (membership, student visibility, who is host) is
+   * applied exactly once, here.
+   */
+  joinLink: orgProcedure
+    .input(sessionIdSchema)
+    .mutation(async ({ ctx, input }) => createSessionJoinLink(ctx, input.id)),
 });

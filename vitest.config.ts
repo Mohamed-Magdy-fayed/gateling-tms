@@ -8,9 +8,10 @@ export default defineConfig({
   // import to a relative path.
   // `server-only` is a build-time guard: its whole job is to throw when a
   // client bundle imports it, and vitest is neither. Stubbing it lets modules
-  // that legitimately carry the marker — the onMeeting client handles a
-  // password, so it must — still be unit-tested, instead of forcing the choice
-  // between "testable" and "can't be imported into a client component".
+  // that legitimately carry the marker — the Gateling Meetings client holds
+  // the deployment's API key, so it must — still be unit-tested, instead of
+  // forcing the choice between "testable" and "can't be imported into a
+  // client component".
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -22,7 +23,11 @@ export default defineConfig({
     // needs a live database, so it has its own config and script
     // (`npm run test:isolation`). Excluding it keeps `npm test` runnable with
     // nothing but the repo checked out.
-    include: ["tests/**/*.test.ts"],
+    //
+    // The Meetings client block (`@gateling/meetings-integration`) ships its
+    // own specs beside the code it covers, and they are the contract tests for
+    // an API this app doesn't own — so they run with the rest.
+    include: ["tests/**/*.test.ts", "src/integrations/meetings/*.test.ts"],
     exclude: ["tests/integration/**"],
   },
 });

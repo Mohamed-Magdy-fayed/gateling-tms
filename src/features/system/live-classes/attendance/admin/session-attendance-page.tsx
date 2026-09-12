@@ -26,7 +26,7 @@ import { AttendanceRowActions, AttendanceStatusTag } from "./components";
  * One class: when it runs, how to get into it, and who was there.
  *
  * The register is the point of the page. Everything happening *in* the class —
- * the video, the whiteboard, the recording — happens in onMeeting (D8); what this
+ * the video, the screen share, the chat — happens on Gateling Meetings (D8); what this
  * screen owns is the schedule, the links, and the record of who attended.
  */
 export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
@@ -105,10 +105,11 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
             {dateTimeFmt.format(session.scheduledAt)}
           </h1>
           <SessionStatusTag status={session.status} />
-          <div className="ms-auto">
+          <div className="ms-auto flex items-center gap-2">
             <SessionJoinActions
               session={session}
-              hasActiveMeetingAccount={data.hasActiveMeetingAccount}
+              liveClassesEnabled={data.liveClassesEnabled}
+              canShareLink
             />
           </div>
         </div>

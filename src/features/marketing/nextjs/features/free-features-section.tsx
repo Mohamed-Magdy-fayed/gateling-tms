@@ -38,8 +38,8 @@ export async function FreeFeaturesSection() {
       description: t("features.modules.liveClasses.description"),
       bullets: [
         t("features.modules.liveClasses.bullets.hdVideoStreaming"),
-        t("features.modules.liveClasses.bullets.interactiveWhiteboard"),
-        t("features.modules.liveClasses.bullets.recordingCapabilities"),
+        t("features.modules.liveClasses.bullets.breakoutRooms"),
+        t("features.modules.liveClasses.bullets.joinFromLink"),
         t("features.modules.liveClasses.bullets.screenSharing"),
       ],
     },

@@ -14,8 +14,8 @@ export default {
     enrollments: "التسجيلات",
     certificates: "الشهادات",
     liveClasses: "الحصص المباشرة",
-    meetingRooms: "غرف الاجتماعات",
     settings: "الإعدادات",
+    systemSettings: "الربط مع الأنظمة",
     assessments: "التقييمات",
   },
   actions: {
@@ -948,7 +948,7 @@ export default {
   },
   sessions: {
     title: "الحصص المباشرة",
-    lead: "كل الحصص المجدولة في مكان واحد. اربط غرفة onMeeting لتتمكن من بدء كل حصة من هنا — وتُقام الحصة نفسها على onMeeting.",
+    lead: "كل الحصص المجدولة في مكان واحد. ابدأ الحصة من هنا وينضم الجميع بنقرة واحدة — وتُقام الحصة نفسها على Gateling Meetings.",
     scopeOptions: {
       upcoming: "القادمة",
       past: "السابقة",
@@ -962,13 +962,15 @@ export default {
     start: "بدء الحصة",
     starting: "جارٍ البدء…",
     join: "انضمام",
-    offline: "لا توجد غرفة مرتبطة",
+    offline: "الحصص المباشرة غير متاحة",
     notStarted: "لم تبدأ بعد",
     waitingForHost: "بانتظار بدء المعلّم للحصة",
-    noMeetingAccount:
-      "لا توجد غرفة onMeeting مرتبطة، لذلك تُجدول الحصص لكن لا يمكن بدؤها من هنا.",
-    connectMeetingAccount: "ربط onMeeting",
+    notConfiguredNotice:
+      "لم يتم إعداد الحصص المباشرة على هذا النظام بعد، لذلك تُجدول الحصص لكن لا يمكن بدؤها من هنا. اطلب من المشغّل ربط Gateling Meetings.",
     started: "بدأت الحصة.",
+    copyLink: "نسخ الرابط",
+    copied: "تم النسخ",
+    copyLinkFailed: "تعذّر نسخ الرابط.",
     emptyTitle: "لا يوجد شيء مجدول",
     emptyUpcoming: "أضف جدولًا أسبوعيًا لإحدى المجموعات لتظهر حصصها هنا.",
     emptyPast: "ستظهر الحصص السابقة هنا بعد انتهاء أول حصة.",
@@ -981,9 +983,16 @@ export default {
       cancelled: "تم إلغاء هذه الحصة.",
       outsideWindow:
         "يمكن بدء الحصة قرب موعدها فقط — من ١٥ دقيقة قبلها وحتى وقت قصير بعد موعد انتهائها.",
-      noRoomAvailable:
-        "كل غرف onMeeting المرتبطة مشغولة بحصة أخرى في هذا الوقت. اربط غرفة إضافية أو ابدأ الحصة بعد أن تتفرغ إحداها.",
       startFailed: "تعذّر بدء الحصة. حاول مرة أخرى.",
+      notStarted: "لم تبدأ هذه الحصة بعد. انتظر حتى يبدأها المعلّم.",
+      notConfigured:
+        "لم يتم إعداد الحصص المباشرة على هذا النظام بعد. اطلب من المشغّل ربط Gateling Meetings.",
+      misconfigured:
+        "رفض Gateling Meetings بيانات اعتماد هذا النظام. اطلب من المشغّل التحقق من الربط.",
+      meetingOver: "انتهى اجتماع هذه الحصة بالفعل.",
+      busy: "Gateling Meetings مشغول حاليًا. حاول مرة أخرى بعد لحظات.",
+      unavailable: "تعذّر الوصول إلى Gateling Meetings. حاول مرة أخرى بعد قليل.",
+      notFound: "هذه الحصة غير موجودة، أو أنك لست مسجلًا فيها.",
     },
   },
   attendance: {
@@ -1006,59 +1015,51 @@ export default {
     notFoundTitle: "الحصة غير موجودة",
     notFoundDescription: "هذه الحصة غير موجودة أو تم حذفها.",
   },
-  meetingAccounts: {
-    title: "غرف الاجتماعات",
+  settings: {
+    title: "الربط مع الأنظمة",
     subtitle:
-      "اربط حساب onMeeting الذي تُقام عليه حصصك. كل غرفة فيه تصبح غرفة يمكنك عقد حصة داخلها. الجدولة تعمل بدونه — تبقى الحصص بدون رابط حتى تربط حسابًا.",
-    connect: "ربط onMeeting",
-    connectAction: "ربط الحساب",
-    connectDescription:
-      "سجّل الدخول بحساب onMeeting الخاص بك، وستصبح كل غرفه متاحة للحصص.",
-    passwordNotice:
-      "تُستخدم كلمة مرور onMeeting مرة واحدة للحصول على مفتاح وصول، ولا يحفظها Gateling-TMS إطلاقًا.",
-    name: "اسم الاتصال",
-    nameDescription: "لفريقك، مثل «الحساب الرئيسي» أو «الحصص المسائية».",
-    email: "بريد onMeeting",
-    emailDescription: "البريد الذي تسجّل به الدخول إلى onMeeting.",
-    password: "كلمة مرور onMeeting",
-    passwordDescription: "تُستخدم مرة واحدة ولا تُحفظ.",
-    roomLabel: "الغرفة: {room}",
-    connectedRooms: dt("تم ربط {count:plural}.", {
-      plural: {
-        count: {
-          zero: "لا غرف",
-          one: "غرفة واحدة",
-          two: "غرفتين",
-          few: "{?} غرف",
-          many: "{?} غرفة",
-          other: "{?} غرفة",
+      "روابط على مستوى النظام كله مع أنظمة Gateling الأخرى. يضبطها مدير مرة واحدة وتسري على كل الأكاديميات على هذا النظام.",
+    adminOnly: "يمكن لمديري المؤسسة فقط عرض هذه الإعدادات أو تغييرها.",
+    loadFailed: "تعذّر تحميل الإعدادات.",
+    saved: "تم حفظ الإعداد.",
+    saveFailed: "تعذّر حفظ الإعداد.",
+    save: "حفظ",
+    clear: "مسح",
+    set: "مضبوط",
+    notSet: "غير مضبوط",
+    updatedAt: "آخر تحديث {time:string}",
+    secretPlaceholder: "الصق قيمة جديدة لاستبدال المحفوظة",
+    groups: {
+      meetings: {
+        title: "Gateling Meetings",
+        description:
+          "يستضيف الحصص المباشرة. أنشئ ربطًا في meetings.gateling.com ← الإعدادات ← الربط مع الأنظمة باستخدام رابط الويب هوك والأصل الخاصين بهذا النظام، ثم الصق مفتاح API وسر الويب هوك هنا. تُفعَّل الحصص المباشرة لكل الأكاديميات فور حفظهما.",
+        webhookUrl: "رابط الويب هوك الذي تسجّله في Meetings",
+        returnOrigin: "أصل العودة المسموح الذي تسجّله في Meetings",
+        status: {
+          configured: "متصل — يمكن بدء الحصص.",
+          missingKey: "غير متصل — الصق مفتاح API لتفعيل الحصص المباشرة.",
+          missingSecret:
+            "متصل، لكن بدون سر الويب هوك — ستبدأ الحصص، لكن لن تُحدَّد كمكتملة عند إغلاق الغرفة.",
         },
       },
-    }),
-    connectFailed: "تعذّر ربط حساب onMeeting.",
-    disconnect: "فصل",
-    disconnectTitle: "فصل هذه الغرفة؟",
-    disconnectDescription:
-      "سيتم فصل «{name}». تبقى الحصص المجدولة كما هي، لكن لن يمكن بدء حصة جديدة في هذه الغرفة. يظل مفتاح الوصول صالحًا لدى onMeeting — غيّره من هناك إن أردت إبطاله.",
-    disconnected: "تم فصل الغرفة.",
-    disconnectFailed: "تعذّر فصل الغرفة.",
-    loadFailed: "تعذّر تحميل غرف الاجتماعات.",
-    emptyTitle: "لا يوجد حساب onMeeting مرتبط",
-    emptyDescription: "اربط حسابًا لتصبح غرفه متاحة لحصصك المجدولة.",
-    status: {
-      active: "مرتبط",
-      error: "يحتاج إلى مراجعة",
+    },
+    names: {
+      "00001": "رابط Meetings API",
+      "00002": "مفتاح Meetings API",
+      "00003": "سر ويب هوك Meetings",
+    },
+    descriptions: {
+      "00001":
+        "حيث يعمل Gateling Meetings. اترك القيمة الافتراضية ما لم تستضف نسختك الخاصة.",
+      "00002":
+        "المفتاح gm_live_… الذي يظهر مرة واحدة عند إنشاء الربط. تدويره في Meetings يُصدر مفتاحًا جديدًا وسر ويب هوك جديدًا — حدّث الاثنين.",
+      "00003":
+        "السر whsec_… الذي يظهر بجوار مفتاح API. يتحقق من أن تسليم الويب هوك جاء فعلًا من Meetings.",
     },
     errors: {
-      notConfigured:
-        "لم يتم إعداد onMeeting على هذا النظام بعد. اطلب من المشغّل ضبط مفتاح تشفير onMeeting.",
-      rejected:
-        "لم يقبل onMeeting هذا البريد وكلمة المرور. تحقّق منهما وحاول مرة أخرى.",
-      noRooms: "لا توجد غرف في حساب onMeeting هذا، فلا مكان لعقد حصة فيه بعد.",
-      rateLimited: "محاولات ربط كثيرة. انتظر قليلًا قبل المحاولة مجددًا.",
-      providerRateLimited:
-        "يقيّد onMeeting هذا الحساب حاليًا. حاول مرة أخرى بعد قليل.",
-      unavailable: "تعذّر الوصول إلى onMeeting. حاول مرة أخرى بعد قليل.",
+      unknown: "هذا الإعداد غير موجود.",
+      invalidValue: "هذه القيمة غير صالحة لهذا الإعداد.",
     },
   },
   googleImport: {
@@ -1572,7 +1573,7 @@ export default {
         liveClasses: {
           title: "الحصص المباشرة",
           description:
-            "قدّم جلسات فيديو عالية الجودة، شارك الشاشة، وسجّل الحصص — بواسطة onMeeting.",
+            "قدّم حصص فيديو عالية الجودة، شارك الشاشة، ودع الطلاب ينضمون من رابط — بواسطة Gateling Meetings.",
         },
         hr: {
           title: "إدارة الموارد البشرية",
@@ -1678,11 +1679,11 @@ export default {
       liveClasses: {
         title: "الفصول المباشرة",
         description:
-          "بث فصول مباشرة تفاعلية بجودة عالية مع أدوات تعاون فوري — بواسطة onMeeting.",
+          "بث فصول مباشرة تفاعلية بجودة عالية مع مشاركة الشاشة وغرف فرعية — بواسطة Gateling Meetings، بدون تسجيل دخول ثانٍ.",
         bullets: {
           hdVideoStreaming: "بث فيديو عالي الجودة",
-          interactiveWhiteboard: "سبورة تفاعلية",
-          recordingCapabilities: "تسجيل الفصول",
+          breakoutRooms: "غرف فرعية",
+          joinFromLink: "ينضم الطلاب من رابط",
           screenSharing: "مشاركة الشاشة",
         },
       },

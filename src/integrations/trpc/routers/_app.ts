@@ -20,8 +20,8 @@ import { placementTestsRouter } from "@/features/system/learning-flow/placement-
 import { progressRouter } from "@/features/system/learning-flow/progress/server";
 import { traineesRouter } from "@/features/system/learning-flow/trainees/server";
 import { attendanceRouter } from "@/features/system/live-classes/attendance/server";
-import { meetingAccountsRouter } from "@/features/system/live-classes/meeting-accounts/server";
 import { sessionsRouter } from "@/features/system/live-classes/sessions/server";
+import { settingsRouter } from "@/features/system/settings/server";
 import { createTRPCRouter } from "../init";
 import { healthRouter } from "./health";
 
@@ -48,9 +48,9 @@ export const appRouter = createTRPCRouter({
   certificates: certificatesRouter,
   progress: progressRouter,
   dashboard: dashboardRouter,
-  meetingAccounts: meetingAccountsRouter,
   sessions: sessionsRouter,
   attendance: attendanceRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

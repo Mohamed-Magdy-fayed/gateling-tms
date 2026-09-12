@@ -219,9 +219,9 @@ export async function deleteGroup(
   input: GroupDeleteInput,
 ) {
   // The group's sessions go with it (composite FK, ON DELETE CASCADE).
-  // Nothing has to be told about that: onMeeting meetings are created when a
-  // class is started and live in the room until it ends, and there is no
-  // delete-meeting endpoint to call anyway (STATE.md D143/D145).
+  // Nothing has to be told about that: a class that was never started has no
+  // room on Gateling Meetings, and one that ran has already ended there
+  // (STATE.md D143).
   await ctx.db.transaction(async (trx) => {
     const [deleted] = await trx
       .delete(GroupsTable)

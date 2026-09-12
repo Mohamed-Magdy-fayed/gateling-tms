@@ -5,28 +5,11 @@ export type SessionViewer = {
   role: OrganizationMembershipRole;
 };
 
-export type SessionMeetingColumns = {
-  teacherId: string | null;
-  joinUrl: string | null;
-  startUrl: string | null;
-};
-
-export type SessionLinks = {
-  /** Everyone in the org gets this one — it joins as a participant. */
-  joinUrl: string | null;
-  /** Host link, or null when this viewer must not have host rights. */
-  startUrl: string | null;
-};
-
 /**
- * An onMeeting `start_url` grants host control of the meeting to whoever opens
- * it, so it is not a link that may travel with a session row. Only the teacher
- * the session is assigned to, and org admins (who own the connection itself),
- * ever see it — a teacher who isn't running *this* class gets the participant
- * link like everyone else.
- *
- * The same rule decides who may *start* a class, since starting it is what
- * produces that link in the first place (STATE.md D143).
+ * Who may *start* a class — which is what creates its meeting and fixes who
+ * hosts it (STATE.md D143). The teacher the session is assigned to, and org
+ * admins (who own the schedule itself). A teacher who isn't running *this*
+ * class joins it like everyone else.
  */
 export function canHostSession(
   viewer: SessionViewer,
@@ -35,14 +18,30 @@ export function canHostSession(
   return viewer.role === "admin" || viewer.userId === teacherId;
 }
 
-export function resolveSessionLinks(
-  viewer: SessionViewer,
-  session: SessionMeetingColumns,
-): SessionLinks {
-  return {
-    joinUrl: session.joinUrl,
-    startUrl: canHostSession(viewer, session.teacherId)
-      ? session.startUrl
-      : null,
-  };
+/**
+ * Whether this viewer holds host rights on the meeting that already exists.
+ *
+ * Distinct from `canHostSession`: Gateling Meetings binds host control to one
+ * identity — the `meetingHostUserId` recorded when the class was started —
+ * and issues a host link to nobody else (a request for one answers 403). An
+ * admin who didn't start the class therefore joins it as a participant; they
+ * still see everything, they just don't hold the room's controls.
+ */
+export function isMeetingHost(
+  viewer: Pick<SessionViewer, "userId">,
+  meetingHostUserId: string | null,
+): boolean {
+  return meetingHostUserId !== null && viewer.userId === meetingHostUserId;
+}
+
+/**
+ * The in-app link that sends a signed-in member into a session's meeting.
+ *
+ * Never the meeting's own URL: a host link is single-use and expires within
+ * minutes, so it can't be rendered into a page and clicked later. The route
+ * behind this path mints one per click and redirects — see
+ * `app/(system)/live-classes/sessions/[id]/join/route.ts`.
+ */
+export function sessionJoinPath(sessionId: string): string {
+  return `/live-classes/sessions/${encodeURIComponent(sessionId)}/join`;
 }

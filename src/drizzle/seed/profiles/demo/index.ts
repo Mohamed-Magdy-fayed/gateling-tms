@@ -6,11 +6,7 @@ import { SEED_ORG_ID, SEED_TEACHER_ID } from "../../constants";
 import { seedBaselineProfile } from "../baseline";
 import { seedDemoCourse } from "./content";
 import { DEMO_COURSES, DEMO_TRAINEES } from "./data";
-import {
-  seedDemoGroup,
-  seedDemoMeetingAccountFixture,
-  seedDemoSessionsForGroup,
-} from "./groups";
+import { seedDemoGroup, seedDemoSessionsForGroup } from "./groups";
 import { seedDemoTestimonial } from "./showcase";
 import {
   seedDemoAttendance,
@@ -28,7 +24,7 @@ const ATTENDANCE_SESSION_COUNT = 4;
 /**
  * The realistic-academy screenshot/demo dataset: 2 courses (levels +
  * lectures + a quiz each), 3 groups with weekly schedules and generated
- * sessions (one onMeeting-fixture-connected), 25 trainees spread across the
+ * sessions (one group seeded as already started), 25 trainees spread across the
  * groups with enrollments, level progress, attendance on past sessions, and
  * certificates for completed enrollments.
  *
@@ -48,8 +44,6 @@ export async function seedDemoProfile() {
   const [englishCourseSeed, businessCourseSeed] = DEMO_COURSES;
   const english = await seedDemoCourse(organization.id, englishCourseSeed);
   const business = await seedDemoCourse(organization.id, businessCourseSeed);
-
-  const meetingFixture = await seedDemoMeetingAccountFixture(organization.id);
 
   const groupA = await seedDemoGroup({
     organizationId: organization.id,
@@ -89,7 +83,9 @@ export async function seedDemoProfile() {
     organizationId: organization.id,
     group: groupA,
     timeZone: organization.timeZone,
-    meetingFixture: { meetingAccountId: meetingFixture.id },
+    // Named as host so the teacher account sees "Start class" on these rows
+    // and everyone else sees "Join" — the two states a demo has to show.
+    meetingFixture: { hostUserId: SEED_TEACHER_ID },
   });
   const groupBSessions = await seedDemoSessionsForGroup({
     organizationId: organization.id,

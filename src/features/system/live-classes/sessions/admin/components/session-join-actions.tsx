@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2Icon, VideoIcon, VideoOffIcon } from "lucide-react";
+import {
+  CheckIcon,
+  Link2Icon,
+  Loader2Icon,
+  VideoIcon,
+  VideoOffIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,32 +19,48 @@ import { useTRPC } from "@/integrations/trpc/client";
 type SessionJoinActionsProps = {
   session: Pick<
     SessionRow,
-    "id" | "joinUrl" | "startUrl" | "status" | "hasMeeting" | "canStart"
+    | "id"
+    | "joinUrl"
+    | "joinPath"
+    | "status"
+    | "hasMeeting"
+    | "canStart"
+    | "isHost"
   >;
-  /** Whether the org has a connected onMeeting room at all. */
-  hasActiveMeetingAccount: boolean;
+  /** Whether this deployment has Gateling Meetings configured at all. */
+  liveClassesEnabled: boolean;
+  /**
+   * Whether to offer the share link. Staff paste it into the class group for
+   * students who have no account here; a signed-in student already gets in
+   * through their own "Join".
+   */
+  canShareLink?: boolean;
 };
+
+/** How long the copy button shows its "copied" state. */
+const COPIED_FEEDBACK_MS = 2_000;
 
 /**
  * What a viewer can do with one session's meeting.
  *
- * Under Zoom, a meeting existed from the moment the schedule was saved and
- * this component only ever handed out links. onMeeting meetings are created on
- * demand (STATE.md D143), so a host now gets a **button that creates one** and
- * everyone else waits for them — which is why the row has three no-link states
- * rather than two, and they read very differently to whoever is looking:
+ * Meetings are created on demand (STATE.md D143), so a host gets a **button
+ * that creates one** and everyone else waits for them — which is why a row
+ * has three no-link states, and they read very differently to whoever is
+ * looking:
  *
- * - no room connected at all → this academy doesn't run classes here
- * - room connected, nobody started → a host can start it, a student waits
- * - started → a join link for everyone, a host link for the host
+ * - live classes not configured on this deployment → classes don't run here
+ * - configured, nobody started → a host can start it, a student waits
+ * - started → "Start class" for the host, "Join" for everyone else
  *
- * `startUrl` is only ever present for the teacher running the class and for
- * admins (server-side rule, lib/session-links.ts); this component doesn't
- * decide who hosts, it shows what the caller was given.
+ * Both of those are plain links to the session's `/join` route: the server
+ * mints a fresh signed link per click and redirects, so nothing here ever
+ * holds a meeting URL that could go stale. Who is host is decided server-side
+ * (`isHost`); this component shows what the caller was given.
  */
 export function SessionJoinActions({
   session,
-  hasActiveMeetingAccount,
+  liveClassesEnabled,
+  canShareLink = false,
 }: SessionJoinActionsProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
@@ -49,48 +71,38 @@ export function SessionJoinActions({
 
   if (session.status === "cancelled") return null;
 
-  // Already running: the host opens their own link, everyone else joins.
-  if (session.startUrl) {
+  if (session.hasMeeting) {
     return (
-      <Button
-        size="sm"
-        render={
-          <a href={session.startUrl} target="_blank" rel="noreferrer">
-            <VideoIcon className="size-3.5" />
-            {t("sessions.start")}
-          </a>
-        }
-      />
-    );
-  }
-
-  if (session.joinUrl) {
-    return (
-      <Button
-        size="sm"
-        variant="outline"
-        render={
-          <a href={session.joinUrl} target="_blank" rel="noreferrer">
-            <VideoIcon className="size-3.5" />
-            {t("sessions.join")}
-          </a>
-        }
-      />
+      <>
+        <Button
+          size="sm"
+          variant={session.isHost ? "default" : "outline"}
+          render={
+            <a href={session.joinPath} target="_blank" rel="noreferrer">
+              <VideoIcon className="size-3.5" />
+              {t(session.isHost ? "sessions.start" : "sessions.join")}
+            </a>
+          }
+        />
+        {canShareLink && session.joinUrl ? (
+          <CopyLinkButton url={session.joinUrl} />
+        ) : null}
+      </>
     );
   }
 
   async function handleStart() {
     setStarting(true);
     try {
-      const { startUrl } = await startMut.mutateAsync({ id: session.id });
+      const { joinPath } = await startMut.mutateAsync({ id: session.id });
       await queryClient.invalidateQueries({
         queryKey: trpc.sessions.pathKey(),
       });
       toast.success(t("sessions.started"));
       // Opened after the mutation resolves rather than optimistically: a
       // pop-up blocked here is recoverable (the row now shows the link), but
-      // a tab opened before the meeting existed would land nowhere.
-      window.open(startUrl, "_blank", "noreferrer");
+      // a tab opened before the meeting existed would land on an error.
+      window.open(joinPath, "_blank", "noreferrer");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -102,7 +114,7 @@ export function SessionJoinActions({
     }
   }
 
-  if (hasActiveMeetingAccount && session.canStart && !session.hasMeeting) {
+  if (liveClassesEnabled && session.canStart) {
     return (
       <Button size="sm" disabled={starting} onClick={handleStart}>
         {starting ? (
@@ -118,11 +130,49 @@ export function SessionJoinActions({
   return (
     <Tag color="neutral">
       <VideoOffIcon className="size-3.5" />
-      {!hasActiveMeetingAccount
+      {!liveClassesEnabled
         ? t("sessions.offline")
         : session.canStart
           ? t("sessions.notStarted")
           : t("sessions.waitingForHost")}
     </Tag>
+  );
+}
+
+/**
+ * Copies the meeting's plain share link. It is the one meeting URL that is
+ * safe to hand around — passcode-free, and the waiting room is off for
+ * classes — so a student without an account can still get in from WhatsApp.
+ */
+function CopyLinkButton({ url }: { url: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
+    } catch {
+      toast.error(t("sessions.copyLinkFailed"));
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      onClick={handleCopy}
+      aria-label={t("sessions.copyLink")}
+      title={t("sessions.copyLink")}
+    >
+      {copied ? (
+        <CheckIcon className="size-3.5" />
+      ) : (
+        <Link2Icon className="size-3.5" />
+      )}
+      {copied ? t("sessions.copied") : t("sessions.copyLink")}
+    </Button>
   );
 }

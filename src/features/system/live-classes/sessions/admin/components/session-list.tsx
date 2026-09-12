@@ -10,14 +10,15 @@ import { SessionStatusTag } from "./session-status-tag";
 
 type SessionListProps = {
   sessions: SessionRow[];
-  hasActiveMeetingAccount: boolean;
+  liveClassesEnabled: boolean;
   /** The org's IANA zone — sessions read on the academy's clock, not the
    * viewer's, so a teacher abroad still sees the local class time. */
   timeZone: string;
   /** Off on a group's own page, where every row is the same class. */
   showGroup?: boolean;
   /**
-   * Whether to offer the register. The attendance routes are staff-only
+   * Whether to offer the register — and the meeting's share link, which is
+   * the same "is this staff" question. The attendance routes are staff-only
    * (`attendance/server/router.ts`), so a student is not sent to a page that
    * can only answer FORBIDDEN.
    */
@@ -26,7 +27,7 @@ type SessionListProps = {
 
 export function SessionList({
   sessions,
-  hasActiveMeetingAccount,
+  liveClassesEnabled,
   timeZone,
   showGroup = false,
   canOpenRegister = false,
@@ -71,7 +72,8 @@ export function SessionList({
             <SessionStatusTag status={session.status} />
             <SessionJoinActions
               session={session}
-              hasActiveMeetingAccount={hasActiveMeetingAccount}
+              liveClassesEnabled={liveClassesEnabled}
+              canShareLink={canOpenRegister}
             />
             {canOpenRegister ? (
               <Button

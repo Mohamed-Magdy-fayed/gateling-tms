@@ -14,8 +14,8 @@ export default {
     enrollments: "Enrollments",
     certificates: "Certificates",
     liveClasses: "Live Classes",
-    meetingRooms: "Meeting rooms",
     settings: "Settings",
+    systemSettings: "Integrations",
     assessments: "Assessments",
   },
   actions: {
@@ -986,7 +986,7 @@ export default {
   },
   sessions: {
     title: "Live classes",
-    lead: "Every scheduled class in one place. Connect an onMeeting room and you can start each class from here — the class itself runs in onMeeting.",
+    lead: "Every scheduled class in one place. Start a class from here and everyone joins with one click — the class itself runs on Gateling Meetings.",
     scopeOptions: {
       upcoming: "Upcoming",
       past: "Past",
@@ -1002,13 +1002,15 @@ export default {
     join: "Join",
     // Three different reasons a row has no link, and they mean very different
     // things to whoever is looking at it.
-    offline: "No room connected",
+    offline: "Live classes unavailable",
     notStarted: "Not started yet",
     waitingForHost: "Waiting for the teacher to start",
-    noMeetingAccount:
-      "No onMeeting room is connected, so classes are scheduled but can't be started here.",
-    connectMeetingAccount: "Connect onMeeting",
+    notConfiguredNotice:
+      "Live classes aren't set up on this deployment yet, so classes are scheduled but can't be started here. Ask your operator to connect Gateling Meetings.",
     started: "Class started.",
+    copyLink: "Copy link",
+    copied: "Copied",
+    copyLinkFailed: "Couldn't copy the link.",
     emptyTitle: "Nothing scheduled",
     emptyUpcoming:
       "Give a class a weekly schedule and its sessions appear here.",
@@ -1023,9 +1025,19 @@ export default {
       cancelled: "This class was cancelled.",
       outsideWindow:
         "A class can only be started around its scheduled time — 15 minutes before, until shortly after it was due to end.",
-      noRoomAvailable:
-        "Every connected onMeeting room is busy with another class in this slot. Connect another room, or start this class once one frees up.",
       startFailed: "Couldn't start the class. Try again.",
+      // The join route lands back on the agenda with one of these
+      // (lib/join-result.ts), so each has to make sense on its own.
+      notStarted:
+        "This class hasn't been started yet. Wait for the teacher to start it.",
+      notConfigured:
+        "Live classes aren't set up on this deployment yet. Ask your operator to connect Gateling Meetings.",
+      misconfigured:
+        "Gateling Meetings refused this deployment's credentials. Ask your operator to check the integration.",
+      meetingOver: "This class's meeting has already ended.",
+      busy: "Gateling Meetings is busy right now. Try again in a moment.",
+      unavailable: "Couldn't reach Gateling Meetings. Try again shortly.",
+      notFound: "This class doesn't exist, or you're not on it.",
     },
   },
   attendance: {
@@ -1052,53 +1064,52 @@ export default {
     notFoundTitle: "Class not found",
     notFoundDescription: "This class doesn't exist, or it was removed.",
   },
-  meetingAccounts: {
-    title: "Meeting rooms",
+  settings: {
+    title: "Integrations",
     subtitle:
-      "Connect the onMeeting account your classes run on. Each of its rooms becomes a room you can hold a class in. Scheduling works without it — sessions simply stay offline until an account is connected.",
-    connect: "Connect onMeeting",
-    connectAction: "Connect account",
-    connectDescription:
-      "Sign in with your onMeeting account. Every room on it becomes available for classes.",
-    passwordNotice:
-      "Your onMeeting password is used once to get an access key, and is never stored by Gateling-TMS.",
-    name: "Connection name",
-    nameDescription: 'For your team, e.g. "Main account" or "Evening classes".',
-    email: "onMeeting email",
-    emailDescription: "The email you sign in to onMeeting with.",
-    password: "onMeeting password",
-    passwordDescription: "Used once, never saved.",
-    roomLabel: "Room: {room}",
-    connectedRooms: dt("Connected {count:plural}.", {
-      plural: { count: { one: "{?} room", other: "{?} rooms" } },
-    }),
-    connectFailed: "Could not connect the onMeeting account.",
-    disconnect: "Disconnect",
-    disconnectTitle: "Disconnect this room?",
-    disconnectDescription:
-      'Disconnect "{name}". Scheduled classes stay, but no new class can be started in this room. Your onMeeting access key stays valid on onMeeting — rotate it there if you want it revoked.',
-    disconnected: "Room disconnected.",
-    disconnectFailed: "Could not disconnect the room.",
-    loadFailed: "Couldn't load meeting rooms.",
-    emptyTitle: "No onMeeting account connected",
-    emptyDescription:
-      "Connect an account and its rooms become available for your scheduled classes.",
-    status: {
-      active: "Connected",
-      error: "Needs attention",
+      "Deployment-wide connections to other Gateling systems. Set once by an admin, they apply to every academy on this deployment.",
+    adminOnly: "Only organization admins can view or change these settings.",
+    loadFailed: "Couldn't load the settings.",
+    saved: "Setting saved.",
+    saveFailed: "Couldn't save the setting.",
+    save: "Save",
+    clear: "Clear",
+    set: "Set",
+    notSet: "Not set",
+    updatedAt: "Updated {time:string}",
+    secretPlaceholder: "Paste a new value to replace the stored one",
+    groups: {
+      meetings: {
+        title: "Gateling Meetings",
+        description:
+          "Hosts live classes. Create an integration at meetings.gateling.com → Settings → Integrations with this system's webhook URL and origin, then paste the API key and webhook secret here. Live classes turn on for every academy as soon as both are saved.",
+        webhookUrl: "Webhook URL to register on Meetings",
+        returnOrigin: "Allowed return origin to register on Meetings",
+        status: {
+          configured: "Connected — classes can be started.",
+          missingKey:
+            "Not connected — paste the API key to turn live classes on.",
+          missingSecret:
+            "Connected, but no webhook secret — classes will start, but won't be marked completed when the room closes.",
+        },
+      },
+    },
+    names: {
+      "00001": "Meetings API URL",
+      "00002": "Meetings API key",
+      "00003": "Meetings webhook secret",
+    },
+    descriptions: {
+      "00001":
+        "Where Gateling Meetings runs. Leave the default unless you host your own instance.",
+      "00002":
+        "The gm_live_… key shown once when the integration is created. Rotating it on Meetings issues a new key and a new webhook secret — update both.",
+      "00003":
+        "The whsec_… secret shown next to the API key. Verifies that a webhook delivery really came from Meetings.",
     },
     errors: {
-      notConfigured:
-        "onMeeting isn't configured on this deployment yet. Ask your operator to set the onMeeting encryption key.",
-      rejected:
-        "onMeeting didn't accept that email and password. Check them and try again.",
-      noRooms:
-        "That onMeeting account has no rooms, so there's nothing to hold a class in yet.",
-      rateLimited:
-        "Too many connection attempts. Wait a while before trying again.",
-      providerRateLimited:
-        "onMeeting is rate limiting this account right now. Try again shortly.",
-      unavailable: "Couldn't reach onMeeting. Try again shortly.",
+      unknown: "That setting doesn't exist.",
+      invalidValue: "That value isn't valid for this setting.",
     },
   },
   googleImport: {
@@ -1583,7 +1594,7 @@ export default {
         liveClasses: {
           title: "Live Classes",
           description:
-            "Host HD video sessions, share your screen, and record classes — powered by onMeeting.",
+            "Host HD video classes, share your screen, and let students join from a link — powered by Gateling Meetings.",
         },
         hr: {
           title: "HR Management",
@@ -1692,11 +1703,11 @@ export default {
       liveClasses: {
         title: "Live Classes",
         description:
-          "Host interactive live classes with HD video streaming and real-time collaboration — powered by onMeeting.",
+          "Host interactive live classes with HD video, screen sharing and breakout rooms — powered by Gateling Meetings, no second login.",
         bullets: {
           hdVideoStreaming: "HD Video Streaming",
-          interactiveWhiteboard: "Interactive Whiteboard",
-          recordingCapabilities: "Class Recording",
+          breakoutRooms: "Breakout Rooms",
+          joinFromLink: "Students Join From a Link",
           screenSharing: "Screen Sharing",
         },
       },

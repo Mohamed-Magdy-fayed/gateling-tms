@@ -61,8 +61,8 @@ export function GroupSessionsSection({
   const [hasWaitedTooLong, setHasWaitedTooLong] = useState(false);
 
   // `sessions.byGroup`, not a groups-owned query: these rows carry the
-  // onMeeting join links, and the rules for who may see a host link live with
-  // the rest of the meeting code (live-classes/sessions).
+  // Gateling Meetings join state, and the rules for who hosts a class live
+  // with the rest of the meeting code (live-classes/sessions).
   const { data, isLoading, isError } = useQuery({
     ...trpc.sessions.byGroup.queryOptions({ groupId }),
     // Generation usually runs through Inngest, so an empty list right after
@@ -211,7 +211,7 @@ export function GroupSessionsSection({
         ) : hasRows ? (
           <SessionList
             sessions={data?.rows ?? []}
-            hasActiveMeetingAccount={data?.hasActiveMeetingAccount ?? false}
+            liveClassesEnabled={data?.liveClassesEnabled ?? false}
             timeZone={timeZone}
             canOpenRegister={canOpenRegister}
           />

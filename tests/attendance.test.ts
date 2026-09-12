@@ -2,10 +2,10 @@ import { describe, expect, test } from "vitest";
 import { markAttendanceSchema } from "../src/features/system/live-classes/attendance/server/schemas";
 
 /**
- * Attendance is teacher-marked only (STATE.md D144). onMeeting exposes no
- * webhooks and no participants endpoint, so the Zoom-era event parsing,
- * participant matching, and join/leave folding this file used to cover no
- * longer exist — the register is what a human says it is.
+ * Attendance is teacher-marked only (STATE.md D144). Students join Gateling
+ * Meetings anonymously by design, so the Zoom-era event parsing, participant
+ * matching, and join/leave folding this file used to cover no longer exist —
+ * the register is what a human says it is.
  */
 describe("markAttendanceSchema", () => {
   test("accepts a present/absent verdict on a real session and trainee", () => {

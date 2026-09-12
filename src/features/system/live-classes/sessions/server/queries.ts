@@ -13,12 +13,16 @@ import {
 import {
   GroupStudentsTable,
   GroupsTable,
-  MeetingAccountsTable,
   SessionsTable,
   TraineesTable,
   UsersTable,
 } from "@/drizzle/schema";
-import { canHostSession, resolveSessionLinks } from "../lib/session-links";
+import {
+  canHostSession,
+  isMeetingHost,
+  sessionJoinPath,
+} from "../lib/session-links";
+import { isLiveClassesEnabled } from "./meetings-config";
 import type { ListSessionsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -31,11 +35,11 @@ const sessionColumns = {
   groupName: GroupsTable.name,
   teacherId: SessionsTable.teacherId,
   teacherName: UsersTable.name,
-  meetingNumber: SessionsTable.meetingNumber,
+  meetingCode: SessionsTable.meetingCode,
   joinUrl: SessionsTable.joinUrl,
-  // Selected but never returned as-is: `toSessionRow` hands it only to the
-  // assigned teacher or an admin (lib/session-links.ts).
-  startUrl: SessionsTable.startUrl,
+  // Never returned as-is: `toSessionRow` turns it into `isHost` for the one
+  // viewer it names (lib/session-links.ts).
+  meetingHostUserId: SessionsTable.meetingHostUserId,
 } as const;
 
 export type SessionRow = {
@@ -47,18 +51,28 @@ export type SessionRow = {
   groupName: string;
   teacherId: string | null;
   teacherName: string | null;
-  /** Null until the class has been started — no meeting exists for it yet. */
-  joinUrl: string | null;
-  /** Host link, present only for the teacher running it and for admins. */
-  startUrl: string | null;
   /**
-   * Whether a meeting has been created for this session at all. Distinct from
-   * `joinUrl` being null, which a student also sees before the class starts —
-   * this is what the UI keys the "Start class" action off.
+   * The meeting's plain share link — null until the class has been started.
+   * Safe for anyone on the roster: it is what staff paste into the class
+   * group for students who have no account here.
+   */
+  joinUrl: string | null;
+  /**
+   * Whether a meeting has been created for this session at all; what the UI
+   * keys the "Start class" action off. Always equal to `joinUrl !== null`
+   * today, kept separate so the two can diverge without touching the UI.
    */
   hasMeeting: boolean;
   /** Whether this viewer may start the class (STATE.md D143). */
   canStart: boolean;
+  /**
+   * Whether this viewer holds host rights on the meeting — Meetings binds them
+   * to one account, recorded when the class was started, so an admin who
+   * didn't start it joins as a participant (lib/session-links.ts).
+   */
+  isHost: boolean;
+  /** The in-app route that mints this viewer's signed join link per click. */
+  joinPath: string;
 };
 
 /**
@@ -101,9 +115,9 @@ export async function listSessions(
     page,
     pageCount,
     total: Number(total),
-    // Lets the UI tell "this org has no room connected, and that's fine" apart
-    // from "this class just hasn't been started yet".
-    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
+    // Lets the UI tell "this deployment doesn't run live classes" apart from
+    // "this class just hasn't been started yet".
+    liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
   };
 }
 
@@ -124,7 +138,7 @@ export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
 
   return {
     rows: rows.map((row) => toSessionRow(ctx, row)),
-    hasActiveMeetingAccount: await hasActiveMeetingAccount(ctx),
+    liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
   };
 }
 
@@ -138,7 +152,7 @@ export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
  * `trainees.userId` bridge. A student with no trainee record matches nothing,
  * which is the correct answer rather than an error.
  */
-function ownClassesOnlyForStudents(ctx: OrgTRPCContext) {
+export function ownClassesOnlyForStudents(ctx: OrgTRPCContext) {
   if (ctx.role !== "student") return undefined;
 
   const ownGroupIds = ctx.db
@@ -187,20 +201,15 @@ function selectSessions(
 /** What `selectSessions` returns, before the link rules are applied. */
 type SessionQueryRow = Omit<
   SessionRow,
-  "joinUrl" | "startUrl" | "hasMeeting" | "canStart"
+  "joinUrl" | "hasMeeting" | "canStart" | "isHost" | "joinPath"
 > & {
-  meetingNumber: string | null;
+  meetingCode: string | null;
   joinUrl: string | null;
-  startUrl: string | null;
+  meetingHostUserId: string | null;
 };
 
 function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
   const viewer = { userId: ctx.session.user.id, role: ctx.role };
-  const links = resolveSessionLinks(viewer, {
-    teacherId: row.teacherId,
-    joinUrl: row.joinUrl,
-    startUrl: row.startUrl,
-  });
 
   return {
     id: row.id,
@@ -211,31 +220,10 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     groupName: row.groupName,
     teacherId: row.teacherId,
     teacherName: row.teacherName,
-    joinUrl: links.joinUrl,
-    startUrl: links.startUrl,
-    hasMeeting: row.meetingNumber !== null,
+    joinUrl: row.joinUrl,
+    hasMeeting: row.meetingCode !== null,
     canStart: canHostSession(viewer, row.teacherId),
+    isHost: isMeetingHost(viewer, row.meetingHostUserId),
+    joinPath: sessionJoinPath(row.id),
   };
-}
-
-/**
- * Whether the org has any onMeeting room connected at all — the difference
- * between "this class hasn't been started yet" and "this academy hasn't
- * connected a room", which read very differently to whoever is looking (D102).
- */
-export async function hasActiveMeetingAccount(
-  ctx: OrgTRPCContext,
-): Promise<boolean> {
-  const [{ value }] = await ctx.db
-    .select({ value: count() })
-    .from(MeetingAccountsTable)
-    .where(
-      and(
-        eq(MeetingAccountsTable.organizationId, ctx.organizationId),
-        eq(MeetingAccountsTable.status, "active"),
-        isNull(MeetingAccountsTable.deletedAt),
-      ),
-    );
-
-  return Number(value) > 0;
 }

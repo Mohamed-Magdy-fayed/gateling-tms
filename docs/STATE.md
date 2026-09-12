@@ -27,7 +27,7 @@ storage per organization. Paid modules are "coming soon" everywhere they appear.
 | Content Library | Courses → levels → lectures, media upload to Firebase, search and CSV/XLSX export |
 | Learning Flow | Trainees, groups with weekly schedules, generated sessions, enrollments, placement tests, level progress, certificates |
 | Assessments | Form builder, auto-scoring, AI-assisted short-answer grading with manual fallback, Google Forms import |
-| Live Classes | onMeeting rooms connected per organization, start-class from a session, teacher-marked attendance |
+| Live Classes | Gateling Meetings, one deployment-level integration set up by an admin on `/settings` (no env vars): start a class from a session, signed one-click join for every member, share link for students without accounts, session closed by webhook, teacher-marked attendance |
 | Import/export | Template-shaped round trip for students, courses, levels, enrollments and group assignments |
 | Marketing site | Home, features, pricing, about, contact, testimonials, and the legal pages — all bilingual |
 
@@ -39,7 +39,7 @@ Everything below is green on `master`:
 |---|---|
 | `npm run check` | typecheck + lint clean |
 | `npm test` | unit suite |
-| `npm run test:isolation` | org isolation across all 21 tenant-owned tables |
+| `npm run test:isolation` | org isolation across all 20 tenant-owned tables |
 | `npm run build` | production build |
 | `npm run audit:gate` | **0 vulnerabilities** |
 | `npm run scan:secrets` | no known secret shapes in tracked files |
@@ -65,7 +65,13 @@ STATE.md:
   scoped to the caller's own trainee record, and `forms.getTree` must stop
   returning accepted answers before a student can call it.
 - **Three integrations report "not configured" until their credentials are set**
-  — onMeeting, Google, Gemini. See [`deploy.md`](deploy.md) §2.
+  — Gateling Meetings (on `/settings`, by an admin), Google and Gemini (env,
+  [`deploy.md`](deploy.md) §2).
+- **Meetings are created when a class is started, not when it is scheduled**, so
+  the share link doesn't exist days ahead. Pre-creating rooms on schedule save
+  is the obvious next step (`ensureScheduledMeeting` in the client block already
+  does the create-or-reschedule dance); it was left out of the switch to keep
+  regeneration provider-free ([`integrations-meetings.md`](integrations-meetings.md)).
 
 ## What's next
 

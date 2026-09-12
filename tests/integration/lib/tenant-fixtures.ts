@@ -14,7 +14,6 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
-  MeetingAccountsTable,
   PlacementTestsTable,
   QuestionsTable,
   SessionStudentsTable,
@@ -197,18 +196,9 @@ export async function seedTenantData(tenant: TenantFixture) {
     })
     .returning({ id: CertificatesTable.id });
 
-  const [meetingAccount] = await db
-    .insert(MeetingAccountsTable)
-    .values({
-      organizationId,
-      name: "Isolation Room",
-      accountId: `isolation-${organizationId}`,
-      roomCode: `ISO-${organizationId.slice(0, 8)}`,
-      roomName: "Isolation Room",
-      createdBy: ACTOR,
-    })
-    .returning({ id: MeetingAccountsTable.id });
-
+  // Deliberately not started: the isolation suite asserts that a refused
+  // `startMeeting` leaves no meeting behind, so the row must begin without
+  // one — and nothing in this suite ever contacts Gateling Meetings.
   const [session] = await db
     .insert(SessionsTable)
     .values({
@@ -216,7 +206,6 @@ export async function seedTenantData(tenant: TenantFixture) {
       groupId: group.id,
       scheduledAt: new Date("2026-09-01T18:00:00Z"),
       durationMinutes: 120,
-      meetingAccountId: meetingAccount.id,
     })
     .returning({ id: SessionsTable.id });
 
@@ -269,7 +258,6 @@ export async function seedTenantData(tenant: TenantFixture) {
     groupStudentId: groupStudent.id,
     lectureId: lecture.id,
     levelId: level.id,
-    meetingAccountId: meetingAccount.id,
     placementTestId: placementTest.id,
     questionId: question.id,
     responseId: response.id,

@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertTriangleIcon,
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,10 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { H2, Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
+import {
+  parseSessionJoinResultCode,
+  SESSION_JOIN_RESULT_PARAM,
+} from "@/features/system/live-classes/sessions/lib/join-result";
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
 // The zod module directly, not the server barrel: the barrel also re-exports
 // the meeting code, which pulls the database driver into the client bundle.
@@ -32,16 +37,23 @@ const PER_PAGE = 20;
  * The org's live-class agenda: what is coming up, and what already ran.
  *
  * Days are the unit people think in, so rows are grouped under one heading per
- * day rather than listed flat — and the whole thing works with no Zoom
- * connected at all, which is the point of phase-06.md step 3's "sessions stay
- * offline gracefully".
+ * day rather than listed flat — and the whole thing works with no Gateling
+ * Meetings configured at all, which is the point of phase-06.md step 3's
+ * "sessions stay offline gracefully".
  */
 export function SessionsAgendaPage() {
   const { t, locale } = useTranslation();
   const trpc = useTRPC();
+  const searchParams = useSearchParams();
 
   const [scope, setScope] = useState<SessionScope>("upcoming");
   const [page, setPage] = useState(1);
+
+  // The join route lands back here when it couldn't send someone into a
+  // room, carrying only a fixed code (lib/join-result.ts) — never text.
+  const joinResult = parseSessionJoinResultCode(
+    searchParams.get(SESSION_JOIN_RESULT_PARAM),
+  );
 
   const { data: organization } = useQuery(
     trpc.organizations.getActive.queryOptions(),
@@ -72,13 +84,19 @@ export function SessionsAgendaPage() {
         <Muted>{t("sessions.lead")}</Muted>
       </div>
 
-      {data && !data.hasActiveMeetingAccount ? (
+      {joinResult ? (
+        <Alert variant="destructive">
+          <AlertTriangleIcon />
+          <AlertDescription>
+            {t(`sessions.errors.${joinResult}`)}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {data && !data.liveClassesEnabled ? (
         <Alert>
           <AlertDescription>
-            {t("sessions.noMeetingAccount")}{" "}
-            <Link className="underline" href="/live-classes/meeting-accounts">
-              {t("sessions.connectMeetingAccount")}
-            </Link>
+            {t("sessions.notConfiguredNotice")}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -118,9 +136,7 @@ export function SessionsAgendaPage() {
               <CardContent>
                 <SessionList
                   sessions={day.sessions}
-                  hasActiveMeetingAccount={
-                    data?.hasActiveMeetingAccount ?? false
-                  }
+                  liveClassesEnabled={data?.liveClassesEnabled ?? false}
                   timeZone={timeZone}
                   showGroup
                   canOpenRegister={isStaff}

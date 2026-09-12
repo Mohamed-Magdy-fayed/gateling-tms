@@ -5,8 +5,8 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   LibraryIcon,
-  PlugZapIcon,
   SettingsIcon,
+  SlidersHorizontalIcon,
   UserCheckIcon,
   UsersIcon,
   VideoIcon,
@@ -29,7 +29,7 @@ export type SystemNavItem = {
     | "nav.enrollments"
     | "nav.certificates"
     | "nav.liveClasses"
-    | "nav.meetingRooms";
+    | "nav.systemSettings";
   Icon: LucideIcon;
 };
 
@@ -40,11 +40,10 @@ export type SystemNavItem = {
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
  *
- * Live Classes is the session agenda; the Zoom connections page sits beside
- * it as its own entry rather than being the area's landing page — the agenda
- * is what people open daily, and it works whether or not Zoom is connected.
- * The attendance view lands in the next Phase 6 segment and gets its own
- * entry then.
+ * Live Classes is the session agenda, and it is the whole area: classes run
+ * on Gateling Meetings through one deployment-level integration, so there is
+ * nothing for an academy to connect and no "rooms" page beside it. The
+ * register is reached from a session row rather than the sidebar.
  */
 export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
   {
@@ -87,15 +86,6 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     translationKey: "nav.liveClasses",
     Icon: VideoIcon,
   },
-  {
-    // The Zoom equivalent (`/live-classes/zoom-clients`) is deliberately no
-    // longer in the sidebar: Zoom is being deleted in the next segment
-    // (STATE.md D142), and shipping two "connections" entries for one window
-    // would be more confusing than the page briefly being URL-only.
-    href: "/live-classes/meeting-accounts",
-    translationKey: "nav.meetingRooms",
-    Icon: PlugZapIcon,
-  },
 ];
 
 export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
@@ -103,5 +93,12 @@ export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
     href: "/organizations",
     translationKey: "nav.settings",
     Icon: SettingsIcon,
+  },
+  {
+    // Deployment-wide integrations (Gateling Meetings). Listed for everyone
+    // like the rest of the sidebar; the page itself is admin-only.
+    href: "/settings",
+    translationKey: "nav.systemSettings",
+    Icon: SlidersHorizontalIcon,
   },
 ];

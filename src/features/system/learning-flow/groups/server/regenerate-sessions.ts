@@ -35,9 +35,10 @@ const emptyRegeneration: RegenerationResult = { removed: 0, written: 0 };
  * upserts against `unique(groupId, scheduledAt)`, so running it twice — or
  * inline and queued at once — converges on the same rows.
  *
- * This tells no provider anything (STATE.md D143). onMeeting meetings are
- * created when a class is started, not ahead of it, so a dropped occurrence
- * has no meeting to cancel and a new one has no meeting to provision.
+ * This tells no provider anything (STATE.md D143). Gateling Meetings rooms
+ * are created when a class is started, not ahead of it, so a dropped
+ * occurrence has no meeting to cancel and a new one has no meeting to
+ * provision.
  */
 export async function regenerateGroupSessions({
   db,
@@ -109,8 +110,7 @@ export async function regenerateGroupSessions({
       eq(SessionsTable.status, "scheduled"),
       gt(SessionsTable.scheduledAt, regeneratedAt),
       // Untouched by anyone starting it — see the note below.
-      isNull(SessionsTable.meetingAccountId),
-      isNull(SessionsTable.meetingNumber),
+      isNull(SessionsTable.meetingCode),
       keptTimes.length > 0
         ? notInArray(SessionsTable.scheduledAt, keptTimes)
         : undefined,
@@ -118,14 +118,12 @@ export async function regenerateGroupSessions({
 
     // Only future, still-`scheduled` rows reach here, and a class nobody
     // started has no meeting — so a dropped occurrence leaves nothing behind
-    // at onMeeting to clean up.
+    // on Gateling Meetings to clean up.
     //
-    // "Nobody started it" is checked, not assumed. A session is claimed
-    // (`meetingAccountId` written) a moment before its meeting exists and
-    // before its status leaves `scheduled`, so a schedule edit landing in that
-    // window would otherwise delete a class somebody is in the middle of
-    // starting — and the teacher would be handed a link to a meeting whose
-    // session row no longer exists.
+    // "Nobody started it" is checked, not assumed: the meeting code is
+    // written in the same statement that moves the status off `scheduled`,
+    // so the two conditions agree, and a schedule edit landing while a start
+    // is in flight deletes nothing that is about to hold a room.
     const removed = await trx
       .delete(SessionsTable)
       .where(staleCondition)

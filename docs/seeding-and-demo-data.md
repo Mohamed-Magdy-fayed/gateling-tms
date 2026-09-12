@@ -30,34 +30,32 @@ content, rather than needing a second login to see it:
 - **3 groups** with weekly schedules, each expanded into up to 12 generated sessions via the same
   pure `generateSessionOccurrences` expander the real `group/schedule-changed` Inngest function
   uses (`src/features/system/learning-flow/groups/server/schedule.ts`). One group ("Beginner Batch
-  A") is onMeeting-fixture-connected — see "onMeeting fixture data" below.
+  A") is seeded as already started — see "Meeting fixture data" below.
 - **25 trainees**, split across the three groups' rosters, with enrollments spanning the full
   status lifecycle (`completed` → a certificate, `ongoing`, `waiting`, `placementTest`,
   `postponed`/`cancelled`), level-progress rows for anything past `waiting`, and manually-recorded
-  attendance on the earliest 4 sessions of the onMeeting-connected group.
+  attendance on the earliest 4 sessions of that started group.
 
 All names/emails/phones are hand-authored, deterministic literal data
 (`src/drizzle/seed/profiles/demo/data.ts`) — no data-generation library is approved
 (`docs/rebuild/02-dependencies.md` has no faker-style package), and adding one wasn't justified
 for a one-off dataset.
 
-#### onMeeting fixture data
+#### Meeting fixture data
 
-No real onMeeting credentials exist in dev/CI, and nothing in this profile calls the real onMeeting
-API. Instead, `seedDemoMeetingAccountFixture` inserts a `meeting_accounts` row with
-`status: "active"` and obviously-fake credential strings (`"fixture:not-a-real-key"`, written
-without `encryptToken` and never read back by the seed), and the connected group's generated
-sessions get plausible `meetingNumber`/`joinUrl`/`startUrl` fields written directly at insert time.
+Nothing in this profile contacts Gateling Meetings. "Beginner Batch A"'s generated sessions are
+written as if a host had already pressed "Start class": `status: "ongoing"`, a Meetings-shaped
+`meetingCode` (`fix-demo-001`…), a `joinUrl` on `https://meetings.example.test` — a host that never
+resolves — and `meetingHostUserId` set to the seeded teacher.
 
-Those strings are not ciphertext, so **anything that does try to use them fails deliberately**: the
-fixture room is `active`, so pressing "Start class" on one of the demo group's *unstarted* sessions
-will select it, fail to decrypt, mark that room `error` with the reason, and refuse — which is the
-same path a real room with rotated credentials takes, and a reasonable thing for a demo dataset to
-be able to show. It never reaches onMeeting.
+That last field is what makes the fixture worth having: signed in as the teacher, those rows show
+**"Start class"** (the host link); signed in as the admin they show **"Join"** — the two states a demo
+has to show, and the two `e2e/journey/meetings-fixture-session.spec.ts` asserts. Neither link is
+ever followed in CI: following one asks Meetings for a signed URL, and there is nothing to answer.
 
-That last part is what makes the fixture worth having: a real session gets those fields **only when
-a host presses "Start class"** (STATE.md D143), so without it there would be no way to see the
-already-started state in a screenshot or an e2e run. Nothing here ever reaches `onmeeting.co`.
+A real session gets those fields **only when a host presses "Start class"** (STATE.md D143), so
+without the fixture there would be no way to see the already-started state in a screenshot or an
+e2e run.
 
 ### 3. `performance`
 
@@ -85,7 +83,7 @@ src/drizzle/seed/
     demo/
       index.ts                 # orchestrator
       content.ts                 # courses/levels/lectures/quiz forms
-      groups.ts                   # groups/sessions + the onMeeting fixture
+      groups.ts                   # groups/sessions + the started-class fixture
       trainees.ts                  # trainees/enrollments/attendance/certificates
       data.ts                       # hand-authored literal content
     performance.ts
