@@ -21,34 +21,6 @@ export type SystemSettingRow = {
 };
 
 /**
- * Whoever wrote a row that no human did. Rows are created lazily the first
- * time they are needed (below), so a deployment that was never seeded still
- * has something for an admin to edit.
- */
-const SYSTEM_ACTOR = "system";
-
-/**
- * Guarantees one row per registry code. Insert-or-ignore on the unique
- * `code`, so it is safe from a request path, a seed, and two of either at
- * once — the registry is the source of which rows should exist, the table
- * only the source of their values.
- */
-export async function ensureSystemSettingRows(db: Database): Promise<void> {
-  await db
-    .insert(SettingsTable)
-    .values(
-      SYSTEM_SETTINGS.map((definition) => ({
-        code: definition.code,
-        label: definition.label,
-        value: definition.seedValue,
-        isActive: true,
-        createdBy: SYSTEM_ACTOR,
-      })),
-    )
-    .onConflictDoNothing({ target: SettingsTable.code });
-}
-
-/**
  * Raw values by code, for the server code that *uses* a setting (the
  * Meetings client, the webhook receiver). Never reaches a tRPC response —
  * that is what `listSystemSettings` is for, and it masks.
@@ -72,12 +44,17 @@ export async function readSystemSettingValues(
   return values;
 }
 
-/** The admin's view: every registered setting, secrets reported but not shown. */
+/**
+ * The admin's view: every registered setting, secrets reported but not shown.
+ *
+ * The rows themselves are created by a data migration
+ * (`migrations/0024_seed_system_settings.sql`), which is how deployment data
+ * reaches every environment — never lazily from a request. A registry code
+ * with no row (a migration not yet written for it) still lists, as unset.
+ */
 export async function listSystemSettings(
   ctx: OrgTRPCContext,
 ): Promise<SystemSettingRow[]> {
-  await ensureSystemSettingRows(ctx.db);
-
   const rows = await ctx.db
     .select({
       code: SettingsTable.code,

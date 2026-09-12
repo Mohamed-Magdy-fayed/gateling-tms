@@ -1,6 +1,5 @@
 export { updateSystemSetting } from "./mutations";
 export {
-  ensureSystemSettingRows,
   listSystemSettings,
   readSystemSettingValues,
   type SystemSettingRow,

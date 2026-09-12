@@ -169,6 +169,13 @@
       "when": 1789245640190,
       "tag": "0023_cynical_mattie_franklin",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789250156703,
+      "tag": "0024_seed_system_settings",
+      "breakpoints": true
     }
   ]
 }

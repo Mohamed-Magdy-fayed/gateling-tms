@@ -69,8 +69,9 @@ The `settings` table (`src/drizzle/schemas/system/settings-table.ts`, migration
 | `00002` | Meetings API key | yes |
 | `00003` | Meetings webhook secret | yes |
 
-Rows are created insert-or-ignore on first use (`ensureSystemSettingRows`),
-so a deployment that was never seeded still has something to edit. Secrets
+The rows are created by the data migration `0024_seed_system_settings.sql`
+(a `drizzle-kit generate --custom` file) — deployment data always ships as
+a migration, never as a runtime insert or a seed script. Secrets
 are never returned to a browser: `settings.list` reports only whether one is
 set, and saving replaces it. The page and both procedures are
 `orgAdminProcedure` — organization admins own this, there is no separate

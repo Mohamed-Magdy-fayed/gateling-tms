@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { OrganizationsTable } from "@/drizzle/schema";
-import { ensureSystemSettingRows } from "@/features/system/settings/server/queries";
 import { seedIfMissing } from "../base";
 import {
   SEED_ADMIN_EMAIL,
@@ -28,11 +27,6 @@ import { seedMember } from "../lib/seed-member";
  * running this profile twice in a row is a no-op the second time.
  */
 export async function seedBaselineProfile() {
-  // Deployment-wide settings rows (the Meetings integration's key and secret,
-  // empty until an admin pastes them in). Insert-or-ignore, so it fits the
-  // additive-only rule and never touches a value someone has set.
-  await ensureSystemSettingRows(db);
-
   const organization = await seedIfMissing({
     label: `organization "${SEED_ORG_NAME}" (short code ${SEED_ORG_SHORT_CODE})`,
     find: async () => {

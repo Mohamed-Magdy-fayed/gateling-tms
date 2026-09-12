@@ -5,7 +5,6 @@ import {
   getSystemSettingDefinition,
   isSystemSettingCode,
 } from "../lib/system-settings-registry";
-import { ensureSystemSettingRows } from "./queries";
 import type { UpdateSystemSettingInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -35,16 +34,24 @@ export async function updateSystemSetting(
     });
   }
 
-  await ensureSystemSettingRows(ctx.db);
-
-  await ctx.db
+  const [updated] = await ctx.db
     .update(SettingsTable)
     .set({
       value,
       updatedBy: ctx.session.user.email ?? ctx.session.user.id,
       updatedAt: new Date(),
     })
-    .where(eq(SettingsTable.code, input.code));
+    .where(eq(SettingsTable.code, input.code))
+    .returning({ code: SettingsTable.code });
+
+  // A registered code with no row means its data migration hasn't landed —
+  // an operator problem to surface, not one to paper over from a request.
+  if (!updated) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("settings.errors.unknown"),
+    });
+  }
 
   return { code: input.code, hasValue: value !== null };
 }
