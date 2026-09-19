@@ -2,6 +2,8 @@ import { ThemeProvider } from "next-themes";
 import type { PropsWithChildren } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getAuth } from "@/features/core/auth/nextjs/actions";
+import { AuthProvider } from "@/features/core/auth/nextjs/components/auth-provider";
 import { TranslationProvider } from "@/features/core/i18n/client";
 import { TRPCReactProvider } from "@/integrations/trpc/client";
 
@@ -16,7 +18,8 @@ type ProvidersProps = PropsWithChildren<{
   nonce?: string;
 }>;
 
-export function Providers({ children, locale, nonce }: ProvidersProps) {
+export async function Providers({ children, locale, nonce }: ProvidersProps) {
+  const user = await getAuth();
   return (
     <ThemeProvider
       attribute="class"
@@ -27,8 +30,10 @@ export function Providers({ children, locale, nonce }: ProvidersProps) {
       <TranslationProvider defaultLocale={locale} fallbackLocale="en">
         <TRPCReactProvider>
           <TooltipProvider>
-            {children}
-            <Toaster visibleToasts={3} />
+            <AuthProvider value={user}>
+              {children}
+              <Toaster visibleToasts={3} />
+            </AuthProvider>
           </TooltipProvider>
         </TRPCReactProvider>
       </TranslationProvider>
