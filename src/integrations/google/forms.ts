@@ -142,7 +142,11 @@ const itemSchema = z.object({
 export const googleFormSchema = z.object({
   formId: z.string().min(1),
   info: z.object({
-    title: z.string(),
+    // Google marks this required, but its JSON is proto3: a field holding its
+    // default value is left out, so a form whose header title was left blank
+    // arrives with no `title` key at all. The mapper falls back to a
+    // placeholder.
+    title: z.string().optional(),
     documentTitle: z.string().optional(),
     description: z.string().optional(),
   }),

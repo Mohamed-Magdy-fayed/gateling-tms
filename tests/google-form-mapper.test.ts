@@ -419,6 +419,18 @@ describe("mapGoogleForm — question types", () => {
 
     expect(questionsOf(mapped.sections[0])[0].text).toBe("Untitled");
   });
+
+  test("falls back to a placeholder when Google omits the form title", () => {
+    const mapped = mapGoogleForm(
+      form({
+        info: { documentTitle: "Untitled form" },
+        items: [choiceItem("Q1", "RADIO", ["A"])],
+      }),
+    );
+
+    expect(mapped.title).toBe("Untitled");
+    expect(mapped.sections[0].title).toBe("Untitled");
+  });
 });
 
 /**

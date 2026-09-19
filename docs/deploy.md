@@ -10,7 +10,7 @@ true for a deploy to work, and where to look when one doesn't.
 
 | | **dev** | **preview** | **production** |
 |---|---|---|---|
-| App | `npm run dev` (localhost:3000) | Vercel preview deploy, one per PR | Vercel production → `tms.gateling.com` |
+| App | `npm run dev` (localhost:3000) | `tmstest.gateling.com` ← the standing `preview` branch (§1a), plus one deploy per PR | Vercel production → `tms.gateling.com` |
 | Postgres | local Docker (`docker compose up -d`) | Neon branch DB per preview | Neon main branch |
 | Redis | Upstash dev database | Upstash preview database | Upstash prod database |
 | Email | SMTP dev/log transport | real SMTP, test inbox | real SMTP |
@@ -19,6 +19,28 @@ true for a deploy to work, and where to look when one doesn't.
 | Google OAuth | dev credentials, localhost redirect | dev credentials, preview redirect | prod credentials |
 | Gateling Meetings | local Meetings stack, or none — set on `/settings` | preview integration on meetings.gateling.com, set on `/settings` | production integration, set on `/settings` |
 | Env vars live in | `.env` (gitignored) | Vercel → **Preview** scope | Vercel → **Production** scope |
+
+### 1a. The `preview` branch — pre-production
+
+`preview` is a long-lived branch, not a feature branch. It is where every
+change is tested against a real deployment before it reaches `master`, and it
+is the only branch besides `master` that is never deleted.
+
+- **Flow:** feature branch → merge (or fast-forward) into `preview` → push →
+  Vercel deploys it → Mohamed tests → PR into `master`. Nothing goes to
+  `master` that has not been on `preview` first.
+- **Stable URL: `tmstest.gateling.com`.** The domain is assigned to the
+  `preview` branch in Vercel → Domains, so the address to test on does not
+  change from push to push; each push replaces what it serves.
+- **Database:** the `preview` deploy migrates its own Neon branch (§2), so
+  migrations are exercised end to end before production sees them. When a
+  migration is destructive, re-branch preview's database from `main` first so
+  the test runs against a fresh copy of the current production schema.
+- **Same gates as production:** `npm run typecheck` and `npm run build` must
+  pass before pushing to `preview` — a red preview is a wasted deploy, not a
+  place to find type errors.
+- **Keep it converging on `master`:** after a release, fast-forward `preview`
+  to `master` so the two only ever differ by what is currently under test.
 
 **No sharing and no fallbacks across environments.** Encryption keys in
 particular are per-environment: `GOOGLE_TOKEN_ENCRYPTION_KEY` must be a
