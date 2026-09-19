@@ -2,7 +2,7 @@ import { eventType } from "inngest";
 import { z } from "zod";
 
 import { db } from "@/drizzle";
-import { regenerateGroupSessions } from "@/features/system/learning-flow/groups/server/regenerate-sessions";
+import { regenerateGroupSessions } from "@/features/system/students/groups/server/regenerate-sessions";
 import { inngest } from "../client";
 
 /**

@@ -4,7 +4,7 @@ import {
   enrollmentMutationSchema,
   enrollmentStatusSchema,
   listEnrollmentsInput,
-} from "@/features/system/learning-flow/enrollments/server/schemas";
+} from "@/features/system/students/enrollments/server/schemas";
 import { issueKeyAt } from "./test-utils";
 
 const traineeId = "3f1c0a3e-2b7d-4a55-9c1e-0d2f4b6a8c10";

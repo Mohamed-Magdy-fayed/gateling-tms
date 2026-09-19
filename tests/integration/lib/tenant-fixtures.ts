@@ -14,11 +14,13 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
+  PaymentsTable,
   PlacementTestsTable,
   QuestionsTable,
   SessionStudentsTable,
   SessionsTable,
   TestimonialsTable,
+  TraineeNotesTable,
   TraineesTable,
 } from "@/drizzle/schema";
 import type { TenantFixture } from "./harness";
@@ -196,6 +198,29 @@ export async function seedTenantData(tenant: TenantFixture) {
     })
     .returning({ id: CertificatesTable.id });
 
+  const [traineeNote] = await db
+    .insert(TraineeNotesTable)
+    .values({
+      organizationId,
+      traineeId: trainee.id,
+      body: "Isolation note",
+      createdBy: ACTOR,
+    })
+    .returning({ id: TraineeNotesTable.id });
+
+  const [payment] = await db
+    .insert(PaymentsTable)
+    .values({
+      organizationId,
+      traineeId: trainee.id,
+      enrollmentId: enrollment.id,
+      amount: 1500,
+      paidAt: "2026-09-01",
+      method: "cash",
+      createdBy: ACTOR,
+    })
+    .returning({ id: PaymentsTable.id });
+
   // Deliberately not started: the isolation suite asserts that a refused
   // `startMeeting` leaves no meeting behind, so the row must begin without
   // one — and nothing in this suite ever contacts Gateling Meetings.
@@ -258,6 +283,8 @@ export async function seedTenantData(tenant: TenantFixture) {
     groupStudentId: groupStudent.id,
     lectureId: lecture.id,
     levelId: level.id,
+    paymentId: payment.id,
+    traineeNoteId: traineeNote.id,
     placementTestId: placementTest.id,
     questionId: question.id,
     responseId: response.id,

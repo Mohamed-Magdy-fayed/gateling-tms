@@ -38,10 +38,28 @@ const timeZoneOptions = (
   Intl.supportedValuesOf?.("timeZone") ?? ["UTC", "Africa/Cairo"]
 ).map((zone) => ({ value: zone, label: zone.replace(/_/g, " ") }));
 
+// Every ISO 4217 code the runtime can format, labelled with its own name
+// where the browser knows one ("EGP — Egyptian Pound"). Depends on the
+// locale, so it is built per locale below rather than at module scope.
+function buildCurrencyOptions(locale: string) {
+  const codes = Intl.supportedValuesOf?.("currency") ?? ["EGP", "USD"];
+  const names =
+    typeof Intl.DisplayNames === "function"
+      ? new Intl.DisplayNames([locale], { type: "currency" })
+      : null;
+  return codes.map((code) => {
+    const name = names?.of(code);
+    return {
+      value: code,
+      label: name && name !== code ? `${code} — ${name}` : code,
+    };
+  });
+}
+
 type OrganizationProfileFormDialogProps = {
   organization: Pick<
     Organization,
-    "name" | "businessName" | "phone" | "website" | "timeZone"
+    "name" | "businessName" | "phone" | "website" | "timeZone" | "currency"
   >;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -52,7 +70,7 @@ export function OrganizationProfileFormDialog({
   onOpenChange,
   open,
 }: OrganizationProfileFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -65,9 +83,12 @@ export function OrganizationProfileFormDialog({
       phone: organization.phone ?? "",
       website: organization.website ?? "",
       timeZone: organization.timeZone,
+      currency: organization.currency,
     }),
     [organization],
   );
+
+  const currencyOptions = useMemo(() => buildCurrencyOptions(locale), [locale]);
 
   const form = useAppForm({
     defaultValues,
@@ -164,6 +185,16 @@ export function OrganizationProfileFormDialog({
                     label={t("organizations.profile.timeZoneLabel")}
                     description={t("organizations.profile.timeZoneHint")}
                     options={timeZoneOptions}
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name="currency">
+                {(field) => (
+                  <field.ComboboxOneField
+                    label={t("organizations.profile.currencyLabel")}
+                    description={t("organizations.profile.currencyHint")}
+                    options={currencyOptions}
                   />
                 )}
               </form.AppField>

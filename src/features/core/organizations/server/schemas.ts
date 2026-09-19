@@ -26,6 +26,19 @@ export function isSupportedTimeZone(value: string): boolean {
   }
 }
 
+/**
+ * True for any ISO 4217 code this runtime can format. Same approach as the
+ * time zone: `NumberFormat` throws a RangeError on a code it doesn't know.
+ */
+export function isSupportedCurrency(value: string): boolean {
+  try {
+    Intl.NumberFormat(undefined, { style: "currency", currency: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const organizationProfileSchema = z.object({
   name: z
     .string()
@@ -47,6 +60,15 @@ export const organizationProfileSchema = z.object({
     .refine(
       isSupportedTimeZone,
       translationKey("organizations.validation.invalidTimeZone"),
+    )
+    .optional(),
+  // Same shape as timeZone: optional so onboarding inherits the column
+  // default, validated against the runtime's own currency table.
+  currency: z
+    .string()
+    .refine(
+      isSupportedCurrency,
+      translationKey("organizations.validation.invalidCurrency"),
     )
     .optional(),
 });

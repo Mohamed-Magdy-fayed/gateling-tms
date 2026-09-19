@@ -15,12 +15,12 @@ vi.mock("@/integrations/inngest/client", () => ({
 
 const regenerateGroupSessions = vi.fn();
 vi.mock(
-  "@/features/system/learning-flow/groups/server/regenerate-sessions",
+  "@/features/system/students/groups/server/regenerate-sessions",
   () => ({ regenerateGroupSessions }),
 );
 
 const { createGroup, updateGroup } = await import(
-  "../src/features/system/learning-flow/groups/server/mutations"
+  "../src/features/system/students/groups/server/mutations"
 );
 
 const GROUP_ID = "11111111-1111-4111-8111-111111111111";

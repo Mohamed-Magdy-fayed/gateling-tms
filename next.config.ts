@@ -24,7 +24,7 @@ const securityHeaders = [
   // and scanners that only read this one.
   { key: "X-Frame-Options", value: "DENY" },
   // Full URL to our own origin, origin-only when leaving it: outbound links
-  // from a page like /learning-flow/trainees/<uuid> must not hand that id to
+  // from a page like /students/<uuid> must not hand that id to
   // the destination.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // The app asks for none of these. Denying them outright means an injected
@@ -42,6 +42,30 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // The students area used to live at /learning-flow, with the roster one
+  // level down at /learning-flow/trainees. Bookmarks and shared links from
+  // before the rename land on the same pages. Most specific first: the two
+  // trainee rules must win over the catch-all, which would otherwise send
+  // /learning-flow/trainees to a /students/trainees that doesn't exist.
+  async redirects() {
+    return [
+      {
+        source: "/learning-flow/trainees/:id",
+        destination: "/students/:id",
+        permanent: true,
+      },
+      {
+        source: "/learning-flow/trainees",
+        destination: "/students",
+        permanent: true,
+      },
+      {
+        source: "/learning-flow/:path*",
+        destination: "/students/:path*",
+        permanent: true,
+      },
+    ];
   },
 };
 

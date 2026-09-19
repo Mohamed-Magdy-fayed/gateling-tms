@@ -3,12 +3,12 @@ import { loadCourseExportRows } from "@/features/system/content-library/courses/
 import { courseImportTemplate } from "@/features/system/content-library/courses/server/import-template";
 import { loadLevelExportRows } from "@/features/system/content-library/levels/server/import-export";
 import { levelImportTemplate } from "@/features/system/content-library/levels/server/import-template";
-import { loadEnrollmentExportRows } from "@/features/system/learning-flow/enrollments/server/import-export";
-import { enrollmentImportTemplate } from "@/features/system/learning-flow/enrollments/server/import-template";
-import { loadGroupStudentExportRows } from "@/features/system/learning-flow/groups/server/import-export";
-import { groupStudentImportTemplate } from "@/features/system/learning-flow/groups/server/import-template";
-import { loadTraineeExportRows } from "@/features/system/learning-flow/trainees/server/import-export";
-import { traineeImportTemplate } from "@/features/system/learning-flow/trainees/server/import-template";
+import { loadEnrollmentExportRows } from "@/features/system/students/enrollments/server/import-export";
+import { enrollmentImportTemplate } from "@/features/system/students/enrollments/server/import-template";
+import { loadGroupStudentExportRows } from "@/features/system/students/groups/server/import-export";
+import { groupStudentImportTemplate } from "@/features/system/students/groups/server/import-template";
+import { loadTraineeExportRows } from "@/features/system/students/trainees/server/import-export";
+import { traineeImportTemplate } from "@/features/system/students/trainees/server/import-template";
 
 /**
  * Produces the organization's own rows keyed by the entity template's own

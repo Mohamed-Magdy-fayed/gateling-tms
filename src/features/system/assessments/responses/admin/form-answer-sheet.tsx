@@ -59,7 +59,7 @@ const TEXT_INPUT_TYPE: Partial<Record<QuestionType, "date" | "time">> = {
 /**
  * In-progress answers for one pass over a form.
  *
- * Shared by the assessments Preview tab and the learning-flow placement-test
+ * Shared by the assessments Preview tab and the students module's placement-test
  * runner: both are a staff member filling in the same form, and the payload
  * both send has to match what the scorer expects.
  */

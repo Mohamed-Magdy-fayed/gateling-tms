@@ -40,6 +40,20 @@ export const SessionsTable = pgTable(
     scheduledAt: timestamp({ withTimezone: true }).notNull(),
     durationMinutes: integer().notNull(),
     status: sessionStatusEnum().notNull().default("scheduled"),
+    // The weekly-pattern instant this row was generated *for*. Equal to
+    // `scheduledAt` when the generator writes it, and left alone when someone
+    // drags the class to another time on the calendar — so a regeneration can
+    // still tell "the Monday 18:00 occurrence" is accounted for by the row now
+    // sitting on Tuesday, rather than deleting it and minting a duplicate
+    // (groups/server/regenerate-sessions.ts). Nullable only for rows that
+    // predate the column; the migration backfills it, and readers coalesce to
+    // `scheduledAt` for safety.
+    plannedAt: timestamp({ withTimezone: true }),
+    // Set when a person edits the row from the calendar — moved it, resized
+    // it, or gave it a different teacher. Regeneration reshapes the plan but
+    // never overwrites what a human deliberately changed: a substitute teacher
+    // put on one class must survive the group being renamed.
+    adjustedAt: timestamp({ withTimezone: true }),
     // All three are plain single-column FKs rather than the composite
     // (organizationId, x) shape used elsewhere: Postgres nulls *every* column
     // named in a composite FK's SET NULL action, including the NOT NULL
@@ -81,6 +95,14 @@ export const SessionsTable = pgTable(
     unique("sessions_group_id_scheduled_at_unique").on(
       table.groupId,
       table.scheduledAt,
+    ),
+    // What regeneration upserts against now that a row's `scheduledAt` can
+    // drift from the pattern: one row per (group, pattern occurrence),
+    // wherever that row was later moved to. Postgres treats NULLs as
+    // distinct here, so legacy rows without a `plannedAt` never collide.
+    unique("sessions_group_id_planned_at_unique").on(
+      table.groupId,
+      table.plannedAt,
     ),
     // Phase 6's session_students hangs a composite FK off this pair.
     unique("sessions_organization_id_id_unique").on(

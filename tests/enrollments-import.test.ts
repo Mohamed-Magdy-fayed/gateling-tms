@@ -6,15 +6,24 @@ import {
   enrollmentPairKey,
   type ImportReferences,
   resolveEnrollmentRows,
-} from "../src/features/system/learning-flow/enrollments/server/import-resolution";
-import { enrollmentImportColumns } from "../src/features/system/learning-flow/enrollments/server/import-template";
-import { enrollmentImportRowSchema } from "../src/features/system/learning-flow/enrollments/server/schemas";
+} from "../src/features/system/students/enrollments/server/import-resolution";
+import { enrollmentImportColumns } from "../src/features/system/students/enrollments/server/import-template";
+import { enrollmentImportRowSchema } from "../src/features/system/students/enrollments/server/schemas";
 
 const validate = zodRowValidator(enrollmentImportRowSchema);
 const translateLabel = (key: string) => key;
 
-const EN_HEADERS = ["Id", "Trainee email", "Trainee name", "Course", "Status"];
-const AR_HEADERS = [
+const EN_HEADERS = ["Id", "Student email", "Student name", "Course", "Status"];
+const AR_HEADERS = ["المعرّف", "بريد الطالب", "اسم الطالب", "الدورة", "الحالة"];
+// What the same templates said before students were called students.
+const LEGACY_EN_HEADERS = [
+  "Id",
+  "Trainee email",
+  "Trainee name",
+  "Course",
+  "Status",
+];
+const LEGACY_AR_HEADERS = [
   "المعرّف",
   "بريد المتدرب",
   "اسم المتدرب",
@@ -87,8 +96,18 @@ function row(rowNumber: number, values: Record<string, string>) {
 
 describe("enrollments template headers", () => {
   test("matches the English template's own headers", () => {
-    expect(mapHeaders(EN_HEADERS, enrollmentImportColumns).missingRequiredKeys)
-      .toEqual([]);
+    expect(
+      mapHeaders(EN_HEADERS, enrollmentImportColumns).missingRequiredKeys,
+    ).toEqual([]);
+  });
+
+  test("still matches the headers of a file exported when students were trainees", () => {
+    for (const headers of [LEGACY_EN_HEADERS, LEGACY_AR_HEADERS]) {
+      const mapping = mapHeaders(headers, enrollmentImportColumns);
+      expect(mapping.unknownHeaders).toEqual([]);
+      expect(mapping.columnIndexByKey.traineeEmail).toBe(1);
+      expect(mapping.columnIndexByKey.traineeName).toBe(2);
+    }
   });
 
   test("matches the Arabic template's headers, so a downloaded template round-trips", () => {
@@ -142,7 +161,9 @@ describe("enrollmentImportRowSchema", () => {
 
     expect(result).toEqual({
       ok: false,
-      errors: [{ column: "status", message: "import.validation.invalidStatus" }],
+      errors: [
+        { column: "status", message: "import.validation.invalidStatus" },
+      ],
     });
   });
 });
@@ -212,9 +233,7 @@ describe("resolveEnrollmentRows", () => {
   test("rejects a course this organization doesn't have instead of creating one", () => {
     const result = resolveEnrollmentRows(
       {
-        valid: [
-          row(2, { traineeEmail: "sara@x.com", courseName: "Business" }),
-        ],
+        valid: [row(2, { traineeEmail: "sara@x.com", courseName: "Business" })],
         invalid: [],
       },
       references,

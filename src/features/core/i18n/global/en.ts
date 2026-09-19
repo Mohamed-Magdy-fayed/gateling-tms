@@ -9,7 +9,7 @@ export default {
   nav: {
     dashboard: "Dashboard",
     contentLibrary: "Content Library",
-    learningFlow: "Learning Flow",
+    students: "Students",
     groups: "Groups",
     enrollments: "Enrollments",
     certificates: "Certificates",
@@ -293,6 +293,7 @@ export default {
     validation: {
       invalidWebsite: "Enter a valid website URL.",
       invalidTimeZone: "Choose a valid time zone.",
+      invalidCurrency: "Choose a valid currency.",
     },
     plan: {
       free: "Free",
@@ -310,6 +311,9 @@ export default {
       timeZoneLabel: "Time zone",
       timeZoneHint:
         "Class schedules and session times are shown on this clock.",
+      currencyLabel: "Currency",
+      currencyHint:
+        "Student payments are recorded and totalled in this currency.",
       saveSuccess: "Organization updated.",
       saveFailed: "Could not update the organization.",
     },
@@ -477,31 +481,101 @@ export default {
     moveDown: "Move down",
   },
   trainees: {
-    title: "Trainees",
-    lead: "Your student roster — add trainees directly, no invitation or account required.",
+    title: "Students",
+    lead: "Everyone enrolled at your academy. Open a student to see their profile — notes, payments, courses, groups and certificates.",
+    profile: "Student profile",
+    viewProfile: "View profile",
     name: "Name",
     phone: "Phone",
     email: "Email",
-    add: "Add trainee",
-    edit: "Edit trainee",
-    addDescription: "Add a new trainee to this organization.",
-    editDescription: "Update this trainee's details.",
-    created: "Trainee added.",
-    updated: "Trainee updated.",
-    saveFailed: "Could not save trainee.",
-    deleteTitle: "Delete trainee?",
+    add: "Add student",
+    edit: "Edit student",
+    addDescription: "Add a new student to this organization.",
+    editDescription: "Update this student's details.",
+    created: "Student added.",
+    updated: "Student updated.",
+    saveFailed: "Could not save student.",
+    deleteTitle: "Delete student?",
     deleteDescription:
       "Remove {name}. This can't be undone once they have enrollments or certificates.",
-    deleted: "Trainee deleted.",
-    deleteFailed: "Could not delete trainee.",
-    searchHint: "Search trainees…",
-    notFoundTitle: "Trainee not found",
+    deleted: "Student deleted.",
+    deleteFailed: "Could not delete student.",
+    searchHint: "Search students…",
+    notFoundTitle: "Student not found",
     notFoundDescription:
-      "This trainee may have been deleted, or belongs to another organization.",
-    groupsLead: "The classes this trainee attends.",
+      "This student may have been deleted, or belongs to another organization.",
+    groupsLead: "The classes this student attends.",
     groupsEmptyTitle: "Not in any group yet",
     groupsEmptyDescription:
-      "Add this trainee to a group from the group's own roster.",
+      "Add this student to a group from the group's own roster.",
+  },
+  traineeNotes: {
+    title: "Notes",
+    lead: "Staff notes about this student — calls, requests, anything the next person should know.",
+    add: "Add note",
+    edit: "Edit note",
+    formDescription:
+      "Notes are visible to admins and teachers only, never to the student.",
+    body: "Note",
+    bodyPlaceholder: "What should the team remember about this student?",
+    created: "Note added.",
+    updated: "Note updated.",
+    saveFailed: "Could not save the note.",
+    deleteTitle: "Delete note?",
+    deleteDescription: "This note is removed for good.",
+    deleted: "Note deleted.",
+    deleteFailed: "Could not delete the note.",
+    emptyTitle: "No notes yet",
+    emptyDescription:
+      "Add the first note about this student — it stays on their profile for the whole team.",
+    loadFailedTitle: "Couldn't load notes",
+    byline: "{author} · {date}",
+    edited: "edited",
+  },
+  payments: {
+    title: "Payments",
+    lead: "What this student has paid, and when.",
+    totalPaid: "Total paid",
+    record: "Record payment",
+    edit: "Edit payment",
+    formDescription:
+      "Amounts are in {currency}. The currency is set in Organization settings.",
+    amount: "Amount ({currency})",
+    paidAt: "Paid on",
+    method: "Method",
+    methods: {
+      cash: "Cash",
+      bankTransfer: "Bank transfer",
+      instapay: "InstaPay",
+      wallet: "Mobile wallet",
+      card: "Card",
+      other: "Other",
+    },
+    course: "Course",
+    courseDescription: "The enrollment this payment is for, if any.",
+    noCourse: "No specific course",
+    reference: "Reference",
+    referenceDescription: "A receipt number or transfer reference.",
+    note: "Note",
+    recorded: "Payment recorded.",
+    updated: "Payment updated.",
+    saveFailed: "Could not save the payment.",
+    deleteTitle: "Delete payment?",
+    deleteDescription:
+      "Remove the {amount} payment from this student's record. This can't be undone.",
+    deleted: "Payment deleted.",
+    deleteFailed: "Could not delete the payment.",
+    emptyTitle: "No payments recorded",
+    emptyDescription:
+      "Record what this student has paid so the whole team can see it here.",
+    loadFailedTitle: "Couldn't load payments",
+    enrollmentNotFound: "That enrollment doesn't belong to this student.",
+    validation: {
+      amount: "Enter an amount greater than zero.",
+      amountMax: "That amount is too large.",
+      amountPrecision: "Use at most two decimal places.",
+      date: "Enter a valid date.",
+    },
   },
   import: {
     action: "Import",
@@ -571,10 +645,10 @@ export default {
     },
     validation: {
       invalidId: "This id isn't a valid identifier.",
-      unknownId: "No trainee in this organization has this id.",
+      unknownId: "No student in this organization has this id.",
       duplicateId: "This id appears in an earlier row.",
       duplicateEmail: "This email appears in an earlier row.",
-      duplicateTrainee: "An earlier row already updates this trainee.",
+      duplicateTrainee: "An earlier row already updates this student.",
       duplicateName: "This name appears in an earlier row.",
       unknownCourseId: "No course in this organization has this id.",
       duplicateCourse: "An earlier row already updates this course.",
@@ -586,20 +660,20 @@ export default {
       duplicateLevelName:
         "This level name appears in an earlier row for the same course.",
       invalidOrder: "The position must be a whole number.",
-      traineeRequired: "Give the trainee's email or name.",
-      unknownTrainee: "No trainee in this organization matches this.",
+      traineeRequired: "Give the student's email or name.",
+      unknownTrainee: "No student in this organization matches this.",
       ambiguousTrainee:
-        "More than one trainee has this name. Use their email instead.",
+        "More than one student has this name. Use their email instead.",
       unknownEnrollmentId: "No enrollment in this organization has this id.",
       enrollmentMismatch:
-        "This id belongs to a different trainee or course. Leave it blank to enrol them in this course.",
+        "This id belongs to a different student or course. Leave it blank to enrol them in this course.",
       duplicateEnrollment:
-        "An earlier row already enrols this trainee in this course.",
+        "An earlier row already enrols this student in this course.",
       invalidStatus: "This isn't one of the allowed statuses.",
       invalidTransition:
         "This enrollment can't move straight to that status. See the Reference sheet for the allowed steps.",
       duplicateMembership:
-        "An earlier row already adds this trainee to this group.",
+        "An earlier row already adds this student to this group.",
     },
     courses: {
       action: "Import courses",
@@ -638,17 +712,17 @@ export default {
       title: "Enrollments",
       columns: {
         id: "Id",
-        traineeEmail: "Trainee email",
-        traineeName: "Trainee name",
+        traineeEmail: "Student email",
+        traineeName: "Student name",
         courseName: "Course",
         status: "Status",
       },
       hints: {
         id: "Leave blank for a new enrollment. Keep the value when re-importing an export to update that enrollment instead of adding another.",
         traineeEmail:
-          "The trainee's email. Used first when both columns are filled — it's the only one that identifies a person unambiguously.",
+          "The student's email. Used first when both columns are filled — it's the only one that identifies a person unambiguously.",
         traineeName:
-          "Used only when no email is given. Refused if two trainees share the name.",
+          "Used only when no email is given. Refused if two students share the name.",
         courseName: "Required. The course must already exist.",
         status:
           "Optional. One of: placementTest, waiting, ongoing, completed, cancelled, postponed. Blank means waiting for a new enrollment, and leaves an existing one unchanged. Changing an existing enrollment can only follow these steps: placementTest → waiting or cancelled; waiting → ongoing, postponed or cancelled; ongoing → completed, postponed or cancelled; postponed → ongoing or cancelled. Completed and cancelled are final.",
@@ -659,20 +733,20 @@ export default {
       title: "Group assignments",
       columns: {
         groupName: "Group",
-        traineeEmail: "Trainee email",
-        traineeName: "Trainee name",
+        traineeEmail: "Student email",
+        traineeName: "Student name",
       },
       hints: {
         groupName:
           "Required. A group with this name is created if it doesn't exist yet — with no schedule, so no sessions are generated.",
         traineeEmail:
-          "The trainee's email. Used first when both columns are filled.",
+          "The student's email. Used first when both columns are filled.",
         traineeName:
-          "Used only when no email is given. Refused if two trainees share the name.",
+          "Used only when no email is given. Refused if two students share the name.",
       },
     },
     trainees: {
-      title: "Trainees",
+      title: "Students",
       columns: {
         id: "Id",
         name: "Name",
@@ -681,13 +755,13 @@ export default {
         groupName: "Group",
       },
       hints: {
-        id: "Leave blank for a new trainee. Keep the value when re-importing an export to update that trainee instead of adding another.",
-        name: "Required. The trainee's full name.",
+        id: "Leave blank for a new student. Keep the value when re-importing an export to update that student instead of adding another.",
+        name: "Required. The student's full name.",
         phone: "Optional. Any format, up to 32 characters.",
         email:
-          "Optional. Used to match an existing trainee when no id is given.",
+          "Optional. Used to match an existing student when no id is given.",
         groupName:
-          "Optional. The trainee is added to this group; a group with this name is created if it doesn't exist yet.",
+          "Optional. The student is added to this group; a group with this name is created if it doesn't exist yet.",
       },
     },
   },
@@ -753,21 +827,21 @@ export default {
       lead: "{count:number} on the roster",
       add: "Add students",
       addDescription:
-        "Pick existing trainees, or create a new one without leaving this screen.",
-      createNew: "Create a new trainee",
+        "Pick existing students, or create a new one without leaving this screen.",
+      createNew: "Create a new student",
       selected: "{count:number} selected",
       added: "Students added.",
       addFailed: "Could not add students.",
       remove: "Remove from group",
       removeTitle: "Remove from group?",
       removeDescription:
-        "Remove {name} from this group. Their trainee record and other groups are unaffected.",
+        "Remove {name} from this group. Their student record and other groups are unaffected.",
       removed: "Student removed from group.",
       removeFailed: "Could not remove student.",
       emptyTitle: "No students yet",
       emptyDescription: "Add students to this group to get started.",
-      searchHint: "Search trainees…",
-      noneAvailable: "Every trainee is already in this group.",
+      searchHint: "Search students…",
+      noneAvailable: "Every student is already in this group.",
     },
     sessions: {
       title: "Sessions",
@@ -801,12 +875,12 @@ export default {
       tooManySlots: "That's too many weekly slots.",
       tooManyStudents: "Too many students selected at once.",
     },
-    noTraineesToAdd: "None of those trainees are available to add.",
+    noTraineesToAdd: "None of those students are available to add.",
   },
   enrollments: {
     title: "Enrollments",
-    lead: "Who is studying what — enroll a trainee in a course and track their progress through its levels.",
-    trainee: "Trainee",
+    lead: "Who is studying what — enroll a student in a course and track their progress through its levels.",
+    trainee: "Student",
     course: "Course",
     status: "Status",
     enrolledAt: "Enrolled",
@@ -818,10 +892,10 @@ export default {
       cancelled: "Cancelled",
       postponed: "Postponed",
     },
-    add: "Enroll a trainee",
+    add: "Enroll a student",
     addDescription:
-      "Enroll a trainee in a course. Group membership doesn't require this — an enrollment adds curriculum tracking on top.",
-    created: "Trainee enrolled.",
+      "Enroll a student in a course. Group membership doesn't require this — an enrollment adds curriculum tracking on top.",
+    created: "Student enrolled.",
     saveFailed: "Could not save enrollment.",
     changeStatus: "Change status",
     changeStatusDescription: "Move {name} to a new status.",
@@ -833,15 +907,15 @@ export default {
       "Remove {name}'s enrollment along with its level progress. This can't be undone.",
     deleted: "Enrollment deleted.",
     deleteFailed: "Could not delete enrollment.",
-    searchHint: "Search by trainee or course…",
+    searchHint: "Search by student or course…",
     emptyTitle: "No enrollments yet",
     emptyDescription:
-      "Enroll a trainee in a course to start tracking their progress.",
-    traineeNotFound: "That trainee doesn't exist in this organization.",
+      "Enroll a student in a course to start tracking their progress.",
+    traineeNotFound: "That student doesn't exist in this organization.",
     courseNotFound: "That course doesn't exist in this organization.",
     levelNotFound: "That level isn't part of this enrollment's course.",
     alreadyEnrolled:
-      "This trainee already has an active enrollment in that course.",
+      "This student already has an active enrollment in that course.",
     invalidTransition:
       "That status change isn't allowed from the current status.",
     levels: {
@@ -862,7 +936,7 @@ export default {
   },
   placementTests: {
     title: "Placement tests",
-    lead: "Assess a trainee before they start, then assign the level they belong in.",
+    lead: "Assess a student before they start, then assign the level they belong in.",
     form: "Placement form",
     level: "Assigned level",
     noLevel: "Not assigned yet",
@@ -880,7 +954,7 @@ export default {
     },
     assign: "Assign a placement test",
     assignDescription:
-      "Pick a published placement form for this trainee to take.",
+      "Pick a published placement form for this student to take.",
     assigned: "Placement test assigned.",
     assignFailed: "Could not assign placement test.",
     run: "Record answers",
@@ -906,7 +980,7 @@ export default {
     deleteFailed: "Could not delete placement test.",
     emptyTitle: "No placement tests yet",
     emptyDescription:
-      "Assign a placement form to find out which level this trainee belongs in.",
+      "Assign a placement form to find out which level this student belongs in.",
     noPlacementForms:
       "No published placement forms yet — build one under Assessments first.",
     formNotFound: "That form doesn't exist in this organization.",
@@ -916,13 +990,13 @@ export default {
       "This placement test has no form — the one it used was deleted.",
     levelNotFound: "That level doesn't exist in this organization.",
     alreadyRecorded: "Answers have already been recorded for this test.",
-    notRecorded: "Record the trainee's answers before assigning a level.",
+    notRecorded: "Record the student's answers before assigning a level.",
     unanswered: "Answer at least one question.",
   },
   progress: {
     title: "Progress",
-    traineeLead: "Where this trainee stands across their courses and classes.",
-    groupLead: "How far this class has got, and each trainee within it.",
+    traineeLead: "Where this student stands across their courses and classes.",
+    groupLead: "How far this class has got, and each student within it.",
     levels: "Levels completed",
     levelsDetail: dt("{completed:number} of {total:number}", {}),
     sessions: "Sessions held",
@@ -940,26 +1014,26 @@ export default {
       "No attendance recorded yet — it fills in when a teacher marks the register.",
     emptyTitle: "Nothing to measure yet",
     traineeEmptyDescription:
-      "Enroll this trainee in a course or add them to a class, and their progress shows up here.",
+      "Enroll this student in a course or add them to a class, and their progress shows up here.",
     groupEmptyDescription:
-      "Add trainees to this class to track how they're getting on.",
+      "Add students to this class to track how they're getting on.",
   },
   certificates: {
     title: "Certificates",
-    lead: "Issue and keep a record of what each trainee has completed.",
-    searchHint: "Search by certificate or trainee",
+    lead: "Issue and keep a record of what each student has completed.",
+    searchHint: "Search by certificate or student",
     certificateTitle: "Certificate title",
     titleDescription:
       'What the certificate says, e.g. "Certificate of Completion — English B1".',
     course: "Course",
-    courseDescription: "Only courses this trainee has completed can be chosen.",
+    courseDescription: "Only courses this student has completed can be chosen.",
     noCourse: "No course",
     group: "Class",
     noGroup: "No class",
     issuedAt: "Issued",
     issue: "Issue certificate",
     issueDescription:
-      "Issue a certificate for this trainee. It stays on record and can be printed any time.",
+      "Issue a certificate for this student. It stays on record and can be printed any time.",
     issued: "Certificate issued.",
     issueFailed: "Could not issue the certificate.",
     view: "View",
@@ -970,17 +1044,17 @@ export default {
     revoke: "Revoke",
     revokeTitle: "Revoke certificate?",
     revokeDescription:
-      'Revoke "{name}". The record is removed for good — the trainee\'s enrollment history is untouched.',
+      'Revoke "{name}". The record is removed for good — the student\'s enrollment history is untouched.',
     revoked: "Certificate revoked.",
     revokeFailed: "Could not revoke the certificate.",
     emptyTitle: "No certificates yet",
     emptyDescription:
-      "Once a trainee completes a course or a class, issue their certificate here.",
+      "Once a student completes a course or a class, issue their certificate here.",
     loadFailedTitle: "Couldn't load certificates",
     notFoundTitle: "Certificate not found",
     notFoundDescription: "This certificate doesn't exist, or it was revoked.",
     groupNotFound: "That class doesn't exist in this organization.",
-    notEnrolled: "This trainee isn't enrolled in that course.",
+    notEnrolled: "This student isn't enrolled in that course.",
     courseNotCompleted:
       "Mark the enrollment completed before issuing a certificate for it.",
   },
@@ -1038,6 +1112,64 @@ export default {
       busy: "Gateling Meetings is busy right now. Try again in a moment.",
       unavailable: "Couldn't reach Gateling Meetings. Try again shortly.",
       notFound: "This class doesn't exist, or you're not on it.",
+      notEditable:
+        "This class has already started or finished, so it can't be moved.",
+      sameGroupSameTime: "This group already has a class at that time.",
+    },
+    validation: {
+      notOnGrid: "Times snap to 15 minutes — use :00, :15, :30 or :45.",
+      tooLong: "A class can't be longer than 12 hours.",
+    },
+    view: {
+      week: "Week",
+      list: "List",
+    },
+    calendar: {
+      today: "Today",
+      previousWeek: "Previous week",
+      nextWeek: "Next week",
+      teacher: "Teacher",
+      allTeachers: "All teachers",
+      legend: "Groups this week",
+      emptyWeek: "No classes this week.",
+      adjusted:
+        "Moved by hand — the group's weekly pattern no longer sets this class.",
+      // Only staff see this; a student's calendar has nothing to drag.
+      dragHint:
+        "Drag a class to move it, or drag its bottom edge to change how long it runs. Everything snaps to 15 minutes. Click a class for details.",
+      moved: "Class moved.",
+      moveFailed: "Couldn't move the class.",
+      openGroup: "Open group",
+    },
+    edit: {
+      title: "Edit class",
+      description:
+        "Change when this class runs, how long it is, or who teaches it. Regenerating the group's schedule keeps these changes.",
+      date: "Date",
+      startTime: "Start time",
+      duration: "Duration (minutes)",
+      teacher: "Teacher",
+      saved: "Class updated.",
+      saveFailed: "Couldn't update the class.",
+      // A warning, not a block: the person dragging knows things the
+      // availability table doesn't ("she said she can do Thursday").
+      outsideAvailability: "{name} isn't marked as available at this time.",
+    },
+    availability: {
+      edit: "Edit availability",
+      done: "Done",
+      hint: "Drag on the calendar to mark when {name} is available. Windows repeat every week. Use × on a window to remove it.",
+      legend: "Available",
+      remove: "Remove this window",
+      saved: "Availability updated.",
+      saveFailed: "Couldn't update availability.",
+      empty: "{name} has no availability yet.",
+      validation: {
+        tooManySlots: "That's too many availability windows.",
+      },
+      errors: {
+        forbidden: "You can only edit your own availability.",
+      },
     },
   },
   attendance: {
@@ -1059,7 +1191,7 @@ export default {
     notMarkedYet: "Not marked yet",
     emptyTitle: "No one on the roster",
     emptyDescription:
-      "Add trainees to this class and they'll appear here to be marked.",
+      "Add students to this class and they'll appear here to be marked.",
     openGroup: "Open the class",
     notFoundTitle: "Class not found",
     notFoundDescription: "This class doesn't exist, or it was removed.",
@@ -1462,7 +1594,7 @@ export default {
       enrollments: "Recent enrollments",
       certificates: "Recently issued certificates",
       emptyTitle: "Nothing yet",
-      enrollmentsEmpty: "Enroll a trainee in a course to see it here.",
+      enrollmentsEmpty: "Enroll a student in a course to see it here.",
       certificatesEmpty: "Certificates you issue show up here.",
     },
   },

@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import {
   and,
   asc,
@@ -13,6 +14,7 @@ import {
 import {
   GroupStudentsTable,
   GroupsTable,
+  OrganizationsTable,
   SessionsTable,
   TraineesTable,
   UsersTable,
@@ -22,8 +24,9 @@ import {
   isMeetingHost,
   sessionJoinPath,
 } from "../lib/session-links";
+import { weekBoundsInZone, weekStartOf } from "../lib/week";
 import { isLiveClassesEnabled } from "./meetings-config";
-import type { ListSessionsInput } from "./schemas";
+import type { ListSessionsInput, WeekSessionsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
 const sessionColumns = {
@@ -40,6 +43,7 @@ const sessionColumns = {
   // Never returned as-is: `toSessionRow` turns it into `isHost` for the one
   // viewer it names (lib/session-links.ts).
   meetingHostUserId: SessionsTable.meetingHostUserId,
+  adjustedAt: SessionsTable.adjustedAt,
 } as const;
 
 export type SessionRow = {
@@ -51,6 +55,13 @@ export type SessionRow = {
   groupName: string;
   teacherId: string | null;
   teacherName: string | null;
+  /**
+   * Whether a person changed this row on the calendar — moved it, resized
+   * it, or swapped its teacher — so it no longer follows the group's weekly
+   * pattern. The week view marks these so a deviation from the routine is
+   * visible at a glance.
+   */
+  isAdjusted: boolean;
   /**
    * The meeting's plain share link — null until the class has been started.
    * Safe for anyone on the roster: it is what staff paste into the class
@@ -117,6 +128,65 @@ export async function listSessions(
     total: Number(total),
     // Lets the UI tell "this deployment doesn't run live classes" apart from
     // "this class just hasn't been started yet".
+    liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
+  };
+}
+
+/**
+ * One calendar week of classes, Saturday to Friday on the academy's clock.
+ *
+ * `weekStart` has to be the week's first day: the calendar navigates by
+ * whole weeks and every cell it draws assumes the range starts on a
+ * Saturday, so a mid-week date would put the columns and the rows out of
+ * step. It is snapped here rather than rejected — a bookmarked URL from a
+ * viewer in another zone lands on the right week instead of an error.
+ *
+ * The teacher filter is applied in the query, not the client: a week can
+ * hold more classes than the agenda pages through, and the calendar wants
+ * exactly what it will draw.
+ */
+export async function listWeekSessions(
+  ctx: OrgTRPCContext,
+  input: WeekSessionsInput,
+) {
+  const organization = await ctx.db.query.OrganizationsTable.findFirst({
+    where: eq(OrganizationsTable.id, ctx.organizationId),
+    columns: { timeZone: true },
+  });
+  if (!organization) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("errors.notFound"),
+    });
+  }
+
+  const weekStart = weekStartOf(input.weekStart, organization.timeZone);
+  const bounds = weekBoundsInZone(weekStart, organization.timeZone);
+  if (!bounds) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: ctx.t("groups.validation.date"),
+    });
+  }
+
+  const rows = await selectSessions(
+    ctx,
+    and(
+      eq(SessionsTable.organizationId, ctx.organizationId),
+      ownClassesOnlyForStudents(ctx),
+      input.teacherId
+        ? eq(SessionsTable.teacherId, input.teacherId)
+        : undefined,
+      gte(SessionsTable.scheduledAt, bounds.start),
+      lt(SessionsTable.scheduledAt, bounds.end),
+    ),
+    true,
+  );
+
+  return {
+    weekStart,
+    timeZone: organization.timeZone,
+    rows: rows.map((row) => toSessionRow(ctx, row)),
     liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
   };
 }
@@ -201,11 +271,12 @@ function selectSessions(
 /** What `selectSessions` returns, before the link rules are applied. */
 type SessionQueryRow = Omit<
   SessionRow,
-  "joinUrl" | "hasMeeting" | "canStart" | "isHost" | "joinPath"
+  "joinUrl" | "hasMeeting" | "canStart" | "isHost" | "joinPath" | "isAdjusted"
 > & {
   meetingCode: string | null;
   joinUrl: string | null;
   meetingHostUserId: string | null;
+  adjustedAt: Date | null;
 };
 
 function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
@@ -220,6 +291,7 @@ function toSessionRow(ctx: OrgTRPCContext, row: SessionQueryRow): SessionRow {
     groupName: row.groupName,
     teacherId: row.teacherId,
     teacherName: row.teacherName,
+    isAdjusted: row.adjustedAt !== null,
     joinUrl: row.joinUrl,
     hasMeeting: row.meetingCode !== null,
     canStart: canHostSession(viewer, row.teacherId),

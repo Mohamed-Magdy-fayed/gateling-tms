@@ -2,12 +2,12 @@ import { describe, expect, test } from "vitest";
 import {
   MAX_GENERATED_SESSIONS,
   MAX_SCHEDULE_SLOTS,
-} from "@/features/system/learning-flow/groups/server/schedule";
+} from "@/features/system/students/groups/server/schedule";
 import {
   groupAddStudentsSchema,
   groupMutationSchema,
   groupScheduleSlotSchema,
-} from "@/features/system/learning-flow/groups/server/schemas";
+} from "@/features/system/students/groups/server/schemas";
 import { issueKeyAt } from "./test-utils";
 
 const validSlot = { day: 1, startTime: "18:00", endTime: "20:00" };

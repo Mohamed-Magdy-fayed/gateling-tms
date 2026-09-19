@@ -31,7 +31,7 @@ test("dashboard and groups render RTL in Arabic", async ({ page, context }) => {
 
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 
-  await page.goto("/learning-flow/groups");
+  await page.goto("/students/groups");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { name: "المجموعات" })).toBeVisible();
 });

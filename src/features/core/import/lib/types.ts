@@ -14,6 +14,11 @@ export type ImportColumn = {
   example: string;
   /** Format or valid-values note for the template's reference sheet. */
   hintKey?: MessageKey;
+  /**
+   * Headers this column used to be exported under, in any locale. A file
+   * downloaded before a label was reworded must keep importing unchanged.
+   */
+  legacyLabels?: string[];
 };
 
 /**

@@ -1,8 +1,8 @@
 import { courseImportTemplate } from "@/features/system/content-library/courses/server/import-template";
 import { levelImportTemplate } from "@/features/system/content-library/levels/server/import-template";
-import { enrollmentImportTemplate } from "@/features/system/learning-flow/enrollments/server/import-template";
-import { groupStudentImportTemplate } from "@/features/system/learning-flow/groups/server/import-template";
-import { traineeImportTemplate } from "@/features/system/learning-flow/trainees/server/import-template";
+import { enrollmentImportTemplate } from "@/features/system/students/enrollments/server/import-template";
+import { groupStudentImportTemplate } from "@/features/system/students/groups/server/import-template";
+import { traineeImportTemplate } from "@/features/system/students/trainees/server/import-template";
 import type { ImportTemplate } from "../lib";
 
 /**

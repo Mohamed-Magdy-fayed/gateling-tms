@@ -21,10 +21,11 @@ export function normalizeHeader(value: string): string {
 }
 
 /**
- * Every spelling of a column we accept as its header: the canonical key plus
- * its label in each supported locale, so a file downloaded as an Arabic
- * template re-imports unchanged, and so does one whose headers were typed by
- * hand in English.
+ * Every spelling of a column we accept as its header: the canonical key, its
+ * label in each supported locale, and any label it was exported under before
+ * a rewording — so a file downloaded as an Arabic template re-imports
+ * unchanged, and so does one whose headers were typed by hand in English or
+ * exported back when students were still called trainees.
  */
 export function headerAliases(column: ImportColumn): string[] {
   const labels = SUPPORTED_LOCALES.map((locale) =>
@@ -32,7 +33,9 @@ export function headerAliases(column: ImportColumn): string[] {
     // never has any, the same call shape `FormBase` uses for error keys.
     createI18n(mainTranslations, locale, "en").t(column.labelKey, {}),
   );
-  return [column.key, ...labels].map(normalizeHeader);
+  return [column.key, ...labels, ...(column.legacyLabels ?? [])].map(
+    normalizeHeader,
+  );
 }
 
 export type HeaderMapping = {

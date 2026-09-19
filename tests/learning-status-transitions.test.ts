@@ -7,7 +7,7 @@ import {
   ENROLLMENT_TRANSITIONS,
   isValidTransition,
   PLACEMENT_TEST_TRANSITIONS,
-} from "@/features/system/learning-flow/status-transitions";
+} from "@/features/system/students/status-transitions";
 
 describe("ENROLLMENT_TRANSITIONS", () => {
   test.each([

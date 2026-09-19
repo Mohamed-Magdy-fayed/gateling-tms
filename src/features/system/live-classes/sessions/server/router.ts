@@ -1,10 +1,17 @@
-import { createTRPCRouter, orgProcedure } from "@/integrations/trpc/init";
+import {
+  createTRPCRouter,
+  orgContentManagerProcedure,
+  orgProcedure,
+} from "@/integrations/trpc/init";
 import { createSessionJoinLink, startSessionMeeting } from "./meetings";
-import { listGroupSessions, listSessions } from "./queries";
+import { updateSession } from "./mutations";
+import { listGroupSessions, listSessions, listWeekSessions } from "./queries";
 import {
   listSessionsInput,
   sessionIdSchema,
   sessionsByGroupSchema,
+  sessionUpdateSchema,
+  weekSessionsInput,
 } from "./schemas";
 
 /**
@@ -20,9 +27,19 @@ export const sessionsRouter = createTRPCRouter({
   list: orgProcedure
     .input(listSessionsInput)
     .query(async ({ ctx, input }) => listSessions(ctx, input)),
+  // The calendar's week. Same visibility rules as `list`, so a student's
+  // week shows their own classes and nothing else's.
+  week: orgProcedure
+    .input(weekSessionsInput)
+    .query(async ({ ctx, input }) => listWeekSessions(ctx, input)),
   byGroup: orgProcedure
     .input(sessionsByGroupSchema)
     .query(async ({ ctx, input }) => listGroupSessions(ctx, input.groupId)),
+  // Moving a class is scheduling, which is staff work — any teacher may
+  // shuffle any class, the same way any teacher may edit any group.
+  update: orgContentManagerProcedure
+    .input(sessionUpdateSchema)
+    .mutation(async ({ ctx, input }) => updateSession(ctx, input)),
   /**
    * Creates the Gateling Meetings room for a session, on demand (STATE.md
    * D143).

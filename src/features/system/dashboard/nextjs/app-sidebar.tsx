@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { User } from "@/drizzle/schema";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import type { User } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import { OrganizationSwitcher } from "@/features/core/organizations/nextjs";
 import { GENERAL_NAV_ITEMS, SYSTEM_NAV_ITEMS } from "./nav";
@@ -30,12 +30,26 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
   const pathname = usePathname() ?? "/";
   const { t, dir } = useTranslation();
 
+  // The item whose href is the longest prefix of the current path is the
+  // active one. A plain prefix test would light up both "Students"
+  // (/students) and "Groups" (/students/groups) on the groups page, since
+  // the students area's sub-pages live under the students list's own path.
+  const activeHref = [...SYSTEM_NAV_ITEMS, ...GENERAL_NAV_ITEMS]
+    .map((item) => item.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
+
   function isActive(href: string) {
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return href === activeHref;
   }
 
   return (
-    <Sidebar collapsible="icon" variant="inset" side={dir === "rtl" ? "right" : "left"} dir={dir}>
+    <Sidebar
+      collapsible="icon"
+      variant="inset"
+      side={dir === "rtl" ? "right" : "left"}
+      dir={dir}
+    >
       <SidebarHeader>
         <OrganizationSwitcher activeOrganizationId={activeOrganizationId} />
       </SidebarHeader>
@@ -61,7 +75,9 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>{t("dashboard.nav.generalGroup")}</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {t("dashboard.nav.generalGroup")}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {GENERAL_NAV_ITEMS.map(({ href, translationKey, Icon }) => (
