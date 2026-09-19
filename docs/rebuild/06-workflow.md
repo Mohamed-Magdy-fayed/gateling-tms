@@ -13,6 +13,7 @@ How the agent works day-to-day. This is process law, same weight as `02-dependen
 - Repo is created **locally and on GitHub** in Phase 0 (`gh repo create` under Mohamed's account, private).
 - `master` is protected in spirit: the agent **never commits to master directly** after the Phase 0 bootstrap commit. All work goes through branches + PRs.
 - Branch naming: `phase-04/courses-crud`, `phase-02/google-oauth` (phase + segment slug).
+- **`preview` is the standing pre-production branch** (added 2026-09-19, see `docs/deploy.md` §1a). Every change is merged into `preview` and tested on its Vercel deployment before a PR to `master`. It is never deleted and never force-pushed; after a release it is fast-forwarded to `master`.
 - **Commit after every single coherent change** — one logical change per commit (a migration, a component, a router, a fix). Conventional messages (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`). Small commits are the review trail; never batch a day of work into one commit.
 - Push the branch after each commit (or at minimum before every message to Mohamed) so GitHub always mirrors local state.
 
