@@ -178,8 +178,11 @@ export async function fetchGoogleForm(
 
   const form = googleFormSchema.safeParse(payload);
   if (!form.success) {
+    // Names the offending fields so the server log says *what* Google sent
+    // that the schema did not expect. Never shown to the client — the caller
+    // replaces the message with a translated one.
     throw new GoogleApiError(
-      "Unexpected Google form payload.",
+      `Unexpected Google form payload: ${describeIssues(form.error)}`,
       response.status,
     );
   }
@@ -243,6 +246,12 @@ function googleErrorMessage(payload: unknown): string {
   if (error_description) return error_description;
   if (typeof error === "string") return error;
   return "Google request failed.";
+}
+
+function describeIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+    .join("; ");
 }
 
 async function readJson(response: Response): Promise<unknown> {
