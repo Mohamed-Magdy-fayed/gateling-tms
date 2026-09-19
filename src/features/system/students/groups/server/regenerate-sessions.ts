@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db as database } from "@/drizzle";
 import {
   GroupsTable,
@@ -108,6 +108,10 @@ export async function regenerateGroupSessions({
     // happens this week. Rows older than the column are matched by their
     // scheduled time, which is what `plannedAt` was backfilled from.
     const patternKey = sql`COALESCE(${SessionsTable.plannedAt}, ${SessionsTable.scheduledAt})`;
+    const keptTimesSql = sql.join(
+      keptTimes.map((time) => sql`${time.toISOString()}::timestamptz`),
+      sql`, `,
+    );
 
     // Only future, still-`scheduled` rows are disposable. Anything past,
     // ongoing, completed, or explicitly cancelled is history — a schedule
@@ -119,7 +123,9 @@ export async function regenerateGroupSessions({
       gt(SessionsTable.scheduledAt, regeneratedAt),
       // Untouched by anyone starting it — see the note below.
       isNull(SessionsTable.meetingCode),
-      keptTimes.length > 0 ? notInArray(patternKey, keptTimes) : undefined,
+      keptTimes.length > 0
+        ? sql`${patternKey} NOT IN (${keptTimesSql})`
+        : undefined,
     );
 
     // Only future, still-`scheduled` rows reach here, and a class nobody
