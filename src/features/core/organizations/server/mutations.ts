@@ -10,11 +10,10 @@ import {
 } from "@/drizzle/schema";
 import { normalizeEmail } from "@/features/core/auth/core/helpers";
 import { setActiveOrganization } from "@/features/core/auth/core/session";
-import type { TRPCContext } from "@/integrations/trpc/init";
 import { inngest } from "@/integrations/inngest/client";
 import { organizationMemberInvitedEvent } from "@/integrations/inngest/functions/on-organization-member-invited";
+import type { TRPCContext } from "@/integrations/trpc/init";
 import { loadValidInviteToken } from "./queries";
-import { generateUniqueOrganizationShortCode } from "./short-code";
 import type {
   AcceptInviteInput,
   InviteMemberInput,
@@ -23,6 +22,7 @@ import type {
   SwitchActiveOrganizationInput,
   UpdateMemberRoleInput,
 } from "./schemas";
+import { generateUniqueOrganizationShortCode } from "./short-code";
 import type { OrgTRPCContext } from "./types";
 
 function nullableTrim(value: string | undefined): string | null {
@@ -103,7 +103,9 @@ export async function createOrganizationForUser(
   // Unreachable — the loop above always either returns or throws on its
   // last attempt — but keeps the function's return type from needing
   // `undefined`.
-  throw new Error("createOrganizationForUser: retry loop exited without a result");
+  throw new Error(
+    "createOrganizationForUser: retry loop exited without a result",
+  );
 }
 
 export async function createOrganization(
@@ -136,6 +138,7 @@ export async function updateOrganization(
       // Left undefined when the caller didn't send one, which makes Drizzle
       // omit the column rather than overwrite the org's zone with a blank.
       timeZone: input.timeZone || undefined,
+      currency: input.currency || undefined,
     })
     .where(eq(OrganizationsTable.id, ctx.organizationId));
 
@@ -149,15 +152,13 @@ export async function switchActiveOrganization(
   const session = ctx.session;
   if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-  const membership = await ctx.db.query.OrganizationMembershipsTable.findFirst(
-    {
-      where: and(
-        eq(OrganizationMembershipsTable.userId, session.user.id),
-        eq(OrganizationMembershipsTable.organizationId, input.organizationId),
-      ),
-      columns: { organizationId: true },
-    },
-  );
+  const membership = await ctx.db.query.OrganizationMembershipsTable.findFirst({
+    where: and(
+      eq(OrganizationMembershipsTable.userId, session.user.id),
+      eq(OrganizationMembershipsTable.organizationId, input.organizationId),
+    ),
+    columns: { organizationId: true },
+  });
 
   if (!membership) {
     throw new TRPCError({
@@ -235,7 +236,9 @@ export async function acceptInvite(ctx: TRPCContext, input: AcceptInviteInput) {
 
   const { tokenRow, metadata } = await loadValidInviteToken(ctx, input.token);
 
-  if (normalizeEmail(metadata.email) !== normalizeEmail(session.user.email ?? "")) {
+  if (
+    normalizeEmail(metadata.email) !== normalizeEmail(session.user.email ?? "")
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: ctx.t("organizations.invite.emailMismatch"),
@@ -290,15 +293,13 @@ export async function updateMemberRole(
   input: UpdateMemberRoleInput,
 ) {
   await ctx.db.transaction(async (trx) => {
-    const membership = await trx.query.OrganizationMembershipsTable.findFirst(
-      {
-        where: and(
-          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-          eq(OrganizationMembershipsTable.userId, input.userId),
-        ),
-        columns: { role: true },
-      },
-    );
+    const membership = await trx.query.OrganizationMembershipsTable.findFirst({
+      where: and(
+        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+        eq(OrganizationMembershipsTable.userId, input.userId),
+      ),
+      columns: { role: true },
+    });
 
     if (!membership) {
       throw new TRPCError({
@@ -336,15 +337,13 @@ export async function removeMember(
   input: RemoveMemberInput,
 ) {
   await ctx.db.transaction(async (trx) => {
-    const membership = await trx.query.OrganizationMembershipsTable.findFirst(
-      {
-        where: and(
-          eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
-          eq(OrganizationMembershipsTable.userId, input.userId),
-        ),
-        columns: { role: true },
-      },
-    );
+    const membership = await trx.query.OrganizationMembershipsTable.findFirst({
+      where: and(
+        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+        eq(OrganizationMembershipsTable.userId, input.userId),
+      ),
+      columns: { role: true },
+    });
 
     if (!membership) {
       throw new TRPCError({

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   generateSessionOccurrences,
   MAX_GENERATED_SESSIONS,
-} from "@/features/system/learning-flow/groups/server/schedule";
+} from "@/features/system/students/groups/server/schedule";
 
 const CAIRO = "Africa/Cairo";
 

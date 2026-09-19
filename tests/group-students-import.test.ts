@@ -5,15 +5,15 @@ import {
   type GroupStudentReferences,
   membershipKey,
   resolveGroupStudentRows,
-} from "../src/features/system/learning-flow/groups/server/import-resolution";
-import { groupStudentImportColumns } from "../src/features/system/learning-flow/groups/server/import-template";
-import { groupStudentImportRowSchema } from "../src/features/system/learning-flow/groups/server/schemas";
+} from "../src/features/system/students/groups/server/import-resolution";
+import { groupStudentImportColumns } from "../src/features/system/students/groups/server/import-template";
+import { groupStudentImportRowSchema } from "../src/features/system/students/groups/server/schemas";
 
 const validate = zodRowValidator(groupStudentImportRowSchema);
 const translateLabel = (key: string) => key;
 
-const EN_HEADERS = ["Group", "Trainee email", "Trainee name"];
-const AR_HEADERS = ["المجموعة", "بريد المتدرب", "اسم المتدرب"];
+const EN_HEADERS = ["Group", "Student email", "Student name"];
+const AR_HEADERS = ["المجموعة", "بريد الطالب", "اسم الطالب"];
 
 const SARA = "11111111-1111-4111-8111-111111111111";
 const OMAR = "22222222-2222-4222-8222-222222222222";
@@ -109,7 +109,9 @@ describe("resolveGroupStudentRows", () => {
   test("treats a group name the organization doesn't have as one to create, not an error", () => {
     const result = resolveGroupStudentRows(
       {
-        valid: [row(2, { groupName: "Advanced B", traineeEmail: "omar@x.com" })],
+        valid: [
+          row(2, { groupName: "Advanced B", traineeEmail: "omar@x.com" }),
+        ],
         invalid: [],
       },
       references,

@@ -15,8 +15,8 @@ import {
   buildExportWorkbook,
   parseWorkbook,
 } from "../src/features/core/import/server/workbook";
-import { traineeImportColumns } from "../src/features/system/learning-flow/trainees/server/import-template";
-import { traineeImportRowSchema } from "../src/features/system/learning-flow/trainees/server/schemas";
+import { traineeImportColumns } from "../src/features/system/students/trainees/server/import-template";
+import { traineeImportRowSchema } from "../src/features/system/students/trainees/server/schemas";
 
 /**
  * The guarantee `phase-07.md` step 3 asks for: an export can be edited and

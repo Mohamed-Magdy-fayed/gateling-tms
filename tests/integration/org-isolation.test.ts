@@ -15,11 +15,13 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
+  PaymentsTable,
   PlacementTestsTable,
   QuestionsTable,
   SessionStudentsTable,
   SessionsTable,
   TestimonialsTable,
+  TraineeNotesTable,
   TraineesTable,
 } from "@/drizzle/schema";
 import {
@@ -35,7 +37,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  * (`docs/rebuild/README.md` rule 6, `phase-08.md` step 5's "org-isolation test
  * suite covers **every** tenant table").
  *
- * Two organizations, each with a row in all 21 tenant-owned tables. Every
+ * Two organizations, each with a row in all 23 tenant-owned tables. Every
  * assertion is org A's admin — a genuine, fully-authorized user — reaching for
  * org B's data by id. The caller goes through the real `orgProcedure`, which
  * resolves the membership from the database, so nothing here is stubbed except
@@ -46,8 +48,8 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  * Directly addressed by a route in this file:
  *   courses, levels, lectures, trainees, groups, group_students, enrollments,
  *   forms, form_sections, questions, form_blocks, answers, form_responses,
- *   placement_tests, certificates, sessions, session_students,
- *   testimonials, google_integrations
+ *   placement_tests, certificates, trainee_notes, payments, sessions,
+ *   session_students, testimonials, google_integrations
  *
  * Reachable only through a parent, and covered by that parent's refusal:
  *   enrollment_levels  → `enrollments.levels` (takes the enrollment id)
@@ -55,7 +57,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *     input at all; it is covered by asserting A's member list never contains
  *     B's admin.
  *
- * That is all 21. A new tenant-owned table must be added here in the same
+ * That is all 23. A new tenant-owned table must be added here in the same
  * change that adds the table.
  */
 
@@ -298,6 +300,23 @@ describe("scoped lists never contain another tenant's rows", () => {
   test("certificates.list", async () => {
     const result = await orgA.caller.certificates.list(listInput);
     expect(result.rows.map((row) => row.id)).not.toContain(dataB.certificateId);
+  });
+
+  // Both lists take the *other* tenant's trainee id outright, so the only
+  // thing keeping B's notes and payments out is the organizationId filter.
+  test("traineeNotes.list", async () => {
+    const result = await orgA.caller.traineeNotes.list({
+      traineeId: dataB.traineeId,
+    });
+    expect(result).toHaveLength(0);
+  });
+
+  test("payments.list", async () => {
+    const result = await orgA.caller.payments.list({
+      traineeId: dataB.traineeId,
+    });
+    expect(result.rows).toHaveLength(0);
+    expect(result.total).toBe(0);
   });
 
   test("forms.list", async () => {
@@ -559,6 +578,100 @@ describe("cross-tenant writes are refused and change nothing", () => {
       "certificates.delete",
     );
     expect(await rowCount(CertificatesTable, dataB.certificateId)).toBe(1);
+  });
+
+  test("traineeNotes.create refuses another org's trainee", async () => {
+    await expectTenantRefusal(
+      orgA.caller.traineeNotes.create({
+        traineeId: dataB.traineeId,
+        body: "Written from the wrong tenant",
+      }),
+      "traineeNotes.create",
+    );
+  });
+
+  test("traineeNotes.update leaves another org's note alone", async () => {
+    await expectTenantRefusal(
+      orgA.caller.traineeNotes.update({
+        id: dataB.traineeNoteId,
+        body: "Rewritten from the wrong tenant",
+      }),
+      "traineeNotes.update",
+    );
+    const [note] = await db
+      .select({ body: TraineeNotesTable.body })
+      .from(TraineeNotesTable)
+      .where(eq(TraineeNotesTable.id, dataB.traineeNoteId));
+    expect(note.body).toBe("Isolation note");
+  });
+
+  test("traineeNotes.delete leaves another org's note alone", async () => {
+    await expectTenantRefusal(
+      orgA.caller.traineeNotes.delete({ id: dataB.traineeNoteId }),
+      "traineeNotes.delete",
+    );
+    expect(await rowCount(TraineeNotesTable, dataB.traineeNoteId)).toBe(1);
+  });
+
+  test("payments.create refuses another org's trainee", async () => {
+    await expectTenantRefusal(
+      orgA.caller.payments.create({
+        traineeId: dataB.traineeId,
+        amount: 100,
+        paidAt: "2026-09-02",
+        method: "cash",
+        enrollmentId: "",
+        reference: "",
+        note: "",
+      }),
+      "payments.create",
+    );
+  });
+
+  // A's own trainee, but B's enrollment: the single-column enrollment FK
+  // (payments-table.ts) would accept this, so the mutation must not.
+  test("payments.create refuses attaching another org's enrollment", async () => {
+    await expectTenantRefusal(
+      orgA.caller.payments.create({
+        traineeId: dataA.traineeId,
+        amount: 100,
+        paidAt: "2026-09-02",
+        method: "cash",
+        enrollmentId: dataB.enrollmentId,
+        reference: "",
+        note: "",
+      }),
+      "payments.create (foreign enrollment)",
+    );
+  });
+
+  test("payments.update leaves another org's payment alone", async () => {
+    await expectTenantRefusal(
+      orgA.caller.payments.update({
+        id: dataB.paymentId,
+        traineeId: dataB.traineeId,
+        amount: 1,
+        paidAt: "2026-09-02",
+        method: "other",
+        enrollmentId: "",
+        reference: "",
+        note: "",
+      }),
+      "payments.update",
+    );
+    const [payment] = await db
+      .select({ amount: PaymentsTable.amount })
+      .from(PaymentsTable)
+      .where(eq(PaymentsTable.id, dataB.paymentId));
+    expect(payment.amount).toBe(1500);
+  });
+
+  test("payments.delete leaves another org's payment alone", async () => {
+    await expectTenantRefusal(
+      orgA.caller.payments.delete({ id: dataB.paymentId }),
+      "payments.delete",
+    );
+    expect(await rowCount(PaymentsTable, dataB.paymentId)).toBe(1);
   });
 
   test("attendance.mark leaves another org's register alone", async () => {

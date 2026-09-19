@@ -68,7 +68,7 @@ test("the full product journey: signup through hitting the free-plan limit", asy
   let groupUrl = "";
 
   await test.step("5a. First class in minutes — create a group with no course attached", async () => {
-    await page.goto("/learning-flow/groups");
+    await page.goto("/students/groups");
     await page.getByRole("button", { name: "Create", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "Add group" }),
@@ -83,7 +83,7 @@ test("the full product journey: signup through hitting the free-plan limit", asy
     await expect(page.getByText("Group created.")).toBeVisible();
 
     await page.getByRole("link", { name: groupName }).click();
-    await page.waitForURL("**/learning-flow/groups/**");
+    await page.waitForURL("**/students/groups/**");
     groupUrl = page.url();
   });
 
@@ -103,7 +103,7 @@ test("the full product journey: signup through hitting the free-plan limit", asy
   });
 
   await test.step("5b. Add students — import from an Excel template", async () => {
-    await page.goto("/learning-flow/trainees");
+    await page.goto("/students");
     await page.getByRole("button", { name: "Import", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "Import from a spreadsheet" }),
@@ -199,9 +199,9 @@ test("the full product journey: signup through hitting the free-plan limit", asy
   });
 
   await test.step("8b. Placement — assign, record, and review the placement test", async () => {
-    await page.goto("/learning-flow/trainees");
+    await page.goto("/students");
     await page.getByRole("link", { name: "Fatma Rageh" }).click();
-    await page.waitForURL("**/learning-flow/trainees/**");
+    await page.waitForURL("**/students/**");
 
     await page
       .getByRole("button", { name: "Assign a placement test" })
@@ -231,7 +231,7 @@ test("the full product journey: signup through hitting the free-plan limit", asy
   });
 
   await test.step("11. Grow — a large import hits the free-plan student limit", async () => {
-    await page.goto("/learning-flow/trainees");
+    await page.goto("/students");
     await page.getByRole("button", { name: "Import", exact: true }).click();
 
     const bigFixturePath = await buildOversizedTraineesImportFixture();

@@ -3,4 +3,4 @@ export {
   SessionList,
   SessionStatusTag,
 } from "./components";
-export { SessionsAgendaPage } from "./sessions-agenda-page";
+export { LiveClassesPage } from "./live-classes-page";

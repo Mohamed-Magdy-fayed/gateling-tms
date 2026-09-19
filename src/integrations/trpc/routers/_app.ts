@@ -13,15 +13,18 @@ import { coursesRouter } from "@/features/system/content-library/courses/server"
 import { lecturesRouter } from "@/features/system/content-library/lectures/server";
 import { levelsRouter } from "@/features/system/content-library/levels/server";
 import { dashboardRouter } from "@/features/system/dashboard/server";
-import { certificatesRouter } from "@/features/system/learning-flow/certificates/server";
-import { enrollmentsRouter } from "@/features/system/learning-flow/enrollments/server";
-import { groupsRouter } from "@/features/system/learning-flow/groups/server";
-import { placementTestsRouter } from "@/features/system/learning-flow/placement-tests/server";
-import { progressRouter } from "@/features/system/learning-flow/progress/server";
-import { traineesRouter } from "@/features/system/learning-flow/trainees/server";
 import { attendanceRouter } from "@/features/system/live-classes/attendance/server";
+import { teacherAvailabilityRouter } from "@/features/system/live-classes/availability/server";
 import { sessionsRouter } from "@/features/system/live-classes/sessions/server";
 import { settingsRouter } from "@/features/system/settings/server";
+import { certificatesRouter } from "@/features/system/students/certificates/server";
+import { enrollmentsRouter } from "@/features/system/students/enrollments/server";
+import { groupsRouter } from "@/features/system/students/groups/server";
+import { traineeNotesRouter } from "@/features/system/students/notes/server";
+import { paymentsRouter } from "@/features/system/students/payments/server";
+import { placementTestsRouter } from "@/features/system/students/placement-tests/server";
+import { progressRouter } from "@/features/system/students/progress/server";
+import { traineesRouter } from "@/features/system/students/trainees/server";
 import { createTRPCRouter } from "../init";
 import { healthRouter } from "./health";
 
@@ -46,10 +49,13 @@ export const appRouter = createTRPCRouter({
   enrollments: enrollmentsRouter,
   placementTests: placementTestsRouter,
   certificates: certificatesRouter,
+  traineeNotes: traineeNotesRouter,
+  payments: paymentsRouter,
   progress: progressRouter,
   dashboard: dashboardRouter,
   sessions: sessionsRouter,
   attendance: attendanceRouter,
+  teacherAvailability: teacherAvailabilityRouter,
   settings: settingsRouter,
 });
 

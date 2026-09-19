@@ -3,7 +3,7 @@ import {
   summarizeEnrollmentStatuses,
   summarizeLevels,
   summarizeSessions,
-} from "@/features/system/learning-flow/progress/server/progress";
+} from "@/features/system/students/progress/server/progress";
 
 describe("summarizeLevels", () => {
   test("returns an all-zero summary for a course with no levels", () => {

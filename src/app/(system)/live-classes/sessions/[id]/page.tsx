@@ -7,7 +7,5 @@ export default async function SessionAttendanceRoute({
 }) {
   const { id } = await params;
 
-  return (
-      <SessionAttendancePage sessionId={id} />
-  );
+  return <SessionAttendancePage sessionId={id} />;
 }

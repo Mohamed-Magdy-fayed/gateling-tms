@@ -2,7 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/drizzle";
 import { GroupsTable, SessionsTable } from "@/drizzle/schema";
-import { regenerateGroupSessions } from "@/features/system/learning-flow/groups/server/regenerate-sessions";
+import { regenerateGroupSessions } from "@/features/system/students/groups/server/regenerate-sessions";
 import { createTenant, destroyTenant, type TenantFixture } from "./lib/harness";
 
 /**
@@ -181,6 +181,77 @@ describe("session generation", () => {
     expect(
       sessions.find((s) => s.scheduledAt.getTime() === past.getTime()),
     ).toMatchObject({ durationMinutes: 90, status: "completed" });
+  });
+
+  test("a class moved on the calendar survives regeneration", async () => {
+    const groupId = await createGroupWithSchedule(tenant);
+    const args = { db, organizationId: tenant.organizationId, groupId };
+
+    await regenerateGroupSessions(args);
+    const [first] = await listSessions(tenant.organizationId, groupId);
+
+    // What `sessions.update` writes: a new instant, the pattern occurrence
+    // pinned, and the human's fingerprint.
+    const movedTo = new Date(first.scheduledAt.getTime() + 86_400_000);
+    await db
+      .update(SessionsTable)
+      .set({
+        scheduledAt: movedTo,
+        durationMinutes: 45,
+        adjustedAt: new Date(),
+      })
+      .where(eq(SessionsTable.id, first.id));
+
+    // A rename-style save: same schedule, regenerated anyway.
+    const result = await regenerateGroupSessions(args);
+
+    const after = await listSessions(tenant.organizationId, groupId);
+    // Neither deleted nor duplicated — still six, the moved one where it was
+    // put, and with the length the person gave it.
+    expect(result.removed).toBe(0);
+    expect(after).toHaveLength(6);
+    expect(after.find((s) => s.id === first.id)).toMatchObject({
+      scheduledAt: movedTo,
+      durationMinutes: 45,
+    });
+    expect(
+      after.filter(
+        (s) => s.scheduledAt.getTime() === first.scheduledAt.getTime(),
+      ),
+    ).toHaveLength(0);
+  });
+
+  test("a hand-picked teacher on one class outlives a group teacher change", async () => {
+    const groupId = await createGroupWithSchedule(tenant, {
+      teacherId: tenant.userId,
+    });
+    const args = { db, organizationId: tenant.organizationId, groupId };
+
+    await regenerateGroupSessions(args);
+    const [substituted, ...others] = await listSessions(
+      tenant.organizationId,
+      groupId,
+    );
+
+    // A substitute on one class — the teacher column cleared here stands in
+    // for "someone else", which the fixture has no second member for.
+    await db
+      .update(SessionsTable)
+      .set({ teacherId: null, adjustedAt: new Date() })
+      .where(eq(SessionsTable.id, substituted.id));
+
+    await regenerateGroupSessions(args);
+
+    const rows = await db
+      .select({ id: SessionsTable.id, teacherId: SessionsTable.teacherId })
+      .from(SessionsTable)
+      .where(eq(SessionsTable.groupId, groupId));
+    expect(rows.find((r) => r.id === substituted.id)?.teacherId).toBeNull();
+    for (const other of others) {
+      expect(rows.find((r) => r.id === other.id)?.teacherId).toBe(
+        tenant.userId,
+      );
+    }
   });
 
   test("refuses to regenerate another organization's group", async () => {

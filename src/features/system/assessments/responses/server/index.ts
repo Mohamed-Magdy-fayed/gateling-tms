@@ -1,5 +1,5 @@
 export type { FormResponse } from "@/drizzle/schema";
-// Exported for the learning-flow placement-test flow, which records a
+// Exported for the students module's placement-test flow, which records a
 // staff-administered attempt and must score it exactly the way a quiz
 // submission is scored.
 export { computeShortAnswerVerdicts, gradeFormResponse } from "./grading";

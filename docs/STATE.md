@@ -1,4 +1,4 @@
-# Gateling-TMS — state
+# Gateling-TMS — state to create dep
 
 > **This is now the ongoing state doc for the product.** Until the Phase 8
 > cut-over it was a stale mirror of the rebuild blueprint's own STATE.md; from
@@ -9,7 +9,7 @@
 ## Status
 
 **v1 is complete.** All eight rebuild phases are built, merged and gated. The
-free tier is the whole product: Content Library, Learning Flow and Live Classes,
+free tier is the whole product: Content Library, Students and Live Classes,
 with Excel and Google Forms import, for up to 50 students, 5 courses and 1 GB of
 storage per organization. Paid modules are "coming soon" everywhere they appear.
 
@@ -25,7 +25,7 @@ storage per organization. Paid modules are "coming soon" everywhere they appear.
 | Accounts | Email + password, Google OAuth, passkeys, email verification, password reset, org invitations |
 | Organizations | Multi-tenant with `organizationId` on every tenant-owned table, admin/teacher/student roles, plan limits and usage meters |
 | Content Library | Courses → levels → lectures, media upload to Firebase, search and CSV/XLSX export |
-| Learning Flow | Trainees, groups with weekly schedules, generated sessions, enrollments, placement tests, level progress, certificates |
+| Students | The roster and each student's profile (`/students/<id>`): staff notes, recorded payments in the organization's currency, groups with weekly schedules, generated sessions, enrollments, placement tests, level progress, certificates. Named "Learning Flow" until the profile became the centre of the area; `/learning-flow/*` redirects. |
 | Assessments | Form builder, auto-scoring, AI-assisted short-answer grading with manual fallback, Google Forms import |
 | Live Classes | Gateling Meetings, one deployment-level integration set up by an admin on `/settings` (no env vars): start a class from a session, signed one-click join for every member, share link for students without accounts, session closed by webhook, teacher-marked attendance |
 | Import/export | Template-shaped round trip for students, courses, levels, enrollments and group assignments |

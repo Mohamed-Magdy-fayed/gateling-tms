@@ -117,7 +117,7 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
         <p className="mt-1 text-muted-foreground text-sm">
           <Link
             className="hover:underline"
-            href={`/learning-flow/groups/${session.groupId}`}
+            href={`/students/groups/${session.groupId}`}
           >
             {session.groupName}
           </Link>
@@ -145,9 +145,7 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  render={
-                    <Link href={`/learning-flow/groups/${session.groupId}`} />
-                  }
+                  render={<Link href={`/students/groups/${session.groupId}`} />}
                 >
                   {t("attendance.openGroup")}
                 </Button>
@@ -161,9 +159,12 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
                   className="flex flex-wrap items-center justify-between gap-3 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-sm">
+                    <Link
+                      href={`/students/${row.traineeId}`}
+                      className="block truncate font-medium text-primary text-sm underline-offset-4 hover:underline"
+                    >
                       {row.traineeName}
-                    </p>
+                    </Link>
                     <p className="truncate text-muted-foreground text-xs">
                       {row.joinedAt
                         ? t("attendance.joinedAt", {

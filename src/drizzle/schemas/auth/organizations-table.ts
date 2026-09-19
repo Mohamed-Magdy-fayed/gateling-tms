@@ -39,6 +39,11 @@ export const OrganizationsTable = pgTable(
     // concrete UTC instants. Org-wide rather than per-group — an academy
     // runs on one clock (STATE.md D80).
     timeZone: varchar({ length: 64 }).notNull().default("Africa/Cairo"),
+    // ISO 4217 code every recorded student payment is in. Org-wide for the
+    // same reason as the time zone: an academy keeps its books in one
+    // currency, and a per-payment one would make a student's "total paid"
+    // a sum across currencies.
+    currency: varchar({ length: 3 }).notNull().default("EGP"),
     // Consent to appear in the public showcase band on the landing page (the
     // academy's initials and its owner's photo). Opt-in, timestamped rather
     // than boolean so it is auditable when someone asks "when did we agree to

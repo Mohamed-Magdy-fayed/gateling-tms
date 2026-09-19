@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { traineeMutationSchema } from "../src/features/system/learning-flow/trainees/server/schemas";
+import { traineeMutationSchema } from "../src/features/system/students/trainees/server/schemas";
 
 describe("traineeMutationSchema", () => {
   test("accepts a name with no phone or email", () => {

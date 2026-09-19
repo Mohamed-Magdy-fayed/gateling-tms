@@ -29,7 +29,7 @@ content, rather than needing a second login to see it:
   lectures per level, and one published quiz form (1 section, 3 questions, 3 answers each).
 - **3 groups** with weekly schedules, each expanded into up to 12 generated sessions via the same
   pure `generateSessionOccurrences` expander the real `group/schedule-changed` Inngest function
-  uses (`src/features/system/learning-flow/groups/server/schedule.ts`). One group ("Beginner Batch
+  uses (`src/features/system/students/groups/server/schedule.ts`). One group ("Beginner Batch
   A") is seeded as already started — see "Meeting fixture data" below.
 - **25 trainees**, split across the three groups' rosters, with enrollments spanning the full
   status lifecycle (`completed` → a certificate, `ongoing`, `waiting`, `placementTest`,

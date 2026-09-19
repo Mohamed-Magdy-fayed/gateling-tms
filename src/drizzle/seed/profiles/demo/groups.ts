@@ -7,7 +7,7 @@ import {
   type Session,
   SessionsTable,
 } from "@/drizzle/schema";
-import { generateSessionOccurrences } from "@/features/system/learning-flow/groups/server/schedule";
+import { generateSessionOccurrences } from "@/features/system/students/groups/server/schedule";
 import { seedIfMissing } from "../../base";
 
 /**
@@ -107,6 +107,9 @@ export async function seedDemoSessionsForGroup(input: {
             organizationId: input.organizationId,
             groupId: input.group.id,
             scheduledAt: occurrence.scheduledAt,
+            // The same pairing the generator writes, so a later regeneration
+            // recognises these as the pattern's rows rather than strays.
+            plannedAt: occurrence.scheduledAt,
             durationMinutes: occurrence.durationMinutes,
             teacherId: input.group.teacherId,
             ...(input.meetingFixture

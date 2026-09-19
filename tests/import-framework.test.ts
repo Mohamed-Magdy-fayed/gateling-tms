@@ -13,9 +13,9 @@ import {
   capacityCutoff,
   reviewImportTable,
 } from "../src/features/core/import/server/review";
-import { resolveRows } from "../src/features/system/learning-flow/trainees/server/import-resolution";
-import { traineeImportColumns } from "../src/features/system/learning-flow/trainees/server/import-template";
-import { traineeImportRowSchema } from "../src/features/system/learning-flow/trainees/server/schemas";
+import { resolveRows } from "../src/features/system/students/trainees/server/import-resolution";
+import { traineeImportColumns } from "../src/features/system/students/trainees/server/import-template";
+import { traineeImportRowSchema } from "../src/features/system/students/trainees/server/schemas";
 
 const columns: ImportColumn[] = traineeImportColumns;
 const validate = zodRowValidator(traineeImportRowSchema);

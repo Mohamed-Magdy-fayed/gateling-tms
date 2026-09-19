@@ -1,4 +1,4 @@
-import { CertificatePrintView } from "@/features/system/learning-flow/certificates/admin";
+import { CertificatePrintView } from "@/features/system/students/certificates/admin";
 
 // Deliberately outside the `(system)` route group: a certificate is a document
 // to print, so it gets the root layout only — no sidebar, no app header. The

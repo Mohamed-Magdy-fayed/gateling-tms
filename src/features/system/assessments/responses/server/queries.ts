@@ -34,7 +34,7 @@ export async function assertFormInOrg(ctx: OrgTRPCContext, formId: string) {
 /** Flattened question+answer tree for a form, shaped for `scoreFormResponse`. */
 /**
  * Widened from the full `OrgTRPCContext` so a caller that is already inside a
- * transaction can pass its `trx` — the learning-flow placement-test flow scores
+ * transaction can pass its `trx` — the students module's placement-test flow scores
  * an attempt while holding the test's row lock.
  */
 type ScorableQuestionsContext = Pick<OrgTRPCContext, "organizationId"> & {

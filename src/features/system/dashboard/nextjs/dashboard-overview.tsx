@@ -25,7 +25,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Tag } from "@/components/ui/tag";
 import { useTranslation } from "@/features/core/i18n/client";
 import { TestimonialPromptCard } from "@/features/marketing/testimonials/admin";
-import { EnrollmentStatusTag } from "@/features/system/learning-flow/enrollments/admin";
+import { EnrollmentStatusTag } from "@/features/system/students/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 
 export function DashboardOverview() {
@@ -149,7 +149,7 @@ export function DashboardOverview() {
                 <Button
                   variant="outline"
                   size="sm"
-                  render={<Link href="/learning-flow/groups" />}
+                  render={<Link href="/students/groups" />}
                 >
                   {t("dashboard.today.groupsCta")}
                 </Button>
@@ -164,7 +164,7 @@ export function DashboardOverview() {
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/learning-flow/groups/${session.groupId}`}
+                      href={`/students/groups/${session.groupId}`}
                       className="truncate font-medium text-sm underline-offset-4 hover:underline"
                     >
                       {session.groupName}
@@ -208,7 +208,7 @@ export function DashboardOverview() {
                     >
                       <div className="min-w-0">
                         <Link
-                          href={`/learning-flow/trainees/${enrollment.traineeId}`}
+                          href={`/students/${enrollment.traineeId}`}
                           className="truncate font-medium text-sm underline-offset-4 hover:underline"
                         >
                           {enrollment.traineeName}

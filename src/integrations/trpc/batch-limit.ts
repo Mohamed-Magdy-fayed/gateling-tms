@@ -3,7 +3,7 @@
  *
  * The tRPC httpBatchLink coalesces calls made in the same tick into a single
  * request, so this has to be comfortably above what any real screen issues at
- * once — the busiest today (`/learning-flow/trainees/[id]`) is well under ten —
+ * once — the busiest today (`/students/[id]`) is well under ten —
  * while still being a bound. Without one, a single request can ask the server
  * to run an unbounded number of queries, which is a cheap way to turn one
  * connection into a lot of database work.

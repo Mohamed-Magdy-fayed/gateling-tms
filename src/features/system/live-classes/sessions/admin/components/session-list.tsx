@@ -55,7 +55,7 @@ export function SessionList({
               {showGroup ? (
                 <Link
                   className="hover:underline"
-                  href={`/learning-flow/groups/${session.groupId}`}
+                  href={`/students/groups/${session.groupId}`}
                 >
                   {session.groupName}
                 </Link>

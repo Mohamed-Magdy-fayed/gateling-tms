@@ -5,9 +5,11 @@ export {
   type StartSessionMeetingResult,
   startSessionMeeting,
 } from "./meetings";
+export { updateSession } from "./mutations";
 export {
   listGroupSessions,
   listSessions,
+  listWeekSessions,
   ownClassesOnlyForStudents,
   type SessionRow,
 } from "./queries";
@@ -15,5 +17,9 @@ export { sessionsRouter } from "./router";
 export {
   listSessionsInput,
   type SessionScope,
+  type SessionUpdateInput,
   sessionScopeValues,
+  sessionUpdateSchema,
+  type WeekSessionsInput,
+  weekSessionsInput,
 } from "./schemas";

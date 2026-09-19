@@ -24,7 +24,7 @@ export type SystemNavItem = {
     | "nav.settings"
     | "nav.contentLibrary"
     | "nav.assessments"
-    | "nav.learningFlow"
+    | "nav.students"
     | "nav.groups"
     | "nav.enrollments"
     | "nav.certificates"
@@ -39,6 +39,10 @@ export type SystemNavItem = {
  * (STATE.md D42: roles live per-organization-membership, not globally on the
  * user). Every item here is reachable by any authenticated org member; add
  * role-gating per item only if a future phase actually needs it.
+ *
+ * Students is the roster; its sub-pages (groups, enrollments, certificates)
+ * live under the same /students prefix and get their own entries so each is
+ * one click away.
  *
  * Live Classes is the session agenda, and it is the whole area: classes run
  * on Gateling Meetings through one deployment-level integration, so there is
@@ -57,22 +61,22 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
     Icon: LibraryIcon,
   },
   {
-    href: "/learning-flow/trainees",
-    translationKey: "nav.learningFlow",
+    href: "/students",
+    translationKey: "nav.students",
     Icon: GraduationCapIcon,
   },
   {
-    href: "/learning-flow/groups",
+    href: "/students/groups",
     translationKey: "nav.groups",
     Icon: UsersIcon,
   },
   {
-    href: "/learning-flow/enrollments",
+    href: "/students/enrollments",
     translationKey: "nav.enrollments",
     Icon: UserCheckIcon,
   },
   {
-    href: "/learning-flow/certificates",
+    href: "/students/certificates",
     translationKey: "nav.certificates",
     Icon: AwardIcon,
   },

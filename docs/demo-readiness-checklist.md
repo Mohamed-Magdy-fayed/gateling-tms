@@ -42,7 +42,7 @@ path is a launch blocker, not a documentation gap.
 | Claim | Demo path | ☐ |
 |---|---|---|
 | Content Library — resource storage, media files, organization, search | `/content-library/courses` → *English Foundations* → levels, lectures, an uploaded thumbnail, and the search box on the courses table. | ☐ |
-| Learning Flow — course structure, progress, assessments, certificates | `/learning-flow/groups` → *Beginner Batch A*; `/learning-flow/trainees/<id>` → progress; `/assessments` → the seeded quiz; `/learning-flow/certificates` → issued certificates. | ☐ |
+| Students — profile, notes, payments, progress, assessments, certificates | `/students/groups` → *Beginner Batch A*; `/students/<id>` → notes, payments, progress; `/assessments` → the seeded quiz; `/students/certificates` → issued certificates. | ☐ |
 | "Built-in Assessments (or imported from Google Forms)" | `/assessments` builder for built-in. Google import at `/assessments/google` — **reports "not configured" without the Google Cloud setup**; either complete that setup before demoing, or say so out loud. | ☐ |
 | Live Classes — HD video, screen sharing, breakout rooms, students join from a link | These are Gateling Meetings' features, delivered by the room the class opens in. `/live-classes/sessions` shows the schedule and the seeded fixture session's join links. **Demonstrating the room itself needs the Meetings integration pasted into `/settings`** (`docs/integrations-meetings.md` §1). | ☐ |
 | Six premium modules marked "coming soon" | `/features`: each premium card carries the badge and no CTA. | ☐ |
@@ -91,7 +91,7 @@ zero-master-data promise is about an empty org.
 | Check | ☐ |
 |---|---|
 | `/`, `/features`, `/pricing`, `/testimonials`, `/contact`, `/privacy` in Arabic | ☐ |
-| `/dashboard`, `/learning-flow/groups`, `/content-library/courses`, `/assessments`, `/organizations` in Arabic | ☐ |
+| `/dashboard`, `/students/groups`, `/content-library/courses`, `/assessments`, `/organizations` in Arabic | ☐ |
 | `dir="rtl"` and no clipped or mirrored-wrong layout (logical properties only) | ☐ |
 | No English string left in an Arabic screen (a missing key fails `npm test` via `tests/i18n-parity.test.ts`, so this is a visual check for awkward wording, not for gaps) | ☐ |
 
@@ -104,7 +104,7 @@ At 375px wide, on a real device or devtools:
 | `/` — hero, showcase band, testimonial card | ☐ |
 | `/pricing` — four tiers stack, no horizontal scroll | ☐ |
 | `/dashboard` — sidebar collapses to the sheet, stat cards stack | ☐ |
-| `/learning-flow/trainees` — the data table scrolls inside itself, page does not | ☐ |
+| `/students` — the data table scrolls inside itself, page does not | ☐ |
 | One form dialog (add a trainee) — body scrolls, header and footer stay pinned | ☐ |
 
 ## E. Automated gate
