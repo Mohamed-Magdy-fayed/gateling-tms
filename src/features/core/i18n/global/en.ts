@@ -897,6 +897,13 @@ export default {
       "Enroll a student in a course. Group membership doesn't require this — an enrollment adds curriculum tracking on top.",
     created: "Student enrolled.",
     saveFailed: "Could not save enrollment.",
+    traineeModeExisting: "Existing student",
+    traineeModeNew: "New student",
+    traineeSearchPlaceholder: "Search students…",
+    newTraineeHint:
+      "Added to your students and enrolled in one step. Type an email or phone to catch duplicates.",
+    possibleDuplicate: "{name} already exists with this email or phone.",
+    useExistingTrainee: "Enroll them instead",
     changeStatus: "Change status",
     changeStatusDescription: "Move {name} to a new status.",
     statusUpdated: "Status updated.",

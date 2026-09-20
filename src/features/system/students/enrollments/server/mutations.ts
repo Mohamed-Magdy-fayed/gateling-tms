@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { Transaction } from "@/drizzle";
 import {
   CoursesTable,
   EnrollmentLevelsTable,
@@ -7,6 +8,7 @@ import {
   LevelsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { insertTrainee } from "@/features/system/students/trainees/server";
 import {
   assertValidTransition,
   ENROLLMENT_TRANSITIONS,
@@ -29,6 +31,38 @@ const ACTIVE_ENROLLMENT_STATUSES = [
   "postponed",
 ] as const;
 
+async function resolveTraineeId(
+  trx: Transaction,
+  ctx: OrgTRPCContext,
+  input: EnrollmentMutationInput,
+): Promise<string> {
+  if (input.traineeMode === "new") {
+    const created = await insertTrainee(trx, ctx, input.newTrainee);
+    return created.id;
+  }
+
+  const [trainee] = await trx
+    .select({ id: TraineesTable.id })
+    .from(TraineesTable)
+    .where(
+      and(
+        eq(TraineesTable.id, input.traineeId),
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        isNull(TraineesTable.deletedAt),
+      ),
+    )
+    .for("update");
+
+  if (!trainee) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: ctx.t("enrollments.traineeNotFound"),
+    });
+  }
+
+  return trainee.id;
+}
+
 /**
  * `enrollments` reaches both trainees and courses through composite
  * (organizationId, x) FKs, so the database already rejects a cross-org id —
@@ -40,30 +74,19 @@ const ACTIVE_ENROLLMENT_STATUSES = [
  * (it depends on status, which changes over the enrollment's life), so the
  * trainee row is locked for the rest of the transaction — otherwise two
  * concurrent requests both read "no active enrollment" and both insert.
+ *
+ * In `new` mode the student is inserted first, inside the same transaction, so
+ * a course that turns out not to exist — or a plan limit hit by
+ * `insertTrainee` — rolls the whole thing back rather than leaving a student
+ * with no enrollment. A row nobody else can see yet needs no lock and can't
+ * already be enrolled, so both checks are skipped for it.
  */
 export async function createEnrollment(
   ctx: OrgTRPCContext,
   input: EnrollmentMutationInput,
 ) {
   return ctx.db.transaction(async (trx) => {
-    const [trainee] = await trx
-      .select({ id: TraineesTable.id })
-      .from(TraineesTable)
-      .where(
-        and(
-          eq(TraineesTable.id, input.traineeId),
-          eq(TraineesTable.organizationId, ctx.organizationId),
-          isNull(TraineesTable.deletedAt),
-        ),
-      )
-      .for("update");
-
-    if (!trainee) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: ctx.t("enrollments.traineeNotFound"),
-      });
-    }
+    const traineeId = await resolveTraineeId(trx, ctx, input);
 
     const course = await trx.query.CoursesTable.findFirst({
       where: and(
@@ -81,15 +104,18 @@ export async function createEnrollment(
       });
     }
 
-    const existing = await trx.query.EnrollmentsTable.findFirst({
-      where: and(
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
-        eq(EnrollmentsTable.traineeId, input.traineeId),
-        eq(EnrollmentsTable.courseId, input.courseId),
-        inArray(EnrollmentsTable.status, ACTIVE_ENROLLMENT_STATUSES),
-      ),
-      columns: { id: true },
-    });
+    const existing =
+      input.traineeMode === "new"
+        ? undefined
+        : await trx.query.EnrollmentsTable.findFirst({
+            where: and(
+              eq(EnrollmentsTable.organizationId, ctx.organizationId),
+              eq(EnrollmentsTable.traineeId, traineeId),
+              eq(EnrollmentsTable.courseId, input.courseId),
+              inArray(EnrollmentsTable.status, ACTIVE_ENROLLMENT_STATUSES),
+            ),
+            columns: { id: true },
+          });
 
     if (existing) {
       throw new TRPCError({
@@ -102,7 +128,7 @@ export async function createEnrollment(
       .insert(EnrollmentsTable)
       .values({
         organizationId: ctx.organizationId,
-        traineeId: input.traineeId,
+        traineeId,
         courseId: input.courseId,
         status: input.status,
       })
