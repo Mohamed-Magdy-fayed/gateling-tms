@@ -872,6 +872,13 @@ export default {
       "سجّل طالبًا في دورة. الانضمام إلى مجموعة لا يتطلب ذلك — التسجيل يضيف متابعة المنهج فوقه.",
     created: "تم تسجيل الطالب.",
     saveFailed: "تعذر حفظ التسجيل.",
+    traineeModeExisting: "طالب موجود",
+    traineeModeNew: "طالب جديد",
+    traineeSearchPlaceholder: "ابحث في الطلاب…",
+    newTraineeHint:
+      "يُضاف إلى طلابك ويُسجَّل في الدورة بخطوة واحدة. أدخل البريد أو الهاتف لاكتشاف التكرار.",
+    possibleDuplicate: "{name} موجود بالفعل بهذا البريد أو رقم الهاتف.",
+    useExistingTrainee: "سجّله بدلًا من ذلك",
     changeStatus: "تغيير الحالة",
     changeStatusDescription: "نقل {name} إلى حالة جديدة.",
     statusUpdated: "تم تحديث الحالة.",
