@@ -723,11 +723,11 @@ Conflict flags: S2, S3 and S4 all touch `drizzle/schemas` (migrations must be ge
 ## Implementation Tasks
 Synthesized from this review's findings. Each task derives from a specific finding above. Run with Claude Code or Codex; checkbox as you ship.
 
-- [ ] **T1 (P1, human: ~4h / CC: ~20min)** — settings — Pin existing system-settings behavior with integration tests
+- [x] **T1 (P1, human: ~4h / CC: ~20min)** — settings — Pin existing system-settings behavior with integration tests
   - Surfaced by: Test review — R6 regression contract
   - Files: tests/integration/system-settings.test.ts
   - Verify: `npm run test:isolation` (integration config) green before any router edit
-- [ ] **T2 (P1, human: ~3h / CC: ~15min)** — auth/trpc — Add `users.isPlatformOwner`, the owner data migration and `platformOwnerProcedure`; gate settings.list/update; hide the integration section for non-owners
+- [x] **T2 (P1, human: ~3h / CC: ~15min)** — auth/trpc — Add `users.isPlatformOwner`, the owner data migration and `platformOwnerProcedure`; gate settings.list/update; hide the integration section for non-owners
   - Surfaced by: Architecture — finding 1 / R1
   - Files: src/drizzle/schemas/auth/users-table.ts, src/integrations/trpc/init.ts, src/features/system/settings/server/router.ts, src/features/system/settings/admin/*, generated + custom migrations
   - Verify: T1 suite (owner passes, non-owner FORBIDDEN); `npm run db:generate` clean
@@ -819,10 +819,11 @@ No new kit components.
 
 These refine the eng tasks T2-T5; they don't replace them.
 
-- [ ] **DT1 (P1, human: ~3h / CC: ~15min)** — platform — expose `isPlatformOwner` on `organizations.getActive`; show the "Platform" nav item to owners only; `/settings` empty state for non-owners
+- [x] **DT1 (P1, human: ~3h / CC: ~15min)** — platform — expose `isPlatformOwner` on `organizations.getActive`; show the "Platform" nav item to owners only; `/settings` empty state for non-owners
   - Surfaced by: Pass 1, issue 2 (2A)
   - Files: src/features/core/organizations/server/queries.ts, src/features/system/dashboard/nextjs/nav.ts, src/features/system/settings/admin/system-settings-page.tsx, en.ts/ar.ts
   - Verify: as a non-owner admin, no nav item and the calm empty state; as the owner, Integrations + Academies
+  - Shipped: the sidebar and `/settings` read the flag off the signed-in user row (already loaded by the `(system)` layout), not `organizations.getActive`, so an owner without an active academy still reaches the page. `getActive` keeps returning `isPlatformOwner`. The Academies section lands with T3/DT4.
 - [ ] **DT2 (P1, human: ~1 day / CC: ~40min)** — academy preferences UI
   - Covers: section on `/organizations` (1A), group cards (8B), save model (3A), state table (4A), keys + component map (10A), mobile (11A), a11y/RTL (12A)
   - Surfaced by: issues 1, 3, 4, 8, 10, 11, 12

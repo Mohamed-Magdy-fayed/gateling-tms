@@ -15,7 +15,7 @@ export default {
     certificates: "Certificates",
     liveClasses: "Live Classes",
     settings: "Settings",
-    systemSettings: "Integrations",
+    platform: "Platform",
     assessments: "Assessments",
   },
   actions: {
@@ -1204,9 +1204,10 @@ export default {
     notFoundDescription: "This class doesn't exist, or it was removed.",
   },
   settings: {
-    title: "Integrations",
+    title: "Platform",
     subtitle:
-      "Deployment-wide connections to other Gateling systems. Set once by the platform owner, they apply to every academy on this deployment.",
+      "Deployment-wide settings, managed by the platform owner. They apply to every academy on this deployment.",
+    integrationsTitle: "Integrations",
     ownerOnly: "These settings are managed by Gateling for every academy on this deployment. There is nothing to set up here.",
     loadFailed: "Couldn't load the settings.",
     saved: "Setting saved.",

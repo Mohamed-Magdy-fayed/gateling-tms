@@ -29,16 +29,19 @@ export type SystemNavItem = {
     | "nav.enrollments"
     | "nav.certificates"
     | "nav.liveClasses"
-    | "nav.systemSettings";
+    | "nav.platform";
   Icon: LucideIcon;
+  /** Shown only to the platform owner (`users.isPlatformOwner`). */
+  platformOwnerOnly?: true;
 };
 
 /**
  * DONOR-B's sidebar filters this list through a global role/screen
  * permission matrix (`hasPermission`) — TMS deliberately doesn't have one
  * (STATE.md D42: roles live per-organization-membership, not globally on the
- * user). Every item here is reachable by any authenticated org member; add
- * role-gating per item only if a future phase actually needs it.
+ * user). Every item here is reachable by any authenticated org member except
+ * the ones marked `platformOwnerOnly`; add role-gating per item only if a
+ * future phase actually needs it.
  *
  * Students is the roster; its sub-pages (groups, enrollments, certificates)
  * live under the same /students prefix and get their own entries so each is
@@ -99,10 +102,12 @@ export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
     Icon: SettingsIcon,
   },
   {
-    // Deployment-wide integrations (Gateling Meetings). Listed for everyone
-    // like the rest of the sidebar; the page itself is admin-only.
+    // The platform owner's page: deployment-wide integrations (Gateling
+    // Meetings) and, later, the academies list. Hidden from everyone else;
+    // the page shows them an empty state and its routes return FORBIDDEN.
     href: "/settings",
-    translationKey: "nav.systemSettings",
+    translationKey: "nav.platform",
     Icon: SlidersHorizontalIcon,
+    platformOwnerOnly: true,
   },
 ];

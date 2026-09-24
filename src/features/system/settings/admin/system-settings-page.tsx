@@ -19,7 +19,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { H2, InlineCode, Muted } from "@/components/ui/typography";
+import { H2, H3, InlineCode, Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
 import { SYSTEM_SETTING_CODE } from "@/features/system/settings/lib/system-settings-registry";
 import type { SystemSettingRow } from "@/features/system/settings/server";
@@ -27,9 +27,10 @@ import { useTRPC } from "@/integrations/trpc/client";
 import { SettingValueForm } from "./components/setting-value-form";
 
 /**
- * Deployment-wide integrations, as one card per system the app talks to.
- * Only the platform owner (`users.isPlatformOwner`) sees the cards; everyone
- * else gets a calm empty state, since there is nothing here for them to do.
+ * The platform owner's page ("Platform"): deployment-wide integrations, as
+ * one card per system the app talks to. Only the platform owner
+ * (`users.isPlatformOwner`) sees the cards; everyone else gets a calm empty
+ * state, since there is nothing here for them to do.
  *
  * The same flow as every other Gateling system: create the integration on
  * the provider's side, then paste what it hands back in here. The card
@@ -38,20 +39,13 @@ import { SettingValueForm } from "./components/setting-value-form";
  * values they *get* from it, so the whole setup reads top to bottom on one
  * screen.
  */
-export function SystemSettingsPage() {
-  const { t } = useTranslation();
-  const trpc = useTRPC();
-
-  const organizationQuery = useQuery(
-    trpc.organizations.getActive.queryOptions(),
-  );
+export function SystemSettingsPage({
+  isPlatformOwner,
+}: {
   // Display gate only — settings.list/update re-check the flag server-side.
-  const isPlatformOwner = organizationQuery.data?.isPlatformOwner === true;
-
-  const settingsQuery = useQuery({
-    ...trpc.settings.list.queryOptions(),
-    enabled: isPlatformOwner,
-  });
+  isPlatformOwner: boolean;
+}) {
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
@@ -60,13 +54,30 @@ export function SystemSettingsPage() {
         <Muted>{t("settings.subtitle")}</Muted>
       </div>
 
-      {organizationQuery.data && !isPlatformOwner ? (
+      {isPlatformOwner ? (
+        <IntegrationsSection />
+      ) : (
         <EmptyState
           icon={<ShieldAlertIcon />}
           title={t("settings.title")}
           description={t("settings.ownerOnly")}
         />
-      ) : settingsQuery.isError ? (
+      )}
+    </div>
+  );
+}
+
+function IntegrationsSection() {
+  const { t } = useTranslation();
+  const trpc = useTRPC();
+  const settingsQuery = useQuery(trpc.settings.list.queryOptions());
+
+  return (
+    <section aria-labelledby="platform-integrations" className="space-y-3">
+      <H3 id="platform-integrations" className="text-lg">
+        {t("settings.integrationsTitle")}
+      </H3>
+      {settingsQuery.isError ? (
         <Alert variant="destructive">
           <AlertTriangleIcon />
           <AlertDescription>{t("settings.loadFailed")}</AlertDescription>
@@ -76,7 +87,7 @@ export function SystemSettingsPage() {
       ) : (
         <MeetingsCard settings={settingsQuery.data} />
       )}
-    </div>
+    </section>
   );
 }
 
