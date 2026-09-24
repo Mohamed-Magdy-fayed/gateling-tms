@@ -1,10 +1,11 @@
 import {
   createTRPCRouter,
   orgAdminProcedure,
+  orgProcedure,
   platformOwnerProcedure,
 } from "@/integrations/trpc/init";
 import { resetAcademySetting, updateAcademySetting } from "./academy-mutations";
-import { listAcademySettings } from "./academy-queries";
+import { listAcademySettings, readAcademySettings } from "./academy-queries";
 import { updateSystemSetting } from "./mutations";
 import { listSystemSettings } from "./queries";
 import {
@@ -20,6 +21,12 @@ import {
  * another's rows.
  */
 const academySettingsRouter = createTRPCRouter({
+  // The effective values only, for any member: forms that follow a preference
+  // (a new slot's class length) are used by teachers too. Preferences hold no
+  // secrets, and the academy is still the caller's own.
+  values: orgProcedure.query(async ({ ctx }) =>
+    readAcademySettings(ctx.db, ctx.organizationId),
+  ),
   list: orgAdminProcedure.query(async ({ ctx }) => listAcademySettings(ctx)),
   update: orgAdminProcedure
     .input(updateAcademySettingSchema)

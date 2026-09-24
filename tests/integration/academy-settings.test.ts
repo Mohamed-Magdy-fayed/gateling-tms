@@ -24,10 +24,9 @@ import {
 
 /**
  * Academy preferences through the real tRPC caller and database (design doc
- * `academy-preferences.md` R2, R3, R10). The real registry is empty until a
- * real academy asks for a preference, so these run against three test
- * entries — one per control kind, one of them reapply — swapped in for the
- * registry module. Everything else (procedures, reader, upsert, the
+ * `academy-preferences.md` R2, R3, R10). These run against three test
+ * entries, whatever the real registry holds — one per control kind, one of
+ * them reapply — swapped in for the registry module. Everything else (procedures, reader, upsert, the
  * transaction around the enqueue) is the production code.
  */
 
@@ -124,6 +123,19 @@ describe("academy settings", () => {
         "FORBIDDEN",
       );
       expect(await rowsOf(academy.organizationId)).toEqual([]);
+    });
+
+    test("a teacher reads the effective values, custom ones included", async () => {
+      await academy.caller.settings.academy.update({
+        code: ENUM,
+        value: "monthly",
+      });
+
+      expect(await teacher.caller.settings.academy.values()).toEqual({
+        [BOOLEAN]: false,
+        [ENUM]: "monthly",
+        [REAPPLY]: 60,
+      });
     });
   });
 

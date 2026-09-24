@@ -191,7 +191,7 @@ The engine PR ships with **at least one setting whose `requestedBy` names a real
 
 ## Open Questions
 
-1. Which behavior becomes the first setting? None has been proven yet (her requests are features). It will likely come out of onboarding academy #2.
+1. ~~Which behavior becomes the first setting?~~ Resolved 2026-09-24: default class length, a provisional pick by Mohamed (see "T7: First academy setting").
 2. Do `timeZone` and `currency` move into the registry, or stay as columns? Recommendation: leave them. They're structural and indexed by other logic, and moving them buys nothing now.
 3. Should teachers (not only admins) ever edit any academy preference? Default is no.
 4. When presets (Approach C) arrive, does a preset write rows, or override defaults virtually? Decide when the second academy archetype is real.
@@ -751,9 +751,10 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Files: tests/integration/org-isolation.test.ts, tests/integration/lib/tenant-fixtures.ts
   - Verify: `npm run test:isolation`
   - Shipped: each fixture tenant stores one override (code `90001`, the non-default `true`). The suite mocks a one-entry boolean registry, because the real registry is empty until T7 and the routes skip rows whose code isn't registered. Three new cases: `settings.academy.list` and `readAcademySettings` show A's own state only (A's row is deleted first, so a leak would show up as a custom value), and `update` and `reset` from A leave B's row unchanged. `test:isolation` passes 120/121. The one failure is the existing `testimonials.submit` case, which needs Upstash Redis credentials.
-- [ ] **T7 (P1, human: n/a / CC: n/a)** — build rule — the engine PR includes at least one real requested setting (Open Question 1 must be answered first)
+- [x] **T7 (P1, human: n/a / CC: n/a)** — build rule — the engine PR includes at least one real requested setting (Open Question 1 must be answered first)
   - Surfaced by: design §Build rule
   - Verify: review
+  - Shipped: preference `00001` "Default class length" (number 30–180, step 15, default 60, `appliesTo: "future"`, group `scheduling`) per "T7: First academy setting" below. "Add time slot" in `group-schedule-editor.tsx` now starts Monday 18:00 + the academy's length (was a fixed 18:00–20:00), read through a new `settings.academy.values` query on `orgProcedure`: effective values only, for any member, since teachers also manage groups. `session-edit-dialog.tsx` was left alone: it only edits existing sessions, and its `60` is the placeholder while no session is open. The app has no "new one-off session" form yet, so that half of the T7 table waits for one. Tests: `tests/default-schedule-slot.test.ts`, a teacher-reads-values case in `tests/integration/academy-settings.test.ts`, and `values` in the org-isolation case.
 
 Effort ratios assumed: tests ~20-50x, features ~30x, architecture ~5x.
 JSONL task artifact for /autoplan: written on the 2026-09-24 re-run (`~/.gstack/projects/Mohamed-Magdy-fayed-gateling-tms/tasks-eng-review-*.jsonl`).
@@ -834,20 +835,22 @@ These refine the eng tasks T2-T5; they don't replace them.
   - Surfaced by: issues 1, 3, 4, 8, 10, 11, 12
   - Files: src/features/core/organizations/nextjs/organizations-settings-page.tsx, src/features/system/settings/admin/*, en.ts/ar.ts
   - Verify: `/ui-scan` on touched files; i18n parity; Mohamed's check in Arabic + English at 375px and desktop
-- [ ] **DT3 (P1, human: ~2h / CC: ~10min)** — settings server — reapply save is all-or-nothing with an inline "Nothing changed. Try again." Alert
+- [x] **DT3 (P1, human: ~2h / CC: ~10min)** — settings server — reapply save is all-or-nothing with an inline "Nothing changed. Try again." Alert
   - Surfaced by: Pass 2, issue 5 (5A)
   - Files: src/features/system/settings/server/*
   - Verify: an integration test with the enqueue forced to fail stores no row
+  - Shipped with T4/T5: the forced-failure tests for save and reset are in `tests/integration/academy-settings.test.ts`, and the inline Alert is in the preference row. The handler double-run test lands with the first `{ reapply }` preference, since there's no handler to run until then (00001 is future-only).
 - [x] **DT4 (P1, human: ~1 day / CC: ~40min)** — Academies list
   - Covers: `platform.listOrganizations` query, DataTable (9A), plan-change confirm with downgrade warning (6A), mobile columns (11A)
   - Surfaced by: issues 6, 9, 11
   - Files: src/features/core/organizations/server/*, src/features/system/settings/admin/*, en.ts/ar.ts
   - Verify: owner search + grant + downgrade warning; non-owner FORBIDDEN on the list query
-- [ ] **DT5 (P2, human: ~3h / CC: ~20min)** — grant notice
+- [x] **DT5 (P2, human: ~3h / CC: ~20min)** — grant notice
   - Covers: `PlanUsageCard` "Plan provided by Gateling" line; `on-organization-plan-granted` Inngest email (en + ar)
   - Surfaced by: Pass 3, issue 7 (7B)
   - Files: src/features/core/organizations/nextjs/components/plan-usage-card.tsx, src/integrations/inngest/functions/, email templates
   - Verify: after a grant, the line shows and one email is sent per admin in their locale
+  - Shipped: `organizations.usage.isGranted` swaps the "coming soon" line for "Plan provided by Gateling.". `setOrganizationPlan` enqueues `organization/plan-granted` only on a real change, with event id `plan-granted:{orgId}:{grantedAt}`, and logs rather than throws if the enqueue fails. `on-organization-plan-granted` sends one neutral email per admin, one `step.run` each. Deviation: users have no stored locale, so the email uses the **granting owner's** locale (same rule as the invite email), not each admin's. Tests: `tests/integration/platform-plans.test.ts` (same plan sends nothing, one event per change, a failed enqueue keeps the grant, only admins are mailed, a retry mails each admin once).
 - [x] **DT6 (P2, human: ~1h / CC: ~5min)** — shared Arabic/Persian digit normaliser + unit tests, used by the number controls
   - Surfaced by: Pass 6, issue 12 (12A)
   - Files: src/lib/ (new helper), tests/
@@ -966,6 +969,43 @@ Critical gaps: 0.
 - Unresolved decisions: 0
 - Outside voice: codex unavailable (not installed); the native fallback needs TaskOutput, which this session doesn't have
 - Lake Score: 2/2
+
+## T7: First academy setting (approved 2026-09-24)
+
+| Question | Decision |
+|---|---|
+| Behavior | **Default class length.** It fills in the length for a new group time slot (end = start + length) in `group-schedule-editor.tsx`, and for a new one-off session in `session-edit-dialog.tsx`. It replaces today's mismatched starting values (120 min for group slots, 60 min for sessions). |
+| Control | `{ kind: "number", min: 30, max: 180, step: 15 }` (the calendar's `SLOT_MINUTES` grid), unit "minutes" |
+| Default | **60** minutes (the reference academy's length, confirmed by Mohamed) |
+| Requested by | Reference academy. It's a provisional pick by Mohamed (2026-09-24) to ship the engine; no second academy has asked yet. Revisit after the teacher calls. |
+| Effect on scheduled classes | `appliesTo: "future"`: it only fills in forms. Existing groups and sessions keep their lengths, and there's no Inngest reapply handler. |
+| Group | `scheduling` |
+
+This knowingly bends premise 2 and the build rule ("no speculative toggles") **once**, by Mohamed's explicit call, so the engine can ship ahead of academy #2. It's logged as a decision. If the teacher calls show academies don't differ on class length, remove the setting: retire its code (never reuse it) and keep 60 as a plain constant.
+
+Open Question 1 is resolved by this entry.
+
+Registry entry to add:
+
+```ts
+// requestedBy: Reference academy — provisional pick by Mohamed (2026-09-24) to ship the
+// engine; no second academy has asked yet. Revisit after the teacher calls.
+{
+  code: "00001",
+  group: "scheduling",
+  control: { kind: "number", min: 30, max: 180, step: 15 },
+  default: 60,
+  appliesTo: "future",
+},
+```
+
+i18n (en + ar): `academySettings.00001.label` ("Default class length"), `.description` ("Starting length for new group time slots and one-off classes"), `.unit` ("minutes").
+
+Tests:
+- The registry default parses under its control.
+- With no academy row, a new group slot is 18:00–19:00 and a new one-off session is 60 min.
+- With a stored value of 90, both forms start at 90.
+- Existing slots and sessions are unchanged after a save.
 
 ## GSTACK REVIEW REPORT
 

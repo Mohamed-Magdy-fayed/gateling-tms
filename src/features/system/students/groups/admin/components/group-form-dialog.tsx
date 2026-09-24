@@ -27,6 +27,10 @@ import {
 } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
+  DEFAULT_CLASS_LENGTH_CODE,
+  DEFAULT_CLASS_LENGTH_MINUTES,
+} from "@/features/system/settings/lib/academy-settings-registry";
+import {
   type GroupMutationInput,
   groupMutationSchema,
   type SessionRegenerationMode,
@@ -81,6 +85,16 @@ export function GroupFormDialog({
     }),
     enabled: open,
   });
+
+  // A new slot's length follows the academy's preference; until it loads,
+  // the registry default stands in, so "Add time slot" never waits on it.
+  const { data: academySettings } = useQuery({
+    ...trpc.settings.academy.values.queryOptions(),
+    enabled: open,
+  });
+  const classMinutes =
+    academySettings?.[DEFAULT_CLASS_LENGTH_CODE] ??
+    DEFAULT_CLASS_LENGTH_MINUTES;
 
   const defaultValues = useMemo<GroupMutationInput>(
     () => ({
@@ -255,6 +269,7 @@ export function GroupFormDialog({
               <form.AppField name="schedule">
                 {(field) => (
                   <GroupScheduleEditor
+                    classMinutes={classMinutes}
                     disabled={pending}
                     value={field.state.value}
                     onChange={(next) => field.handleChange(next)}

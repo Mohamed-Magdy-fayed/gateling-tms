@@ -62,23 +62,35 @@ export type AcademySettingDefinition<
 };
 
 /**
- * Empty until the first real disagreement between two academies names a
- * preference (design doc, Open Question 1 / T7). Add entries as
+ * Add an entry with the next unused code and a `requestedBy` comment:
  *
  *   // requestedBy: <academy> — <how its answer differs from another's> (<date>)
- *   {
- *     code: "00001",
- *     group: "scheduling",
- *     control: { kind: "number", min: 30, max: 180, step: 15 },
- *     default: 60,
- *     appliesTo: "future",
- *   },
  *
  * together with `academySettings.<code>.label` / `.description` (plus
  * `.options.<value>` or `.unit`) in both en.ts and ar.ts.
  */
-export const ACADEMY_SETTINGS =
-  [] as const satisfies readonly AcademySettingDefinition[];
+export const ACADEMY_SETTINGS = [
+  // requestedBy: Reference academy — provisional pick by Mohamed (2026-09-24)
+  // to ship the engine; no second academy has asked yet. Revisit after the
+  // teacher calls: if academies don't differ, retire code 00001 (never reuse
+  // it) and keep 60 as a plain constant.
+  {
+    code: "00001",
+    group: "scheduling",
+    control: { kind: "number", min: 30, max: 180, step: 15 },
+    default: 60,
+    // Only fills in new group time slots; existing groups keep their times.
+    appliesTo: "future",
+  },
+] as const satisfies readonly AcademySettingDefinition[];
+
+/** The starting length, in minutes, of a new group time slot. */
+export const DEFAULT_CLASS_LENGTH_CODE = "00001";
+
+/** Preference 00001's registry default, for forms to use before the academy's value loads. */
+export const DEFAULT_CLASS_LENGTH_MINUTES: number =
+  ACADEMY_SETTINGS.find((entry) => entry.code === DEFAULT_CLASS_LENGTH_CODE)
+    ?.default ?? 60;
 
 type RegisteredAcademySetting = (typeof ACADEMY_SETTINGS)[number];
 

@@ -39,11 +39,11 @@ import {
   type TenantData,
 } from "./lib/tenant-fixtures";
 
-// The real academy-preferences registry is empty until a real academy asks for
-// a preference, and the routes ignore rows whose code is not registered — so
-// without an entry, organization_settings would be unreachable and every
-// assertion on it vacuous. One boolean entry, matching the fixture row's code
-// (ISOLATION_ACADEMY_SETTING_CODE; vi.mock is hoisted above the import).
+// The routes ignore rows whose code is not registered, so the fixture row needs
+// a registry entry to be reachable at all. The registry is swapped for one
+// boolean entry matching the fixture row's code (ISOLATION_ACADEMY_SETTING_CODE;
+// vi.mock is hoisted above the import), so this suite doesn't depend on which
+// real preferences exist.
 vi.mock(
   "@/features/system/settings/lib/academy-settings-registry",
   async (importOriginal) => ({
@@ -402,7 +402,7 @@ describe("scoped lists never contain another tenant's rows", () => {
   // organization_settings: keyed by the caller's org, read without an id. A's
   // override is removed first, so the only override left anywhere is B's — any
   // leak would show up as a custom value.
-  test("settings.academy.list and readAcademySettings see only the caller's own overrides", async () => {
+  test("settings.academy.list, values and readAcademySettings see only the caller's own overrides", async () => {
     await db
       .delete(OrganizationSettingsTable)
       .where(
@@ -418,6 +418,11 @@ describe("scoped lists never contain another tenant's rows", () => {
     );
     expect(row?.isCustom).toBe(false);
     expect(row?.value).toBe(false);
+
+    const values = await orgA.caller.settings.academy.values();
+    expect(
+      (values as Record<string, unknown>)[ISOLATION_ACADEMY_SETTING_CODE],
+    ).toBe(false);
 
     const settings = await readAcademySettings(db, orgA.organizationId);
     expect(

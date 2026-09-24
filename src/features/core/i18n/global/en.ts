@@ -1344,6 +1344,12 @@ export default {
     resetConfirm: "Reset",
     resetDone: "Back to the default.",
     resetFailed: "Couldn't reset the preference.",
+    "00001": {
+      label: "Default class length",
+      description:
+        "How long a new group time slot runs when you add it. You can still change each slot.",
+      unit: "minutes",
+    },
     groups: {
       scheduling: {
         title: "Scheduling",
