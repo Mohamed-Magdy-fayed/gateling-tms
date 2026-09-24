@@ -34,6 +34,12 @@ export const OrganizationsTable = pgTable(
     phone: varchar({ length: 32 }),
     website: varchar({ length: 2048 }),
     plan: organizationPlanEnum().notNull().default("free"),
+    // Who last set `plan` by hand from the platform owner's Academies list,
+    // and when (`platform.setOrganizationPlan`). Null means the plan is still
+    // the one the academy signed up on. The actor is an email, like the
+    // `createdBy` / `updatedBy` helpers, so it survives the user's deletion.
+    planGrantedBy: varchar(),
+    planGrantedAt: timestamp({ withTimezone: true }),
     // IANA zone the org's class schedules are written in. A group's weekly
     // slots are wall-clock ("Mon 18:00"); this is what turns them into
     // concrete UTC instants. Org-wide rather than per-group — an academy

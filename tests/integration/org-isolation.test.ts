@@ -59,6 +59,14 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *
  * That is all 23. A new tenant-owned table must be added here in the same
  * change that adds the table.
+ *
+ * ## The deliberate exception
+ *
+ * `platform.listOrganizations` and `platform.setOrganizationPlan` read and
+ * write across tenants on purpose: they are the platform owner's Academies
+ * list and plan grant. Neither goes through `orgProcedure`; both sit on
+ * `platformOwnerProcedure`, and `platform-plans.test.ts` proves an org admin
+ * who is not the owner gets FORBIDDEN on each.
  */
 
 let orgA: TenantFixture;

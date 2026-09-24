@@ -1,4 +1,7 @@
-import { organizationsRouter } from "@/features/core/organizations/server";
+import {
+  organizationsRouter,
+  platformRouter,
+} from "@/features/core/organizations/server";
 import { uploadsRouter } from "@/features/core/uploads/server";
 import { contactRouter } from "@/features/marketing/server/router";
 import { testimonialsRouter } from "@/features/marketing/testimonials/server";
@@ -57,6 +60,7 @@ export const appRouter = createTRPCRouter({
   attendance: attendanceRouter,
   teacherAvailability: teacherAvailabilityRouter,
   settings: settingsRouter,
+  platform: platformRouter,
 });
 
 export type AppRouter = typeof appRouter;

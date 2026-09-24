@@ -9,6 +9,8 @@ export {
   PLAN_LIMITS,
 } from "./limits";
 export { createOrganizationForUser } from "./mutations";
+export type { PlatformOrganizationRow } from "./platform-queries";
+export { platformRouter } from "./platform-router";
 export type { OrganizationMemberRow } from "./queries";
 export { resolveDefaultActiveOrganizationId } from "./queries";
 export { organizationsRouter } from "./router";

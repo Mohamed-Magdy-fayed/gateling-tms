@@ -25,6 +25,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { SYSTEM_SETTING_CODE } from "@/features/system/settings/lib/system-settings-registry";
 import type { SystemSettingRow } from "@/features/system/settings/server";
 import { useTRPC } from "@/integrations/trpc/client";
+import { AcademiesSection } from "./components/academies-section";
 import { SettingValueForm } from "./components/setting-value-form";
 
 /**
@@ -56,7 +57,10 @@ export function SystemSettingsPage({
       />
 
       {isPlatformOwner ? (
-        <IntegrationsSection />
+        <>
+          <IntegrationsSection />
+          <AcademiesSection />
+        </>
       ) : (
         <EmptyState
           icon={<ShieldAlertIcon />}

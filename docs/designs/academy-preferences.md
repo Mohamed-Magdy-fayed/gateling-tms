@@ -731,10 +731,11 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Surfaced by: Architecture — finding 1 / R1
   - Files: src/drizzle/schemas/auth/users-table.ts, src/integrations/trpc/init.ts, src/features/system/settings/server/router.ts, src/features/system/settings/admin/*, generated + custom migrations
   - Verify: T1 suite (owner passes, non-owner FORBIDDEN); `npm run db:generate` clean
-- [ ] **T3 (P1, human: ~1 day / CC: ~30min)** — organizations — Owner plan-grant route + audit columns + owner-only Academies section
+- [x] **T3 (P1, human: ~1 day / CC: ~30min)** — organizations — Owner plan-grant route + audit columns + owner-only Academies section
   - Surfaced by: Architecture — R8
   - Files: src/drizzle/schemas/auth/organizations-table.ts, src/features/core/organizations/server/*, the settings admin section, en.ts/ar.ts
   - Verify: integration test: non-owner FORBIDDEN; the owner grants basic; the academy adds a 51st student
+  - Shipped with DT4: `platform.listOrganizations` + `platform.setOrganizationPlan` (in `features/core/organizations/server/platform-*`), migration 0031 adds `planGrantedBy` / `planGrantedAt`, and the Academies section sits under Integrations on `/platform`. Saving the plan an academy already has is a no-op (audit untouched), which is what R11 needs. Tests: `tests/integration/platform-plans.test.ts`.
 - [ ] **T4 (P1, human: ~1 day / CC: ~45min)** — settings — `organization_settings` table, registry (control, appliesTo, requestedBy comment + `gstack-shortcut(dec-28099644)` marker), `readAcademySettings(db, orgId)` + cache wrapper, update/reset on orgAdminProcedure
   - Surfaced by: Architecture — R2, R3; Code quality — R4, R5
   - Files: src/drizzle/schemas/system/, src/features/system/settings/{lib,server}/*, generated migration
@@ -834,7 +835,7 @@ These refine the eng tasks T2-T5; they don't replace them.
   - Surfaced by: Pass 2, issue 5 (5A)
   - Files: src/features/system/settings/server/*
   - Verify: an integration test with the enqueue forced to fail stores no row
-- [ ] **DT4 (P1, human: ~1 day / CC: ~40min)** — Academies list
+- [x] **DT4 (P1, human: ~1 day / CC: ~40min)** — Academies list
   - Covers: `platform.listOrganizations` query, DataTable (9A), plan-change confirm with downgrade warning (6A), mobile columns (11A)
   - Surfaced by: issues 6, 9, 11
   - Files: src/features/core/organizations/server/*, src/features/system/settings/admin/*, en.ts/ar.ts
