@@ -90,15 +90,23 @@ export function PlanUsageCard() {
           )}
         />
 
-        <p className="text-muted-foreground text-xs">
-          {t("organizations.usage.comingSoon")}{" "}
-          <Link
-            href="/pricing"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            {t("organizations.usage.seePlans")}
-          </Link>
-        </p>
+        {/* A granted plan came from Gateling by hand (R8, 7B): pointing that
+            academy at "coming soon" plans would describe a plan it isn't on. */}
+        {data.isGranted ? (
+          <p className="text-muted-foreground text-xs">
+            {t("organizations.usage.providedByGateling")}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-xs">
+            {t("organizations.usage.comingSoon")}{" "}
+            <Link
+              href="/pricing"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              {t("organizations.usage.seePlans")}
+            </Link>
+          </p>
+        )}
       </CardContent>
     </Card>
   );

@@ -383,6 +383,7 @@ export default {
       megabytes: dt("{amount:number} MB", {}),
       gigabytes: dt("{amount:number} GB", {}),
       comingSoon: "Paid plans with higher limits are coming soon.",
+      providedByGateling: "Plan provided by Gateling.",
       seePlans: "See plans",
       studentsReached: dt(
         "You've reached this plan's limit of {limit:number} students.",
@@ -411,6 +412,20 @@ export default {
         ctaLabel: "Accept invitation",
         ignore:
           "If you weren't expecting this invitation, you can ignore this email.",
+      },
+      planGranted: {
+        subject: "Your Gateling plan is now {plan}",
+        intro:
+          "{organizationName} is now on the {plan} plan, provided by Gateling.",
+        limits: "It includes {students}, {courses} and {storage} of storage.",
+        students: "up to {count} students",
+        studentsUnlimited: "unlimited students",
+        courses: "up to {count} courses",
+        coursesUnlimited: "unlimited courses",
+        gigabytes: "{amount} GB",
+        ctaLabel: "View plan and usage",
+        notice:
+          "Everything your academy already has stays as it is. If you have questions about this change, reply to this email.",
       },
     },
   },
@@ -1208,7 +1223,8 @@ export default {
     subtitle:
       "Deployment-wide settings, managed by the platform owner. They apply to every academy on this deployment.",
     integrationsTitle: "Integrations",
-    ownerOnly: "These settings are managed by Gateling for every academy on this deployment. There is nothing to set up here.",
+    ownerOnly:
+      "These settings are managed by Gateling for every academy on this deployment. There is nothing to set up here.",
     loadFailed: "Couldn't load the settings.",
     saved: "Setting saved.",
     saveFailed: "Couldn't save the setting.",
@@ -1257,11 +1273,18 @@ export default {
       loadFailed: "Couldn't load the academies.",
       retry: "Try again",
       confirmTitle: "Change the plan for {name:string}?",
-      confirmDescription: "{from:string} → {to:string}. The new limits apply straight away.",
+      confirmDescription:
+        "{from:string} → {to:string}. The new limits apply straight away.",
       confirmDowngrade:
         "Nothing is deleted. The academy keeps everything it has, but can't add more past the new limits:",
-      overStudents: dt("{used:number} students, above the {limit:number} limit: they keep access, but no new students can be added.", {}),
-      overCourses: dt("{used:number} courses, above the {limit:number} limit: they stay, but no new courses can be added.", {}),
+      overStudents: dt(
+        "{used:number} students, above the {limit:number} limit: they keep access, but no new students can be added.",
+        {},
+      ),
+      overCourses: dt(
+        "{used:number} courses, above the {limit:number} limit: they stay, but no new courses can be added.",
+        {},
+      ),
       overStorage:
         "{used:string} stored, above the {limit:string} limit: files stay, but nothing new can be uploaded.",
       confirm: "Change plan",
@@ -1296,15 +1319,18 @@ export default {
     save: "Save",
     saving: "Saving…",
     saved: "Preference saved.",
-    saveFailed: "Couldn't save the preference, so it's back to its previous value.",
+    saveFailed:
+      "Couldn't save the preference, so it's back to its previous value.",
     on: "On",
     off: "Off",
     custom: "Custom",
     defaultIs: "Default: {value:string}",
     range: "{min:string}–{max:string} {unit:string}",
     amount: "{value:string} {unit:string}",
-    invalidNumber: "Enter a number from {min:string} to {max:string}, in steps of {step:string}.",
-    effectFuture: "Applies to new classes only. Classes already scheduled stay as they are.",
+    invalidNumber:
+      "Enter a number from {min:string} to {max:string}, in steps of {step:string}.",
+    effectFuture:
+      "Applies to new classes only. Classes already scheduled stay as they are.",
     effectReapply: "Also updates upcoming classes that are already scheduled.",
     reapplyTitle: "This updates upcoming classes. Continue?",
     reapplyDescription:

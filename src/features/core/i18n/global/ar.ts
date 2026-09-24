@@ -376,6 +376,7 @@ export default {
       megabytes: dt("{amount:number} ميجابايت", {}),
       gigabytes: dt("{amount:number} جيجابايت", {}),
       comingSoon: "خطط مدفوعة بحدود أعلى قريبًا.",
+      providedByGateling: "هذه الخطة مقدّمة من Gateling.",
       seePlans: "عرض الخطط",
       studentsReached: dt(
         "لقد وصلت إلى حد هذه الخطة وهو {limit:number} طالب.",
@@ -403,6 +404,21 @@ export default {
           "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS.",
         ctaLabel: "قبول الدعوة",
         ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
+      },
+      planGranted: {
+        subject: "خطتك في Gateling أصبحت الآن {plan}",
+        intro:
+          "أصبحت {organizationName} الآن على خطة {plan}، مقدّمة من Gateling.",
+        limits:
+          "تشمل الخطة {students}، و{courses}، و{storage} من مساحة التخزين.",
+        students: "حتى {count} طالب",
+        studentsUnlimited: "عددًا غير محدود من الطلاب",
+        courses: "حتى {count} دورة",
+        coursesUnlimited: "عددًا غير محدود من الدورات",
+        gigabytes: "{amount} جيجابايت",
+        ctaLabel: "عرض الخطة والاستخدام",
+        notice:
+          "كل ما لدى أكاديميتك يبقى كما هو. إذا كانت لديك أسئلة عن هذا التغيير، يمكنك الرد على هذه الرسالة.",
       },
     },
   },
@@ -527,8 +543,7 @@ export default {
     totalPaid: "إجمالي المدفوع",
     record: "تسجيل دفعة",
     edit: "تعديل الدفعة",
-    formDescription:
-      "المبالغ بعملة {currency}. تُحدَّد العملة من الإعدادات.",
+    formDescription: "المبالغ بعملة {currency}. تُحدَّد العملة من الإعدادات.",
     amount: "المبلغ ({currency})",
     paidAt: "تاريخ الدفع",
     method: "طريقة الدفع",
@@ -1151,7 +1166,8 @@ export default {
     subtitle:
       "إعدادات على مستوى النظام كله يديرها مالك المنصة، وتسري على كل الأكاديميات على هذا النظام.",
     integrationsTitle: "الربط مع الأنظمة",
-    ownerOnly: "تدير Gateling هذه الإعدادات لكل الأكاديميات على هذا النظام. لا يوجد ما تحتاج إلى ضبطه هنا.",
+    ownerOnly:
+      "تدير Gateling هذه الإعدادات لكل الأكاديميات على هذا النظام. لا يوجد ما تحتاج إلى ضبطه هنا.",
     loadFailed: "تعذّر تحميل الإعدادات.",
     saved: "تم حفظ الإعداد.",
     saveFailed: "تعذّر حفظ الإعداد.",
@@ -1199,11 +1215,18 @@ export default {
       loadFailed: "تعذّر تحميل الأكاديميات.",
       retry: "حاول مرة أخرى",
       confirmTitle: "تغيير خطة {name:string}؟",
-      confirmDescription: "{from:string} ← {to:string}. تسري الحدود الجديدة فورًا.",
+      confirmDescription:
+        "{from:string} ← {to:string}. تسري الحدود الجديدة فورًا.",
       confirmDowngrade:
         "لن يُحذف أي شيء. تحتفظ الأكاديمية بكل ما لديها، لكن لا يمكنها إضافة المزيد بعد تجاوز الحدود الجديدة:",
-      overStudents: dt("{used:number} طالبًا، أعلى من حد {limit:number}: يحتفظون بإمكانية الوصول، لكن لا يمكن إضافة طلاب جدد.", {}),
-      overCourses: dt("{used:number} دورة، أعلى من حد {limit:number}: تبقى الدورات، لكن لا يمكن إضافة دورات جديدة.", {}),
+      overStudents: dt(
+        "{used:number} طالبًا، أعلى من حد {limit:number}: يحتفظون بإمكانية الوصول، لكن لا يمكن إضافة طلاب جدد.",
+        {},
+      ),
+      overCourses: dt(
+        "{used:number} دورة، أعلى من حد {limit:number}: تبقى الدورات، لكن لا يمكن إضافة دورات جديدة.",
+        {},
+      ),
       overStorage:
         "{used:string} مخزّنة، أعلى من حد {limit:string}: تبقى الملفات، لكن لا يمكن رفع ملفات جديدة.",
       confirm: "تغيير الخطة",
@@ -1245,8 +1268,10 @@ export default {
     defaultIs: "الافتراضي: {value:string}",
     range: "{min:string}–{max:string} {unit:string}",
     amount: "{value:string} {unit:string}",
-    invalidNumber: "أدخل رقمًا من {min:string} إلى {max:string}، بزيادات قدرها {step:string}.",
-    effectFuture: "ينطبق على الحصص الجديدة فقط. الحصص المجدولة بالفعل تبقى كما هي.",
+    invalidNumber:
+      "أدخل رقمًا من {min:string} إلى {max:string}، بزيادات قدرها {step:string}.",
+    effectFuture:
+      "ينطبق على الحصص الجديدة فقط. الحصص المجدولة بالفعل تبقى كما هي.",
     effectReapply: "يحدّث أيضًا الحصص القادمة المجدولة بالفعل.",
     reapplyTitle: "سيؤدي هذا إلى تحديث الحصص القادمة. هل تريد المتابعة؟",
     reapplyDescription:

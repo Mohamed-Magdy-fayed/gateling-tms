@@ -1,7 +1,17 @@
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import { db } from "@/drizzle";
 import { OrganizationsTable } from "@/drizzle/schema";
+import { inngest } from "@/integrations/inngest/client";
+import { handleOrganizationPlanGranted } from "@/integrations/inngest/functions/on-organization-plan-granted";
 import {
   createMember,
   createTenant,
@@ -11,6 +21,10 @@ import {
   flagPlatformOwner,
   type TenantFixture,
 } from "./lib/harness";
+
+// The grant email job's only way out; nothing else in this file sends mail.
+const { sendMail } = vi.hoisted(() => ({ sendMail: vi.fn() }));
+vi.mock("@/integrations/email", () => ({ sendMail }));
 
 /**
  * The platform owner's plan grant (design doc `academy-preferences.md` R8)
@@ -52,7 +66,16 @@ describe("platform plan grants", () => {
     otherAdmin = await createMember(academy, "admin");
   });
 
+  // Every grant enqueues the admin email; no test here talks to Inngest.
+  const send = vi.spyOn(inngest, "send").mockResolvedValue({ ids: ["test"] });
+
+  afterEach(() => {
+    send.mockClear();
+    sendMail.mockReset();
+  });
+
   afterAll(async () => {
+    send.mockRestore();
     await destroyMember(otherAdmin.userId);
     await destroyTenant(academy);
     await destroyTenant(owner);
@@ -170,6 +193,45 @@ describe("platform plan grants", () => {
 
       expect(result.changed).toBe(false);
       expect(await planOf(academy.organizationId)).toEqual(before);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    test("a real change enqueues one plan-granted event, keyed to the grant", async () => {
+      await owner.caller.platform.setOrganizationPlan({
+        organizationId: academy.organizationId,
+        plan: "professional",
+      });
+
+      const { planGrantedAt } = await planOf(academy.organizationId);
+      const grantedAt = planGrantedAt?.toISOString();
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: `plan-granted:${academy.organizationId}:${grantedAt}`,
+          name: "organization/plan-granted",
+          data: {
+            organizationId: academy.organizationId,
+            plan: "professional",
+            grantedAt,
+            locale: "en",
+          },
+        }),
+      );
+    });
+
+    test("a failed enqueue still keeps the grant", async () => {
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      send.mockRejectedValueOnce(new Error("Inngest unreachable"));
+
+      const result = await owner.caller.platform.setOrganizationPlan({
+        organizationId: academy.organizationId,
+        plan: "enterprise",
+      });
+
+      expect(result.changed).toBe(true);
+      expect((await planOf(academy.organizationId)).plan).toBe("enterprise");
+      expect(error).toHaveBeenCalled();
+      error.mockRestore();
     });
 
     // Downgrades are allowed and touch no data: the academy keeps what it
@@ -199,6 +261,73 @@ describe("platform plan grants", () => {
           }),
         ),
       ).toBe("NOT_FOUND");
+    });
+  });
+
+  describe("plan-granted email job", () => {
+    /**
+     * A step that memoizes by id across runs, the way Inngest replays a
+     * retried run: a step that already succeeded returns its stored result
+     * instead of running again.
+     */
+    function memoizingStep() {
+      const done = new Map<string, unknown>();
+      return {
+        run: async <T>(id: string, fn: () => Promise<T>) => {
+          if (done.has(id)) return done.get(id);
+          const result = await fn();
+          done.set(id, result);
+          return result;
+        },
+      };
+    }
+
+    const event = () => ({
+      data: {
+        organizationId: academy.organizationId,
+        plan: "basic" as const,
+        grantedAt: "2026-09-24T10:00:00.000Z",
+        locale: "ar",
+      },
+    });
+
+    test("emails every admin of the academy, and only its admins", async () => {
+      const teacher = await createMember(academy, "teacher");
+      try {
+        const result = await handleOrganizationPlanGranted({
+          event: event(),
+          step: memoizingStep(),
+        });
+
+        expect(result).toEqual({ sent: 2 });
+        const recipients = sendMail.mock.calls.map(([mail]) => mail.toEmail);
+        expect(recipients).toHaveLength(2);
+        expect(recipients).toContain(academy.email);
+        expect(recipients).not.toContain(`${owner.userId}@integration.test`);
+        // In the granting owner's locale: Arabic subject, plan name included.
+        expect(sendMail.mock.calls[0][0].subject).toBe(
+          "خطتك في Gateling أصبحت الآن أساسي",
+        );
+      } finally {
+        await destroyMember(teacher.userId);
+      }
+    });
+
+    test("a retry after one failed send emails each admin once", async () => {
+      const step = memoizingStep();
+      sendMail.mockResolvedValueOnce(undefined);
+      sendMail.mockRejectedValueOnce(new Error("SMTP down"));
+
+      await expect(
+        handleOrganizationPlanGranted({ event: event(), step }),
+      ).rejects.toThrow("SMTP down");
+      await handleOrganizationPlanGranted({ event: event(), step });
+
+      const recipients = sendMail.mock.calls.map(([mail]) => mail.toEmail);
+      // First admin once, second admin twice (the failed try + the retry).
+      expect(recipients).toHaveLength(3);
+      expect(new Set(recipients).size).toBe(2);
+      expect(recipients.filter((r) => r === recipients[0])).toHaveLength(1);
     });
   });
 });

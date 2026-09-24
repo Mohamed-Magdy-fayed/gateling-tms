@@ -5,6 +5,7 @@ import { onGoogleIntegrationDisconnected } from "./on-google-integration-disconn
 import { onGroupScheduleChanged } from "./on-group-schedule-changed";
 import { onMeetingsWebhook } from "./on-meetings-webhook";
 import { onOrganizationMemberInvited } from "./on-organization-member-invited";
+import { onOrganizationPlanGranted } from "./on-organization-plan-granted";
 import { onSessionBackfillScheduled } from "./on-session-backfill-scheduled";
 import { onUsageReconciliationRequested } from "./on-usage-reconciliation-requested";
 import { onUsageReconciliationScheduled } from "./on-usage-reconciliation-scheduled";
@@ -21,6 +22,7 @@ export const functions = [
   processTask,
   onUserRegistered,
   onOrganizationMemberInvited,
+  onOrganizationPlanGranted,
   onContactMessageSubmitted,
   onGroupScheduleChanged,
   onSessionBackfillScheduled,

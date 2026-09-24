@@ -56,6 +56,7 @@ export async function getOrganizationUsage(ctx: OrgTRPCContext) {
     where: eq(OrganizationsTable.id, ctx.organizationId),
     columns: {
       plan: true,
+      planGrantedBy: true,
       studentCount: true,
       courseCount: true,
       storageBytes: true,
@@ -73,6 +74,9 @@ export async function getOrganizationUsage(ctx: OrgTRPCContext) {
 
   return {
     plan: organization.plan,
+    // Set once the platform owner has granted a plan by hand (R8); the usage
+    // card then says the plan comes from Gateling instead of "coming soon".
+    isGranted: organization.planGrantedBy !== null,
     usage: {
       students: organization.studentCount,
       courses: organization.courseCount,
