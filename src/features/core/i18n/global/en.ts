@@ -1287,6 +1287,48 @@ export default {
       reapplyFailed: "Nothing changed. Try again.",
     },
   },
+  academySettings: {
+    title: "Academy preferences",
+    description:
+      "How Gateling works for your academy. Anything you haven't changed follows Gateling's default.",
+    loadFailed: "Couldn't load your academy's preferences.",
+    retry: "Try again",
+    save: "Save",
+    saving: "Saving…",
+    saved: "Preference saved.",
+    saveFailed: "Couldn't save the preference, so it's back to its previous value.",
+    on: "On",
+    off: "Off",
+    custom: "Custom",
+    defaultIs: "Default: {value:string}",
+    range: "{min:string}–{max:string} {unit:string}",
+    amount: "{value:string} {unit:string}",
+    invalidNumber: "Enter a number from {min:string} to {max:string}, in steps of {step:string}.",
+    effectFuture: "Applies to new classes only. Classes already scheduled stay as they are.",
+    effectReapply: "Also updates upcoming classes that are already scheduled.",
+    reapplyTitle: "This updates upcoming classes. Continue?",
+    reapplyDescription:
+      "“{name:string}” changes to {value:string}. Classes already scheduled are updated in the background.",
+    reapplyConfirm: "Update classes",
+    reset: "Reset to default",
+    resetTitle: "Reset “{name:string}” to the default?",
+    resetDescription:
+      "It goes back to {value:string} and follows Gateling's default from now on.",
+    resetReapply: "Classes already scheduled are updated in the background.",
+    resetConfirm: "Reset",
+    resetDone: "Back to the default.",
+    resetFailed: "Couldn't reset the preference.",
+    groups: {
+      scheduling: {
+        title: "Scheduling",
+        description: "How classes are planned from each group's schedule.",
+      },
+      attendance: {
+        title: "Attendance",
+        description: "How attendance is taken and counted.",
+      },
+    },
+  },
   googleImport: {
     title: "Google Forms import",
     subtitle:

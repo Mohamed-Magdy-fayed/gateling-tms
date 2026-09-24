@@ -741,10 +741,11 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Files: src/drizzle/schemas/system/, src/features/system/settings/{lib,server}/*, generated migration
   - Verify: unit tests for the registry, builder and reader; integration tests for update/reset/reapply enqueue
   - Shipped: migration 0032 adds `organization_settings`; the registry (`lib/academy-settings-registry.ts`) is empty until T7 names a real preference, and the builder/lookups sit in `lib/academy-settings.ts`. `settings.academy.{list,update,reset}` are on `orgAdminProcedure`. The R10 mechanism landed here too: a reapply save or reset enqueues inside the transaction, only when the effective value changes, and a failed send rolls back with "Nothing changed. Try again." (`settings.errors.reapplyFailed`). Tests: `tests/academy-settings.test.ts`, and `tests/integration/academy-settings.test.ts` against three mocked registry entries. The DT3 UI Alert and the reapply handler double-run test still belong to DT3.
-- [ ] **T5 (P1, human: ~1 day / CC: ~30min)** — settings UI — Academy preferences section with declared controls and the effect hint, en + ar, RTL-safe
+- [x] **T5 (P1, human: ~1 day / CC: ~30min)** — settings UI — Academy preferences section with declared controls and the effect hint, en + ar, RTL-safe
   - Surfaced by: Code quality — R4; Architecture — R3
   - Files: src/features/system/settings/admin/*, src/features/core/i18n/global/{en,ar}.ts
   - Verify: `/ui-scan` on touched files; `tests/i18n-parity.test.ts`; Mohamed's visual check on preview (R9)
+  - Shipped with DT2 and DT6: `AcademyPreferencesSection` sits after `PlanUsageCard` on `/settings` for admins. The registry is still empty, so the section renders nothing and sends no query until T7 adds the first preference; the visual check waits for T7. `tests/i18n-parity.test.ts` now also fails when a registered preference is missing its label, description, options or unit in en or ar. The DT3 inline "Nothing changed. Try again." Alert shows on any failed staged save.
 - [ ] **T6 (P1, human: ~2h / CC: ~10min)** — isolation — Add `organization_settings` to the org-isolation suite (23 → 24)
   - Surfaced by: premise 3 + factual correction
   - Files: tests/integration/org-isolation.test.ts, tests/integration/lib/tenant-fixtures.ts
@@ -827,7 +828,7 @@ These refine the eng tasks T2-T5; they don't replace them.
   - Verify: as a non-owner admin, no nav item and the calm empty state; as the owner, Integrations + Academies
   - Shipped: the sidebar and `/settings` read the flag off the signed-in user row (already loaded by the `(system)` layout), not `organizations.getActive`, so an owner without an active academy still reaches the page. `getActive` keeps returning `isPlatformOwner`. The Academies section lands with T3/DT4.
   - Follow-up (Mohamed's review on preview, 2026-09-24): the sidebar label, page title and URL now match. Academy settings moved from `/organizations` to `/settings` ("Settings"; `/organizations` redirects permanently), and the owner page moved from `/settings` to `/platform`. Both pages share `EntityPageHeader`. The academy switcher lives only in the sidebar and collapses to its icon. The settings page says "academy" rather than "organization" (en + ar); the rest of the app's copy is a later sweep.
-- [ ] **DT2 (P1, human: ~1 day / CC: ~40min)** — academy preferences UI
+- [x] **DT2 (P1, human: ~1 day / CC: ~40min)** — academy preferences UI
   - Covers: section on `/organizations` (1A), group cards (8B), save model (3A), state table (4A), keys + component map (10A), mobile (11A), a11y/RTL (12A)
   - Surfaced by: issues 1, 3, 4, 8, 10, 11, 12
   - Files: src/features/core/organizations/nextjs/organizations-settings-page.tsx, src/features/system/settings/admin/*, en.ts/ar.ts
@@ -846,7 +847,7 @@ These refine the eng tasks T2-T5; they don't replace them.
   - Surfaced by: Pass 3, issue 7 (7B)
   - Files: src/features/core/organizations/nextjs/components/plan-usage-card.tsx, src/integrations/inngest/functions/, email templates
   - Verify: after a grant, the line shows and one email is sent per admin in their locale
-- [ ] **DT6 (P2, human: ~1h / CC: ~5min)** — shared Arabic/Persian digit normaliser + unit tests, used by the number controls
+- [x] **DT6 (P2, human: ~1h / CC: ~5min)** — shared Arabic/Persian digit normaliser + unit tests, used by the number controls
   - Surfaced by: Pass 6, issue 12 (12A)
   - Files: src/lib/ (new helper), tests/
   - Verify: "٣٠" and "۳۰" parse as 30

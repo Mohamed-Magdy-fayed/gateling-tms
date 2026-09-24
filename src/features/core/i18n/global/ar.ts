@@ -1229,6 +1229,48 @@ export default {
       reapplyFailed: "لم يتغير شيء. حاول مرة أخرى.",
     },
   },
+  academySettings: {
+    title: "تفضيلات الأكاديمية",
+    description:
+      "طريقة عمل Gateling في أكاديميتك. كل ما لم تغيّره يتبع الإعداد الافتراضي في Gateling.",
+    loadFailed: "تعذّر تحميل تفضيلات أكاديميتك.",
+    retry: "حاول مرة أخرى",
+    save: "حفظ",
+    saving: "جارٍ الحفظ…",
+    saved: "تم حفظ التفضيل.",
+    saveFailed: "تعذّر حفظ التفضيل، فعاد إلى قيمته السابقة.",
+    on: "مفعّل",
+    off: "متوقف",
+    custom: "مخصص",
+    defaultIs: "الافتراضي: {value:string}",
+    range: "{min:string}–{max:string} {unit:string}",
+    amount: "{value:string} {unit:string}",
+    invalidNumber: "أدخل رقمًا من {min:string} إلى {max:string}، بزيادات قدرها {step:string}.",
+    effectFuture: "ينطبق على الحصص الجديدة فقط. الحصص المجدولة بالفعل تبقى كما هي.",
+    effectReapply: "يحدّث أيضًا الحصص القادمة المجدولة بالفعل.",
+    reapplyTitle: "سيؤدي هذا إلى تحديث الحصص القادمة. هل تريد المتابعة؟",
+    reapplyDescription:
+      "سيتغير «{name:string}» إلى {value:string}. تُحدَّث الحصص المجدولة بالفعل في الخلفية.",
+    reapplyConfirm: "تحديث الحصص",
+    reset: "إعادة إلى الافتراضي",
+    resetTitle: "إعادة «{name:string}» إلى الافتراضي؟",
+    resetDescription:
+      "سيعود إلى {value:string} ويتبع الإعداد الافتراضي في Gateling من الآن فصاعدًا.",
+    resetReapply: "تُحدَّث الحصص المجدولة بالفعل في الخلفية.",
+    resetConfirm: "إعادة",
+    resetDone: "عاد إلى الإعداد الافتراضي.",
+    resetFailed: "تعذّرت إعادة التفضيل.",
+    groups: {
+      scheduling: {
+        title: "الجدولة",
+        description: "طريقة تخطيط الحصص من جدول كل مجموعة.",
+      },
+      attendance: {
+        title: "الحضور",
+        description: "طريقة تسجيل الحضور واحتسابه.",
+      },
+    },
+  },
   googleImport: {
     title: "الاستيراد من Google Forms",
     subtitle:

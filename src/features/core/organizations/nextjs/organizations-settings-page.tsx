@@ -31,6 +31,7 @@ import {
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
 import { PublicShowcaseCard } from "@/features/marketing/testimonials/admin";
+import { AcademyPreferencesSection } from "@/features/system/settings/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import type { OrganizationMemberRow } from "../server/queries";
 import {
@@ -179,6 +180,9 @@ export function OrganizationsSettingsPage() {
       ) : null}
 
       <PlanUsageCard />
+
+      {/* Admin-only: settings.academy.* is orgAdminProcedure (design 1A). */}
+      {canManage ? <AcademyPreferencesSection /> : null}
 
       {/* Admin-only: `testimonials.status` is orgAdminProcedure, and speaking
           publicly for the academy is the owner's call, not any member's. */}
