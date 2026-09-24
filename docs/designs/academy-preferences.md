@@ -746,10 +746,11 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Files: src/features/system/settings/admin/*, src/features/core/i18n/global/{en,ar}.ts
   - Verify: `/ui-scan` on touched files; `tests/i18n-parity.test.ts`; Mohamed's visual check on preview (R9)
   - Shipped with DT2 and DT6: `AcademyPreferencesSection` sits after `PlanUsageCard` on `/settings` for admins. The registry is still empty, so the section renders nothing and sends no query until T7 adds the first preference; the visual check waits for T7. `tests/i18n-parity.test.ts` now also fails when a registered preference is missing its label, description, options or unit in en or ar. The DT3 inline "Nothing changed. Try again." Alert shows on any failed staged save.
-- [ ] **T6 (P1, human: ~2h / CC: ~10min)** — isolation — Add `organization_settings` to the org-isolation suite (23 → 24)
+- [x] **T6 (P1, human: ~2h / CC: ~10min)** — isolation — Add `organization_settings` to the org-isolation suite (23 → 24)
   - Surfaced by: premise 3 + factual correction
   - Files: tests/integration/org-isolation.test.ts, tests/integration/lib/tenant-fixtures.ts
   - Verify: `npm run test:isolation`
+  - Shipped: each fixture tenant stores one override (code `90001`, the non-default `true`). The suite mocks a one-entry boolean registry, because the real registry is empty until T7 and the routes skip rows whose code isn't registered. Three new cases: `settings.academy.list` and `readAcademySettings` show A's own state only (A's row is deleted first, so a leak would show up as a custom value), and `update` and `reset` from A leave B's row unchanged. `test:isolation` passes 120/121. The one failure is the existing `testimonials.submit` case, which needs Upstash Redis credentials.
 - [ ] **T7 (P1, human: n/a / CC: n/a)** — build rule — the engine PR includes at least one real requested setting (Open Question 1 must be answered first)
   - Surfaced by: design §Build rule
   - Verify: review

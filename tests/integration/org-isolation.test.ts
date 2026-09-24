@@ -1,5 +1,5 @@
-import { count, eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { and, count, eq } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { db } from "@/drizzle";
 import {
   AnswersTable,
@@ -15,6 +15,7 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
+  OrganizationSettingsTable,
   PaymentsTable,
   PlacementTestsTable,
   QuestionsTable,
@@ -24,20 +25,47 @@ import {
   TraineeNotesTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import type { AcademySettingDefinition } from "@/features/system/settings/lib/academy-settings-registry";
+import { readAcademySettings } from "@/features/system/settings/server";
 import {
   createTenant,
   destroyTenant,
   errorCodeOf,
   type TenantFixture,
 } from "./lib/harness";
-import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
+import {
+  ISOLATION_ACADEMY_SETTING_CODE,
+  seedTenantData,
+  type TenantData,
+} from "./lib/tenant-fixtures";
+
+// The real academy-preferences registry is empty until a real academy asks for
+// a preference, and the routes ignore rows whose code is not registered — so
+// without an entry, organization_settings would be unreachable and every
+// assertion on it vacuous. One boolean entry, matching the fixture row's code
+// (ISOLATION_ACADEMY_SETTING_CODE; vi.mock is hoisted above the import).
+vi.mock(
+  "@/features/system/settings/lib/academy-settings-registry",
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    ACADEMY_SETTINGS: [
+      {
+        code: "90001",
+        group: "attendance",
+        control: { kind: "boolean" },
+        default: false,
+        appliesTo: "future",
+      },
+    ] satisfies AcademySettingDefinition[],
+  }),
+);
 
 /**
  * The tenancy invariant, exercised end to end against a real database
  * (`docs/rebuild/README.md` rule 6, `phase-08.md` step 5's "org-isolation test
  * suite covers **every** tenant table").
  *
- * Two organizations, each with a row in all 23 tenant-owned tables. Every
+ * Two organizations, each with a row in all 24 tenant-owned tables. Every
  * assertion is org A's admin — a genuine, fully-authorized user — reaching for
  * org B's data by id. The caller goes through the real `orgProcedure`, which
  * resolves the membership from the database, so nothing here is stubbed except
@@ -49,7 +77,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *   courses, levels, lectures, trainees, groups, group_students, enrollments,
  *   forms, form_sections, questions, form_blocks, answers, form_responses,
  *   placement_tests, certificates, trainee_notes, payments, sessions,
- *   session_students, testimonials, google_integrations
+ *   session_students, testimonials, google_integrations, organization_settings
  *
  * Reachable only through a parent, and covered by that parent's refusal:
  *   enrollment_levels  → `enrollments.levels` (takes the enrollment id)
@@ -57,7 +85,7 @@ import { seedTenantData, type TenantData } from "./lib/tenant-fixtures";
  *     input at all; it is covered by asserting A's member list never contains
  *     B's admin.
  *
- * That is all 23. A new tenant-owned table must be added here in the same
+ * That is all 24. A new tenant-owned table must be added here in the same
  * change that adds the table.
  *
  * ## The deliberate exception
@@ -369,6 +397,32 @@ describe("scoped lists never contain another tenant's rows", () => {
     const result = await orgA.caller.googleImport.get();
     expect(result?.googleEmail).toContain(orgA.organizationId);
     expect(result?.googleEmail).not.toContain(orgB.organizationId);
+  });
+
+  // organization_settings: keyed by the caller's org, read without an id. A's
+  // override is removed first, so the only override left anywhere is B's — any
+  // leak would show up as a custom value.
+  test("settings.academy.list and readAcademySettings see only the caller's own overrides", async () => {
+    await db
+      .delete(OrganizationSettingsTable)
+      .where(
+        and(
+          eq(OrganizationSettingsTable.organizationId, orgA.organizationId),
+          eq(OrganizationSettingsTable.code, ISOLATION_ACADEMY_SETTING_CODE),
+        ),
+      );
+
+    const rows = await orgA.caller.settings.academy.list();
+    const row = rows.find(
+      (entry) => entry.code === ISOLATION_ACADEMY_SETTING_CODE,
+    );
+    expect(row?.isCustom).toBe(false);
+    expect(row?.value).toBe(false);
+
+    const settings = await readAcademySettings(db, orgA.organizationId);
+    expect(
+      (settings as Record<string, unknown>)[ISOLATION_ACADEMY_SETTING_CODE],
+    ).toBe(false);
   });
 
   // Not `dashboard.overview`: its counts come from the denormalized counters on
@@ -721,6 +775,30 @@ describe("cross-tenant writes are refused and change nothing", () => {
       orgA.caller.sessions.joinLink({ id: dataB.sessionId }),
       "sessions.joinLink",
     );
+  });
+
+  // Both academy-preference writes take only a code; the row is found by the
+  // caller's own organizationId, so the check is that B's override survives.
+  test("settings.academy.update only ever writes the caller's own row", async () => {
+    await orgA.caller.settings.academy.update({
+      code: ISOLATION_ACADEMY_SETTING_CODE,
+      value: false,
+    });
+
+    const [otherTenantsRow] = await db
+      .select({ value: OrganizationSettingsTable.value })
+      .from(OrganizationSettingsTable)
+      .where(eq(OrganizationSettingsTable.id, dataB.organizationSettingId));
+    expect(otherTenantsRow.value).toBe(true);
+  });
+
+  test("settings.academy.reset leaves another org's override alone", async () => {
+    await orgA.caller.settings.academy.reset({
+      code: ISOLATION_ACADEMY_SETTING_CODE,
+    });
+    expect(
+      await rowCount(OrganizationSettingsTable, dataB.organizationSettingId),
+    ).toBe(1);
   });
 
   // The submit path is an upsert keyed on the caller's own organizationId, so

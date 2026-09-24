@@ -14,6 +14,7 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
+  OrganizationSettingsTable,
   PaymentsTable,
   PlacementTestsTable,
   QuestionsTable,
@@ -26,6 +27,14 @@ import {
 import type { TenantFixture } from "./harness";
 
 const ACTOR = "integration-test";
+
+/**
+ * The academy preference both fixture tenants override. The real registry is
+ * empty until a real academy asks for a preference, so the isolation suite
+ * swaps in a boolean entry with this code (default `false`); the fixture row
+ * stores the non-default `true`, which is what makes it an override.
+ */
+export const ISOLATION_ACADEMY_SETTING_CODE = "90001";
 
 /**
  * One row in **every** tenant-owned table, written directly.
@@ -270,6 +279,17 @@ export async function seedTenantData(tenant: TenantFixture) {
     })
     .returning({ id: TestimonialsTable.id });
 
+  const [organizationSetting] = await db
+    .insert(OrganizationSettingsTable)
+    .values({
+      organizationId,
+      code: ISOLATION_ACADEMY_SETTING_CODE,
+      value: true,
+      createdBy: ACTOR,
+      updatedBy: ACTOR,
+    })
+    .returning({ id: OrganizationSettingsTable.id });
+
   return {
     answerId: answer.id,
     blockId: block.id,
@@ -283,6 +303,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     groupStudentId: groupStudent.id,
     lectureId: lecture.id,
     levelId: level.id,
+    organizationSettingId: organizationSetting.id,
     paymentId: payment.id,
     traineeNoteId: traineeNote.id,
     placementTestId: placementTest.id,
