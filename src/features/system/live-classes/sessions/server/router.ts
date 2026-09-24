@@ -5,9 +5,15 @@ import {
 } from "@/integrations/trpc/init";
 import { createSessionJoinLink, startSessionMeeting } from "./meetings";
 import { updateSession } from "./mutations";
-import { listGroupSessions, listSessions, listWeekSessions } from "./queries";
+import {
+  listGroupSessions,
+  listMonthSessions,
+  listSessions,
+  listWeekSessions,
+} from "./queries";
 import {
   listSessionsInput,
+  monthSessionsInput,
   sessionIdSchema,
   sessionsByGroupSchema,
   sessionUpdateSchema,
@@ -32,6 +38,11 @@ export const sessionsRouter = createTRPCRouter({
   week: orgProcedure
     .input(weekSessionsInput)
     .query(async ({ ctx, input }) => listWeekSessions(ctx, input)),
+  // The calendar's month: the same visibility rules over every whole week
+  // that touches the month.
+  month: orgProcedure
+    .input(monthSessionsInput)
+    .query(async ({ ctx, input }) => listMonthSessions(ctx, input)),
   byGroup: orgProcedure
     .input(sessionsByGroupSchema)
     .query(async ({ ctx, input }) => listGroupSessions(ctx, input.groupId)),

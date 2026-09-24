@@ -369,6 +369,23 @@ describe("scoped lists never contain another tenant's rows", () => {
     expect(result.rows.map((row) => row.id)).not.toContain(dataB.sessionId);
   });
 
+  // Both fixture sessions sit at 2026-09-01T18:00Z, inside this week and this
+  // month in Cairo — so B's absence proves isolation only because A's own
+  // session is present in the same window.
+  test("sessions.week", async () => {
+    const result = await orgA.caller.sessions.week({ weekStart: "2026-08-29" });
+    const ids = result.rows.map((row) => row.id);
+    expect(ids).toContain(dataA.sessionId);
+    expect(ids).not.toContain(dataB.sessionId);
+  });
+
+  test("sessions.month", async () => {
+    const result = await orgA.caller.sessions.month({ month: "2026-09-01" });
+    const ids = result.rows.map((row) => row.id);
+    expect(ids).toContain(dataA.sessionId);
+    expect(ids).not.toContain(dataB.sessionId);
+  });
+
   test("placementTests.list is scoped to the caller's own trainee", async () => {
     const result = await orgA.caller.placementTests.list({
       traineeId: dataA.traineeId,

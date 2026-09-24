@@ -81,6 +81,7 @@ export const listMembersInput = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
+  roles: z.array(z.enum(organizationMembershipRoleValues)).optional(),
 });
 
 export const inviteMemberSchema = z.object({

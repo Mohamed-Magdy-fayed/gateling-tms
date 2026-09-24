@@ -248,3 +248,178 @@ export function layoutOverlaps<T>(
 
   return result;
 }
+
+/** The first day of the month holding `date` ("YYYY-MM-01"). */
+export function monthStartOf(date: IsoDate): IsoDate {
+  const parts = parseIsoDate(date);
+  if (!parts) return date;
+  return toIsoDate(parts.year, parts.month, 1);
+}
+
+/**
+ * `date` moved by whole months, clamped to the target month's last day, so
+ * Jan 31 + 1 is Feb 28 (or 29) rather than spilling into March.
+ */
+export function addIsoMonths(date: IsoDate, months: number): IsoDate {
+  const parts = parseIsoDate(date);
+  if (!parts) return date;
+  const target = new Date(Date.UTC(parts.year, parts.month - 1 + months, 1));
+  const year = target.getUTCFullYear();
+  const month = target.getUTCMonth() + 1;
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return toIsoDate(year, month, Math.min(parts.day, lastDay));
+}
+
+/**
+ * Every date the month grid draws: whole Saturday-to-Friday weeks from the
+ * week holding the 1st to the week holding the last day. That is 4, 5 or 6
+ * rows — a 28-day February that starts on a Saturday fills exactly four —
+ * so callers read the row count as `length / 7` rather than assuming one.
+ */
+export function monthGridDates(
+  monthStart: IsoDate,
+  timeZone: string,
+): IsoDate[] {
+  const first = monthStartOf(monthStart);
+  const lastOfMonth = addIsoDays(addIsoMonths(first, 1), -1);
+  const gridStart = weekStartOf(first, timeZone);
+  const gridEnd = addIsoDays(weekStartOf(lastOfMonth, timeZone), 7);
+  const dates: IsoDate[] = [];
+  for (let date = gridStart; date < gridEnd; date = addIsoDays(date, 1)) {
+    dates.push(date);
+  }
+  return dates;
+}
+
+/**
+ * The month grid's range: its first and one-past-last local dates, and the
+ * UTC instants of their local midnights (start inclusive, end exclusive) —
+ * the same construction as `weekBoundsInZone`, so a DST day is 23 or 25
+ * hours and never a hardcoded 24.
+ */
+export function monthBoundsInZone(
+  monthStart: IsoDate,
+  timeZone: string,
+): { gridStart: IsoDate; gridEnd: IsoDate; start: Date; end: Date } | null {
+  if (!parseIsoDate(monthStart)) return null;
+  const dates = monthGridDates(monthStart, timeZone);
+  const gridStart = dates[0];
+  const gridEnd = addIsoDays(dates[dates.length - 1], 1);
+  const start = zonedInstant(gridStart, 0, timeZone);
+  const end = zonedInstant(gridEnd, 0, timeZone);
+  if (!start || !end) return null;
+  return { gridStart, gridEnd, start, end };
+}
+
+/**
+ * A `?month=` value from the URL, as the first of its month — or null for
+ * anything that isn't a real calendar date. The shape check comes first
+ * because `addIsoDays` hands malformed input back unchanged, so a
+ * round-trip alone would wave "abc" through; the round-trip then catches
+ * "2026-02-30" and "2026-13-01", which match the pattern but aren't dates.
+ */
+export function parseMonthParam(value: string | null): IsoDate | null {
+  if (!value || !parseIsoDate(value)) return null;
+  if (addIsoDays(value, 0) !== value) return null;
+  return monthStartOf(value);
+}
+
+/** The fields the month-level helpers read off a session row. */
+export type MonthSessionLike = {
+  id: string;
+  scheduledAt: Date;
+  durationMinutes: number;
+  status: string;
+  teacherId: string | null;
+};
+
+/**
+ * How many classes actually run in the month: sessions whose local date is
+ * inside it, cancelled ones excluded. The grid also draws the neighbouring
+ * months' leading and trailing days; those don't count.
+ */
+export function countInMonth(
+  sessions: readonly MonthSessionLike[],
+  monthStart: IsoDate,
+  timeZone: string,
+): number {
+  const month = monthStartOf(monthStart).slice(0, 7);
+  return sessions.filter(
+    (session) =>
+      session.status !== "cancelled" &&
+      zonedParts(session.scheduledAt, timeZone).date.slice(0, 7) === month,
+  ).length;
+}
+
+export type TeacherOverlaps = {
+  /** Every session that overlaps another of the same teacher's. */
+  sessionIds: Set<string>;
+  /** Local date → the overlapping sessions that touch that day. */
+  byDate: Map<IsoDate, string[]>;
+};
+
+/**
+ * Where one teacher is booked twice at once. A per-teacher sweep in start
+ * order over the whole range, not a per-day pairwise check, so a class that
+ * runs past local midnight still clashes with the next day's first class.
+ * Back-to-back is not an overlap (end is exclusive); cancelled classes and
+ * classes with no teacher are ignored. Each clash is filed under every
+ * local date its overlapping stretch covers.
+ */
+export function findTeacherOverlaps(
+  sessions: readonly MonthSessionLike[],
+  timeZone: string,
+): TeacherOverlaps {
+  const sessionIds = new Set<string>();
+  const byDate = new Map<IsoDate, string[]>();
+  const file = (date: IsoDate, id: string) => {
+    const ids = byDate.get(date) ?? [];
+    if (!ids.includes(id)) byDate.set(date, [...ids, id]);
+  };
+
+  const byTeacher = new Map<
+    string,
+    { id: string; start: number; end: number }[]
+  >();
+  for (const session of sessions) {
+    if (session.status === "cancelled" || !session.teacherId) continue;
+    const start = session.scheduledAt.getTime();
+    const entry = {
+      id: session.id,
+      start,
+      end: start + session.durationMinutes * 60_000,
+    };
+    byTeacher.set(session.teacherId, [
+      ...(byTeacher.get(session.teacherId) ?? []),
+      entry,
+    ]);
+  }
+
+  for (const entries of byTeacher.values()) {
+    const sorted = [...entries].sort(
+      (a, b) => a.start - b.start || a.end - b.end,
+    );
+    let active: typeof sorted = [];
+    for (const current of sorted) {
+      active = active.filter((other) => other.end > current.start);
+      for (const other of active) {
+        sessionIds.add(other.id);
+        sessionIds.add(current.id);
+        const clashStart = new Date(current.start);
+        const clashEnd = new Date(Math.min(current.end, other.end) - 1);
+        const lastDate = zonedParts(clashEnd, timeZone).date;
+        for (
+          let date = zonedParts(clashStart, timeZone).date;
+          date <= lastDate;
+          date = addIsoDays(date, 1)
+        ) {
+          file(date, other.id);
+          file(date, current.id);
+        }
+      }
+      active = [...active, current];
+    }
+  }
+
+  return { sessionIds, byDate };
+}

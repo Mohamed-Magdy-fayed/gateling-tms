@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { likeContains } from "@/drizzle/lib/search";
 import {
@@ -131,9 +131,14 @@ export async function resolveDefaultActiveOrganizationId(
 }
 
 function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
-  const base = eq(
-    OrganizationMembershipsTable.organizationId,
-    ctx.organizationId,
+  // A role filter narrows the org's members; it never widens past them. The
+  // calendar's teacher list asks for staff only, so a large academy's
+  // students can't push teachers off the one page it loads.
+  const base = and(
+    eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+    input.roles?.length
+      ? inArray(OrganizationMembershipsTable.role, input.roles)
+      : undefined,
   );
   const query = input.globalFilter?.trim();
   if (!query) return base;
