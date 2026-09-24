@@ -1095,6 +1095,7 @@ export default {
     },
     view: {
       week: "الأسبوع",
+      month: "الشهر",
       list: "قائمة",
     },
     calendar: {
@@ -1111,6 +1112,44 @@ export default {
       moved: "تم نقل الحصة.",
       moveFailed: "تعذّر نقل الحصة.",
       openGroup: "فتح المجموعة",
+      loadFailed: "تعذّر تحميل الجدول.",
+      retry: "إعادة المحاولة",
+    },
+    month: {
+      previousMonth: "الشهر السابق",
+      nextMonth: "الشهر التالي",
+      today: "اليوم",
+      classCount: dt("{count:plural} هذا الشهر", {
+        plural: {
+          count: {
+            zero: "لا حصص",
+            one: "حصة واحدة",
+            two: "حصتان",
+            few: "{?} حصص",
+            many: "{?} حصة",
+            other: "{?} حصة",
+          },
+        },
+      }),
+      more: dt("+{count:number} أخرى", {}),
+      openDay: dt("{count:plural} في {date}", {
+        plural: {
+          count: {
+            zero: "لا حصص أخرى",
+            one: "حصة أخرى",
+            two: "حصتان أخريان",
+            few: "{?} حصص أخرى",
+            many: "{?} حصة أخرى",
+            other: "{?} حصة أخرى",
+          },
+        },
+      }),
+      emptyMonth: "لا توجد حصص هذا الشهر.",
+      emptyForTeacher: "لا توجد حصص لـ {name} هذا الشهر.",
+      clearFilter: "إزالة التصفية",
+      openInWeek: "فتح في عرض الأسبوع",
+      overlapTitle: "المعلّم محجوز مرتين",
+      overlapLabel: "لدى {name} حصص متداخلة في هذا اليوم",
     },
     edit: {
       title: "تعديل الحصة",

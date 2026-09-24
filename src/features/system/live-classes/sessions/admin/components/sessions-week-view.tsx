@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangleIcon,
   CalendarDaysIcon,
   CheckIcon,
   ChevronLeftIcon,
@@ -11,16 +12,9 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Muted } from "@/components/ui/typography";
 import { useAuth } from "@/features/core/auth/nextjs/components/auth-provider";
@@ -44,14 +38,13 @@ import {
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
 import { useTRPC } from "@/integrations/trpc/client";
 import { cn } from "@/lib/utils";
-import { SessionEditDialog, type TeacherOption } from "./session-edit-dialog";
+import { SessionEditDialog } from "./session-edit-dialog";
+import { TeacherFilterSelect, useTeacherFilter } from "./teacher-filter";
 import type { Placement } from "./week-calendar/geometry";
 import { groupColor } from "./week-calendar/group-colors";
 import { WeekCalendar } from "./week-calendar/week-calendar";
 
 const WEEK_PARAM = "week";
-const TEACHER_PARAM = "teacher";
-const ALL_TEACHERS = "all";
 
 /**
  * The calendar view of the agenda: one week at a time, Saturday first,
@@ -87,9 +80,10 @@ export function SessionsWeekView() {
       weekStartOf(requestedWeek ?? todayInZone(new Date(), timeZone), timeZone),
     [requestedWeek, timeZone],
   );
-  const teacherParam = searchParams.get(TEACHER_PARAM);
-  const teacherId =
-    teacherParam && teacherParam !== ALL_TEACHERS ? teacherParam : undefined;
+  const [paintMode, setPaintMode] = useState(false);
+  const leavePaintMode = useCallback(() => setPaintMode(false), []);
+  const { teacherId, teacherOptions, selectedTeacher, setTeacher } =
+    useTeacherFilter({ enabled: isStaff, onTeacherChange: leavePaintMode });
 
   const setParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -106,30 +100,9 @@ export function SessionsWeekView() {
     [pathname, router, searchParams],
   );
 
-  const { data, isLoading } = useQuery(
+  const { data, isLoading, isError, refetch } = useQuery(
     trpc.sessions.week.queryOptions({ weekStart, teacherId }),
   );
-
-  // Teachers for the filter and the edit dialog: every member who can teach.
-  const { data: members } = useQuery({
-    ...trpc.organizations.members.list.queryOptions({
-      page: 1,
-      perPage: 100,
-      sorting: [],
-    }),
-    enabled: isStaff,
-  });
-  const teacherOptions = useMemo<TeacherOption[]>(
-    () =>
-      (members?.rows ?? [])
-        .filter((member) => member.role !== "student")
-        .map((member) => ({
-          value: member.userId,
-          label: member.name || member.email || member.userId,
-        })),
-    [members],
-  );
-  const selectedTeacher = teacherOptions.find((o) => o.value === teacherId);
 
   const { data: availabilityRows } = useQuery({
     ...trpc.teacherAvailability.list.queryOptions({ teacherId }),
@@ -150,7 +123,6 @@ export function SessionsWeekView() {
   const canEditAvailability =
     teacherId !== undefined &&
     (role === "admin" || (role === "teacher" && viewerId === teacherId));
-  const [paintMode, setPaintMode] = useState(false);
   const paintingAvailability = paintMode && canEditAvailability;
 
   const setAvailabilityMut = useMutation(
@@ -313,37 +285,12 @@ export function SessionsWeekView() {
 
         {isStaff ? (
           <div className="ms-auto flex flex-wrap items-center gap-2">
-            <Label htmlFor="sessions-teacher-filter" className="text-xs">
-              {t("sessions.calendar.teacher")}
-            </Label>
-            <Select
-              value={teacherId ?? ALL_TEACHERS}
-              onValueChange={(next) => {
-                setPaintMode(false);
-                setParams({
-                  [TEACHER_PARAM]: next && next !== ALL_TEACHERS ? next : null,
-                });
-              }}
-            >
-              <SelectTrigger id="sessions-teacher-filter" className="w-48">
-                <SelectValue>
-                  {(selected) =>
-                    teacherOptions.find((o) => o.value === selected)?.label ??
-                    t("sessions.calendar.allTeachers")
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_TEACHERS}>
-                  {t("sessions.calendar.allTeachers")}
-                </SelectItem>
-                {teacherOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TeacherFilterSelect
+              id="sessions-teacher-filter"
+              teacherId={teacherId}
+              teacherOptions={teacherOptions}
+              onChange={setTeacher}
+            />
 
             {canEditAvailability ? (
               <Button
@@ -381,7 +328,24 @@ export function SessionsWeekView() {
         </Muted>
       ) : null}
 
-      {isLoading || !data ? (
+      {isError ? (
+        <Alert variant="destructive">
+          <AlertTriangleIcon />
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            {t("sessions.calendar.loadFailed")}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void refetch()}
+            >
+              {t("sessions.calendar.retry")}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {isError && !data ? null : isLoading || !data ? (
         <Skeleton className="h-[60vh] w-full rounded-xl" />
       ) : (
         <>

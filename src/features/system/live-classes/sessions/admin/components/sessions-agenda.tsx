@@ -9,13 +9,12 @@ import {
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
-import type { SessionRow } from "@/features/system/live-classes/sessions/server";
+import { groupByDay } from "@/features/system/live-classes/sessions/lib/day-groups";
 // The zod module directly, not the server barrel: the barrel also re-exports
 // the meeting code, which pulls the database driver into the client bundle.
 import {
@@ -23,7 +22,7 @@ import {
   sessionScopeValues,
 } from "@/features/system/live-classes/sessions/server/schemas";
 import { useTRPC } from "@/integrations/trpc/client";
-import { SessionList } from "./session-list";
+import { DaySessionsCard } from "./day-sessions-card";
 
 const PER_PAGE = 20;
 
@@ -102,20 +101,14 @@ export function SessionsAgenda() {
       ) : (
         <div className="space-y-4">
           {days.map((day) => (
-            <Card key={day.label}>
-              <CardHeader>
-                <CardTitle className="text-base">{day.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SessionList
-                  sessions={day.sessions}
-                  liveClassesEnabled={data?.liveClassesEnabled ?? false}
-                  timeZone={timeZone}
-                  showGroup
-                  canOpenRegister={isStaff}
-                />
-              </CardContent>
-            </Card>
+            <DaySessionsCard
+              key={day.date}
+              label={day.label}
+              sessions={day.sessions}
+              liveClassesEnabled={data?.liveClassesEnabled ?? false}
+              timeZone={timeZone}
+              canOpenRegister={isStaff}
+            />
           ))}
         </div>
       )}
@@ -153,36 +146,4 @@ export function SessionsAgenda() {
 
 function isSessionScope(value: string): value is SessionScope {
   return (sessionScopeValues as readonly string[]).includes(value);
-}
-
-/**
- * One heading per calendar day *in the academy's zone* — grouping on the
- * viewer's local day would split an evening class across two headings for
- * anyone in a different country.
- */
-function groupByDay(
-  sessions: SessionRow[],
-  locale: string,
-  timeZone: string,
-): { label: string; sessions: SessionRow[] }[] {
-  const dayFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-    timeZone,
-    dateStyle: "full",
-  });
-
-  const days: { label: string; sessions: SessionRow[] }[] = [];
-
-  for (const session of sessions) {
-    const label = dayFmt.format(session.scheduledAt);
-    const currentDay = days.at(-1);
-
-    if (currentDay?.label === label) {
-      currentDay.sessions.push(session);
-      continue;
-    }
-
-    days.push({ label, sessions: [session] });
-  }
-
-  return days;
 }

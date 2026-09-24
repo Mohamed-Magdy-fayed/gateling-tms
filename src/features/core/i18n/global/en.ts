@@ -1144,6 +1144,7 @@ export default {
     },
     view: {
       week: "Week",
+      month: "Month",
       list: "List",
     },
     calendar: {
@@ -1162,6 +1163,28 @@ export default {
       moved: "Class moved.",
       moveFailed: "Couldn't move the class.",
       openGroup: "Open group",
+      loadFailed: "Couldn't load the schedule.",
+      retry: "Retry",
+    },
+    month: {
+      previousMonth: "Previous month",
+      nextMonth: "Next month",
+      today: "Today",
+      classCount: dt("{count:plural} this month", {
+        plural: { count: { one: "{?} class", other: "{?} classes" } },
+      }),
+      more: dt("+{count:number} more", {}),
+      openDay: dt("{count:plural} on {date}", {
+        plural: {
+          count: { one: "{?} more class", other: "{?} more classes" },
+        },
+      }),
+      emptyMonth: "No classes this month.",
+      emptyForTeacher: "No classes for {name} this month.",
+      clearFilter: "Clear filter",
+      openInWeek: "Open in week view",
+      overlapTitle: "Teacher booked twice",
+      overlapLabel: "{name} has overlapping classes on this day",
     },
     edit: {
       title: "Edit class",
