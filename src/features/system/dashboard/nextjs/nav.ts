@@ -97,7 +97,7 @@ export const SYSTEM_NAV_ITEMS: SystemNavItem[] = [
 
 export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
   {
-    href: "/organizations",
+    href: "/settings",
     translationKey: "nav.settings",
     Icon: SettingsIcon,
   },
@@ -105,7 +105,7 @@ export const GENERAL_NAV_ITEMS: SystemNavItem[] = [
     // The platform owner's page: deployment-wide integrations (Gateling
     // Meetings) and, later, the academies list. Hidden from everyone else;
     // the page shows them an empty state and its routes return FORBIDDEN.
-    href: "/settings",
+    href: "/platform",
     translationKey: "nav.platform",
     Icon: SlidersHorizontalIcon,
     platformOwnerOnly: true,

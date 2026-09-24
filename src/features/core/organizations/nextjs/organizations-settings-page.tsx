@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
+import { H3 } from "@/components/ui/typography";
 import {
   DataTable,
   type DataTableControlledState,
@@ -36,7 +37,6 @@ import {
   InviteMemberDialog,
   MemberRemoveDialog,
   OrganizationProfileFormDialog,
-  OrganizationSwitcher,
   PlanUsageCard,
 } from "./components";
 import { buildMemberColumns } from "./components/members-table-columns";
@@ -139,15 +139,11 @@ export function OrganizationsSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <EntityPageHeader
-          title={t("organizations.pageTitle")}
-          lead={t("organizations.pageLead")}
-        />
-        <OrganizationSwitcher
-          activeOrganizationId={activeOrganization?.id ?? null}
-        />
-      </div>
+      {/* The academy switcher lives in the sidebar header, on every page. */}
+      <EntityPageHeader
+        title={t("organizations.pageTitle")}
+        lead={t("organizations.pageLead")}
+      />
 
       {activeOrganization ? (
         <Card>
@@ -190,9 +186,7 @@ export function OrganizationsSettingsPage() {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">
-            {t("organizations.members.title")}
-          </h2>
+          <H3 className="text-lg">{t("organizations.members.title")}</H3>
         </div>
 
         <DataTable

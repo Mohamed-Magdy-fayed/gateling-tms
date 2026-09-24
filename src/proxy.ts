@@ -17,9 +17,11 @@ import {
 // `/get-started` (the onboarding wizard, Phase 2 segment ④) and `/invite`
 // (accepting an org invite) are deliberately absent from this list — both
 // must be reachable by an authed user who doesn't have an org yet, since
-// they're how that user gets one in the first place.
+// they're how that user gets one in the first place. So is `/platform`: the
+// platform owner may have no academy of their own, and the page's layout
+// already requires a session.
 const PROTECTED_PATH_PREFIXES = [
-  "/organizations",
+  "/settings",
   "/dashboard",
   "/content-library",
   "/assessments",

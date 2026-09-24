@@ -56,7 +56,11 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
       dir={dir}
     >
       <SidebarHeader>
-        <OrganizationSwitcher activeOrganizationId={activeOrganizationId} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <OrganizationSwitcher activeOrganizationId={activeOrganizationId} />
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>

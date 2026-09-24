@@ -288,8 +288,8 @@ export default {
     },
   },
   organizations: {
-    pageTitle: "إعدادات المؤسسة",
-    pageLead: "إدارة الملف الشخصي للمؤسسة والخطة والأعضاء.",
+    pageTitle: "الإعدادات",
+    pageLead: "إدارة الملف الشخصي لأكاديميتك وخطتها وأعضائها.",
     validation: {
       invalidWebsite: "أدخل رابط موقع إلكتروني صالحًا.",
       invalidTimeZone: "اختر منطقة زمنية صالحة.",
@@ -302,9 +302,9 @@ export default {
       enterprise: "مؤسسي",
     },
     profile: {
-      editTitle: "تعديل المؤسسة",
-      editDescription: "تحديث بيانات الملف الشخصي لمؤسستك.",
-      nameLabel: "اسم المؤسسة",
+      editTitle: "تعديل الأكاديمية",
+      editDescription: "تحديث بيانات الملف الشخصي لأكاديميتك.",
+      nameLabel: "اسم الأكاديمية",
       businessNameLabel: "الاسم التجاري",
       phoneLabel: "الهاتف",
       websiteLabel: "الموقع الإلكتروني",
@@ -312,8 +312,8 @@ export default {
       timeZoneHint: "تُعرض جداول الفصول ومواعيد الجلسات وفق هذا التوقيت.",
       currencyLabel: "العملة",
       currencyHint: "تُسجَّل مدفوعات الطلاب وتُجمع بهذه العملة.",
-      saveSuccess: "تم تحديث المؤسسة.",
-      saveFailed: "تعذر تحديث المؤسسة.",
+      saveSuccess: "تم تحديث الأكاديمية.",
+      saveFailed: "تعذر تحديث الأكاديمية.",
     },
     switcher: {
       label: "اختر مؤسسة",
@@ -336,20 +336,20 @@ export default {
       inviteButton: "دعوة عضو",
       inviteTitle: "دعوة عضو جديد",
       inviteDescription:
-        "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه المؤسسة.",
+        "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه الأكاديمية.",
       inviteEmailLabel: "البريد الإلكتروني",
       inviteRoleLabel: "الدور",
       inviteSent: "تم إرسال الدعوة.",
       inviteFailed: "تعذر إرسال الدعوة.",
-      alreadyMember: "هذا الشخص عضو بالفعل في هذه المؤسسة.",
+      alreadyMember: "هذا الشخص عضو بالفعل في هذه الأكاديمية.",
       roleUpdated: "تم تحديث الدور.",
       roleUpdateFailed: "تعذر تحديث الدور.",
       removed: "تمت إزالة العضو.",
       removeFailed: "تعذر إزالة هذا العضو.",
       removeConfirmTitle: "إزالة العضو؟",
       removeConfirmDescription:
-        "إزالة {name} من هذه المؤسسة. سيفقد وصوله فورًا.",
-      lastAdmin: "يجب أن يكون للمؤسسة مدير واحد على الأقل.",
+        "إزالة {name} من هذه الأكاديمية. سيفقد وصوله فورًا.",
+      lastAdmin: "يجب أن يكون للأكاديمية مدير واحد على الأقل.",
     },
     invite: {
       invalid: "رابط هذه الدعوة غير صالح أو منتهي الصلاحية.",
@@ -366,7 +366,7 @@ export default {
     },
     usage: {
       title: "الخطة والاستخدام",
-      description: "ما تستخدمه هذه المؤسسة ضمن خطتها الحالية.",
+      description: "ما تستخدمه هذه الأكاديمية ضمن خطتها الحالية.",
       students: "الطلاب",
       courses: "الدورات",
       storage: "التخزين",
@@ -528,7 +528,7 @@ export default {
     record: "تسجيل دفعة",
     edit: "تعديل الدفعة",
     formDescription:
-      "المبالغ بعملة {currency}. تُحدَّد العملة من إعدادات المؤسسة.",
+      "المبالغ بعملة {currency}. تُحدَّد العملة من الإعدادات.",
     amount: "المبلغ ({currency})",
     paidAt: "تاريخ الدفع",
     method: "طريقة الدفع",

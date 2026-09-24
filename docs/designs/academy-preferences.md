@@ -92,7 +92,7 @@ New table `organization_settings`:
 
 ### UI
 
-- **Placement (design review 1A):** an "Academy preferences" section (group cards, see 8B) on the academy's Settings page (`/organizations`, `organizations-settings-page.tsx`). It sits after `PlanUsageCard` and before `PublicShowcaseCard`, and is visible when `canManage` (admin). The server code stays in `features/system/settings` (D1); only the screen lives with the academy. `/settings` (labelled "Integrations") stays platform-level.
+- **Placement (design review 1A):** an "Academy preferences" section (group cards, see 8B) on the academy's Settings page (`/settings`, formerly `/organizations`; `organizations-settings-page.tsx`). It sits after `PlanUsageCard` and before `PublicShowcaseCard`, and is visible when `canManage` (admin). The server code stays in `features/system/settings` (D1); only the screen lives with the academy. The platform-level page is `/platform` ("Platform").
 - Each control is rendered from its declared `control` (R4): boolean → switch, enum → select, number → input with bounds. The effect hint ("applies to new classes only" vs "updates existing classes") shows before save (R3).
 - **Anatomy (design review 8B, Mohamed's choice over the recommended single card):**
   - An "Academy preferences" section heading (`h2`, `text-lg font-semibold`, matching "Members" on the same page) is followed by **one `Card` per group** (Scheduling, Attendance, ...).
@@ -147,7 +147,7 @@ New table `organization_settings`:
 ### Platform owner (R1, R8)
 
 - `users.isPlatformOwner` (boolean, default false) is set true for Mohamed's account by a custom data migration. There's a new `platformOwnerProcedure` on `protectedProcedure`.
-- Deployment settings (`settings.list` / `settings.update`, the Meetings keys) require the platform owner. The integration section on `/settings` renders only for the owner. No env vars, no allowlist.
+- Deployment settings (`settings.list` / `settings.update`, the Meetings keys) require the platform owner. The integration section on `/platform` (formerly `/settings`) renders only for the owner. No env vars, no allowlist.
 - `platform.setOrganizationPlan({ organizationId, plan })` is owner-only, and it's the one route deliberately allowed to name another org. It's audited with `organizations.planGrantedBy` / `planGrantedAt`, and an owner-only "Academies" section lists academies with a plan select. `PLAN_LIMITS` follow the granted plan.
 - Deferred (R7): gating Meetings behind a paid plan goes to the Billing & Paymob spec (TODOS.md).
 - **Academies list (design review 9A):** a `DataTable` in server mode, the same kit as the Members table.
@@ -169,15 +169,15 @@ New table `organization_settings`:
   - When `organizations.planGrantedBy` is set, `PlanUsageCard` replaces its "Paid plans with higher limits are coming soon" line with "Plan provided by Gateling" (en + ar).
   - Granting invalidates `organizations.getActive` and `organizations.usage`, so the owner's own academy updates at once.
   - An Inngest function (`on-organization-plan-granted`) emails the academy's admins about the new plan in their locale (en + ar templates, Nodemailer). The grant itself never waits on the email.
-- **Owner page (design review 2A):** `organizations.getActive` exposes `isPlatformOwner`. The sidebar item for `/settings` shows only when it's true, renamed "Platform" (en + ar). `/settings` holds the Integrations (Meetings) card and the Academies section. A non-owner who opens the URL gets `EmptyState` with the new copy `settings.ownerOnly`, never the error `Alert`. The old `settings.adminOnly` copy is retired.
+- **Owner page (design review 2A):** `organizations.getActive` exposes `isPlatformOwner`. The sidebar item for the owner page shows only when it's true, labelled "Platform" (en + ar). The page lives at `/platform` and holds the Integrations (Meetings) card and the Academies section. A non-owner who opens the URL gets `EmptyState` with the new copy `settings.ownerOnly`, never the error `Alert`. The old `settings.adminOnly` copy is retired.
 
 Information hierarchy (design review 1A + 2A):
 
 ```
 Academy admin                          Platform owner (Mohamed)
 Sidebar: ... Settings                  Sidebar: ... Settings, Platform
-/organizations  "Settings"             /settings  "Platform"
- 1 Header + academy switcher             1 Header
+/settings  "Settings"                   /platform  "Platform"
+ 1 Header (switcher is in the sidebar)   1 Header
  2 Academy profile card (plan tag)       2 Integrations: Gateling Meetings card
  3 Plan usage                            3 Academies (plan grants)
  4 Academy preferences   <- new
@@ -824,6 +824,7 @@ These refine the eng tasks T2-T5; they don't replace them.
   - Files: src/features/core/organizations/server/queries.ts, src/features/system/dashboard/nextjs/nav.ts, src/features/system/settings/admin/system-settings-page.tsx, en.ts/ar.ts
   - Verify: as a non-owner admin, no nav item and the calm empty state; as the owner, Integrations + Academies
   - Shipped: the sidebar and `/settings` read the flag off the signed-in user row (already loaded by the `(system)` layout), not `organizations.getActive`, so an owner without an active academy still reaches the page. `getActive` keeps returning `isPlatformOwner`. The Academies section lands with T3/DT4.
+  - Follow-up (Mohamed's review on preview, 2026-09-24): the sidebar label, page title and URL now match. Academy settings moved from `/organizations` to `/settings` ("Settings"; `/organizations` redirects permanently), and the owner page moved from `/settings` to `/platform`. Both pages share `EntityPageHeader`. The academy switcher lives only in the sidebar and collapses to its icon. The settings page says "academy" rather than "organization" (en + ar); the rest of the app's copy is a later sweep.
 - [ ] **DT2 (P1, human: ~1 day / CC: ~40min)** — academy preferences UI
   - Covers: section on `/organizations` (1A), group cards (8B), save model (3A), state table (4A), keys + component map (10A), mobile (11A), a11y/RTL (12A)
   - Surfaced by: issues 1, 3, 4, 8, 10, 11, 12

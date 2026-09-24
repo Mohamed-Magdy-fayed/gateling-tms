@@ -19,7 +19,8 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { H2, H3, InlineCode, Muted } from "@/components/ui/typography";
+import { H3, InlineCode } from "@/components/ui/typography";
+import { EntityPageHeader } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
 import { SYSTEM_SETTING_CODE } from "@/features/system/settings/lib/system-settings-registry";
 import type { SystemSettingRow } from "@/features/system/settings/server";
@@ -49,10 +50,10 @@ export function SystemSettingsPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <H2>{t("settings.title")}</H2>
-        <Muted>{t("settings.subtitle")}</Muted>
-      </div>
+      <EntityPageHeader
+        title={t("settings.title")}
+        lead={t("settings.subtitle")}
+      />
 
       {isPlatformOwner ? (
         <IntegrationsSection />

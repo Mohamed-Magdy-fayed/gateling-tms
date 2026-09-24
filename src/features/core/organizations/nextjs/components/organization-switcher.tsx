@@ -4,13 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2Icon, CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { useTranslation } from "@/features/core/i18n/client";
 import { useTRPC } from "@/integrations/trpc/client";
 
@@ -57,21 +57,21 @@ export function OrganizationSwitcher({
 
   return (
     <DropdownMenu>
+      {/* A sidebar menu button, like the user menu in the footer: when the
+          sidebar collapses to icons it shrinks to the building icon instead
+          of overflowing the rail. */}
       <DropdownMenuTrigger
         render={
-          <Button
-            variant="outline"
-            className="w-full justify-between gap-2 sm:w-56"
+          <SidebarMenuButton
+            className="border border-sidebar-border group-data-[collapsible=icon]:border-0 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
             disabled={switchMut.isPending}
           >
-            <span className="flex min-w-0 items-center gap-2">
-              <Building2Icon className="size-3.5 shrink-0" />
-              <span className="truncate">
-                {active?.name ?? t("organizations.switcher.label")}
-              </span>
+            <Building2Icon aria-hidden />
+            <span className="flex-1 truncate">
+              {active?.name ?? t("organizations.switcher.label")}
             </span>
-            <ChevronsUpDownIcon className="size-3.5 shrink-0 opacity-50" />
-          </Button>
+            <ChevronsUpDownIcon className="opacity-50" aria-hidden />
+          </SidebarMenuButton>
         }
       />
       <DropdownMenuContent align="start" className="w-56">

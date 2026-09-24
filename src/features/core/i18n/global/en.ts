@@ -288,8 +288,8 @@ export default {
     },
   },
   organizations: {
-    pageTitle: "Organization settings",
-    pageLead: "Manage your organization's profile, plan, and members.",
+    pageTitle: "Settings",
+    pageLead: "Manage your academy's profile, plan, and members.",
     validation: {
       invalidWebsite: "Enter a valid website URL.",
       invalidTimeZone: "Choose a valid time zone.",
@@ -302,9 +302,9 @@ export default {
       enterprise: "Enterprise",
     },
     profile: {
-      editTitle: "Edit organization",
-      editDescription: "Update your organization's profile details.",
-      nameLabel: "Organization name",
+      editTitle: "Edit academy",
+      editDescription: "Update your academy's profile details.",
+      nameLabel: "Academy name",
       businessNameLabel: "Business name",
       phoneLabel: "Phone",
       websiteLabel: "Website",
@@ -314,8 +314,8 @@ export default {
       currencyLabel: "Currency",
       currencyHint:
         "Student payments are recorded and totalled in this currency.",
-      saveSuccess: "Organization updated.",
-      saveFailed: "Could not update the organization.",
+      saveSuccess: "Academy updated.",
+      saveFailed: "Could not update the academy.",
     },
     switcher: {
       label: "Select organization",
@@ -337,20 +337,20 @@ export default {
       changeRole: "Change role",
       inviteButton: "Invite member",
       inviteTitle: "Invite a member",
-      inviteDescription: "Send an email invitation to join this organization.",
+      inviteDescription: "Send an email invitation to join this academy.",
       inviteEmailLabel: "Email",
       inviteRoleLabel: "Role",
       inviteSent: "Invitation sent.",
       inviteFailed: "Could not send the invitation.",
-      alreadyMember: "This person is already a member of this organization.",
+      alreadyMember: "This person is already a member of this academy.",
       roleUpdated: "Role updated.",
       roleUpdateFailed: "Could not update the role.",
       removed: "Member removed.",
       removeFailed: "Could not remove this member.",
       removeConfirmTitle: "Remove member?",
       removeConfirmDescription:
-        "Remove {name} from this organization. They will lose access immediately.",
-      lastAdmin: "An organization must have at least one admin.",
+        "Remove {name} from this academy. They will lose access immediately.",
+      lastAdmin: "An academy must have at least one admin.",
     },
     invite: {
       invalid: "This invitation link is invalid or has expired.",
@@ -373,7 +373,7 @@ export default {
     },
     usage: {
       title: "Plan and usage",
-      description: "What this organization is using on its current plan.",
+      description: "What this academy is using on its current plan.",
       students: "Students",
       courses: "Courses",
       storage: "Storage",
@@ -539,7 +539,7 @@ export default {
     record: "Record payment",
     edit: "Edit payment",
     formDescription:
-      "Amounts are in {currency}. The currency is set in Organization settings.",
+      "Amounts are in {currency}. The currency is set in Settings.",
     amount: "Amount ({currency})",
     paidAt: "Paid on",
     method: "Method",
