@@ -9,4 +9,4 @@ export {
   type UpdateSystemSettingInput,
   updateSystemSettingSchema,
 } from "./schemas";
-export type { OrgTRPCContext } from "./types";
+export type { PlatformOwnerTRPCContext } from "./types";

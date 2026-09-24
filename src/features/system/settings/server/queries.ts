@@ -8,7 +8,7 @@ import {
   SYSTEM_SETTINGS,
   type SystemSettingCode,
 } from "../lib/system-settings-registry";
-import type { OrgTRPCContext } from "./types";
+import type { PlatformOwnerTRPCContext } from "./types";
 
 export type SystemSettingRow = {
   code: SystemSettingCode;
@@ -45,7 +45,7 @@ export async function readSystemSettingValues(
 }
 
 /**
- * The admin's view: every registered setting, secrets reported but not shown.
+ * The platform owner's view: every registered setting, secrets reported but not shown.
  *
  * The rows themselves are created by a data migration
  * (`migrations/0024_seed_system_settings.sql`), which is how deployment data
@@ -53,7 +53,7 @@ export async function readSystemSettingValues(
  * with no row (a migration not yet written for it) still lists, as unset.
  */
 export async function listSystemSettings(
-  ctx: OrgTRPCContext,
+  ctx: PlatformOwnerTRPCContext,
 ): Promise<SystemSettingRow[]> {
   const rows = await ctx.db
     .select({

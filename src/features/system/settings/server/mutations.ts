@@ -6,16 +6,16 @@ import {
   isSystemSettingCode,
 } from "../lib/system-settings-registry";
 import type { UpdateSystemSettingInput } from "./schemas";
-import type { OrgTRPCContext } from "./types";
+import type { PlatformOwnerTRPCContext } from "./types";
 
 /**
- * Sets one deployment-wide value. Admin-only by the router; the registry
+ * Sets one deployment-wide value. Platform-owner-only by the router; the registry
  * decides whether the value is acceptable. An empty value clears the setting
  * — that is how an integration is disconnected — so "clear" and "set" are one
  * action with one audit trail (`updatedBy`).
  */
 export async function updateSystemSetting(
-  ctx: OrgTRPCContext,
+  ctx: PlatformOwnerTRPCContext,
   input: UpdateSystemSettingInput,
 ): Promise<{ code: string; hasValue: boolean }> {
   if (!isSystemSettingCode(input.code)) {

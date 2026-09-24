@@ -13,6 +13,7 @@ import {
   destroyMember,
   destroyTenant,
   errorCodeOf,
+  flagPlatformOwner,
   type TenantFixture,
 } from "./lib/harness";
 
@@ -28,8 +29,9 @@ import {
  * values, shared by every tenant and every test file. Each test restores the
  * rows it touched, and the suite puts back the snapshot it started from.
  *
- * The gate asserted here is today's: any org admin. R1 intentionally narrows
- * it to the platform owner, and that change updates the gate tests below.
+ * The gate is R1's: only a user flagged `isPlatformOwner`, whatever their org
+ * role. Every behavior test runs as that owner; the gate tests prove an org
+ * admin who is not the owner, and a teacher, are refused.
  */
 
 const { MEETINGS_API_URL, MEETINGS_API_KEY, MEETINGS_WEBHOOK_SECRET } =
@@ -77,7 +79,8 @@ async function setStoredValue(code: string, value: string | null) {
 }
 
 describe("system settings routes", () => {
-  let admin: TenantFixture;
+  let owner: TenantFixture;
+  let admin: Awaited<ReturnType<typeof createMember>>;
   let teacher: Awaited<ReturnType<typeof createMember>>;
   let original: SettingSnapshot[];
 
@@ -89,11 +92,13 @@ describe("system settings routes", () => {
       [...SYSTEM_SETTING_CODES].sort(),
     );
 
-    admin = await createTenant(
+    owner = await createTenant(
       `SS${Date.now().toString().slice(-6)}`,
       "System Settings",
     );
-    teacher = await createMember(admin, "teacher");
+    await flagPlatformOwner(owner.userId);
+    admin = await createMember(owner, "admin");
+    teacher = await createMember(owner, "teacher");
   });
 
   afterEach(async () => {
@@ -102,13 +107,14 @@ describe("system settings routes", () => {
 
   afterAll(async () => {
     await restoreSettings(original);
-    await destroyTenant(admin);
+    await destroyTenant(owner);
+    await destroyMember(admin.userId);
     await destroyMember(teacher.userId);
   });
 
   describe("list", () => {
     test("returns every registered setting in registry order", async () => {
-      const rows = await admin.caller.settings.list();
+      const rows = await owner.caller.settings.list();
 
       expect(rows.map((row) => row.code)).toEqual([...SYSTEM_SETTING_CODES]);
     });
@@ -118,7 +124,7 @@ describe("system settings routes", () => {
       await setStoredValue(MEETINGS_API_KEY, "sk-live-should-never-leak");
       await setStoredValue(MEETINGS_WEBHOOK_SECRET, null);
 
-      const rows = await admin.caller.settings.list();
+      const rows = await owner.caller.settings.list();
       const byCode = new Map(rows.map((row) => [row.code, row]));
 
       expect(byCode.get(MEETINGS_API_URL)).toMatchObject({
@@ -142,7 +148,7 @@ describe("system settings routes", () => {
     test("reports a whitespace-only value as unset", async () => {
       await setStoredValue(MEETINGS_API_URL, "   ");
 
-      const rows = await admin.caller.settings.list();
+      const rows = await owner.caller.settings.list();
       const url = rows.find((row) => row.code === MEETINGS_API_URL);
 
       expect(url).toMatchObject({ value: null, hasValue: false });
@@ -151,7 +157,7 @@ describe("system settings routes", () => {
 
   describe("update", () => {
     test("trims the value it stores and records who saved it", async () => {
-      const result = await admin.caller.settings.update({
+      const result = await owner.caller.settings.update({
         code: MEETINGS_API_KEY,
         value: "  sk-trimmed  ",
       });
@@ -163,7 +169,7 @@ describe("system settings routes", () => {
         .select({ updatedBy: SettingsTable.updatedBy })
         .from(SettingsTable)
         .where(eq(SettingsTable.code, MEETINGS_API_KEY));
-      expect(row.updatedBy).toBe(`${admin.userId}@integration.test`);
+      expect(row.updatedBy).toBe(`${owner.userId}@integration.test`);
     });
 
     // Blank is how an admin disconnects an integration — there is no
@@ -171,7 +177,7 @@ describe("system settings routes", () => {
     test("an empty value clears the setting", async () => {
       await setStoredValue(MEETINGS_WEBHOOK_SECRET, "whsec-existing");
 
-      const result = await admin.caller.settings.update({
+      const result = await owner.caller.settings.update({
         code: MEETINGS_WEBHOOK_SECRET,
         value: "   ",
       });
@@ -184,7 +190,7 @@ describe("system settings routes", () => {
     });
 
     test("accepts an https URL and a localhost http URL", async () => {
-      await admin.caller.settings.update({
+      await owner.caller.settings.update({
         code: MEETINGS_API_URL,
         value: "https://meetings.example.com",
       });
@@ -192,7 +198,7 @@ describe("system settings routes", () => {
         "https://meetings.example.com",
       );
 
-      await admin.caller.settings.update({
+      await owner.caller.settings.update({
         code: MEETINGS_API_URL,
         value: "http://localhost:4000",
       });
@@ -208,7 +214,7 @@ describe("system settings routes", () => {
       await setStoredValue(MEETINGS_API_URL, "https://before.example.com");
 
       const code = await errorCodeOf(
-        admin.caller.settings.update({ code: MEETINGS_API_URL, value }),
+        owner.caller.settings.update({ code: MEETINGS_API_URL, value }),
       );
 
       expect(code).toBe("BAD_REQUEST");
@@ -219,7 +225,7 @@ describe("system settings routes", () => {
 
     test("refuses an unregistered code", async () => {
       const code = await errorCodeOf(
-        admin.caller.settings.update({ code: "99999", value: "anything" }),
+        owner.caller.settings.update({ code: "99999", value: "anything" }),
       );
 
       expect(code).toBe("BAD_REQUEST");
@@ -234,7 +240,7 @@ describe("system settings routes", () => {
         .where(eq(SettingsTable.code, MEETINGS_WEBHOOK_SECRET));
 
       const code = await errorCodeOf(
-        admin.caller.settings.update({
+        owner.caller.settings.update({
           code: MEETINGS_WEBHOOK_SECRET,
           value: "whsec-new",
         }),
@@ -246,29 +252,33 @@ describe("system settings routes", () => {
   });
 
   describe("gate", () => {
-    test("an org admin can list and update", async () => {
-      expect(await errorCodeOf(admin.caller.settings.list())).toBeNull();
+    test("the platform owner can list and update", async () => {
+      expect(await errorCodeOf(owner.caller.settings.list())).toBeNull();
       expect(
         await errorCodeOf(
-          admin.caller.settings.update({
+          owner.caller.settings.update({
             code: MEETINGS_API_KEY,
-            value: "sk-admin",
+            value: "sk-owner",
           }),
         ),
       ).toBeNull();
+      expect(await storedValue(MEETINGS_API_KEY)).toBe("sk-owner");
     });
 
-    test("a non-admin member can neither list nor update", async () => {
+    // R1: being an admin of an academy no longer reaches the deployment's
+    // keys — the owner flag does, and nothing else.
+    test.each([
+      ["an org admin who is not the owner", () => admin.caller],
+      ["a teacher", () => teacher.caller],
+    ])("%s can neither list nor update", async (_who, callerOf) => {
       await setStoredValue(MEETINGS_API_KEY, "sk-before");
 
-      expect(await errorCodeOf(teacher.caller.settings.list())).toBe(
-        "FORBIDDEN",
-      );
+      expect(await errorCodeOf(callerOf().settings.list())).toBe("FORBIDDEN");
       expect(
         await errorCodeOf(
-          teacher.caller.settings.update({
+          callerOf().settings.update({
             code: MEETINGS_API_KEY,
-            value: "sk-teacher",
+            value: "sk-not-owner",
           }),
         ),
       ).toBe("FORBIDDEN");

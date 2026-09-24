@@ -1,18 +1,24 @@
-import { createTRPCRouter, orgAdminProcedure } from "@/integrations/trpc/init";
+import {
+  createTRPCRouter,
+  platformOwnerProcedure,
+} from "@/integrations/trpc/init";
 import { updateSystemSetting } from "./mutations";
 import { listSystemSettings } from "./queries";
 import { updateSystemSettingSchema } from "./schemas";
 
 /**
- * Deployment-wide settings, managed by organization admins — the same people
- * who own everything else configurable in the product. There is no separate
- * operator role (STATE.md D42), and these values are what make live classes
- * work for every academy on the deployment, so the admin who sets them up is
- * doing it for all of them.
+ * Deployment-wide settings, managed by the platform owner only
+ * (`users.isPlatformOwner`, design doc `academy-preferences.md` R1). These
+ * values — the Meetings URL, API key and webhook secret — are what make live
+ * classes work for every academy on the deployment, so they belong to whoever
+ * runs the deployment, not to any one academy's admin. The gate ignores the
+ * active org: the owner reaches these from whichever academy they have open.
  */
 export const settingsRouter = createTRPCRouter({
-  list: orgAdminProcedure.query(async ({ ctx }) => listSystemSettings(ctx)),
-  update: orgAdminProcedure
+  list: platformOwnerProcedure.query(async ({ ctx }) =>
+    listSystemSettings(ctx),
+  ),
+  update: platformOwnerProcedure
     .input(updateSystemSettingSchema)
     .mutation(async ({ ctx, input }) => updateSystemSetting(ctx, input)),
 });

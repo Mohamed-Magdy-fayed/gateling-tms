@@ -15,9 +15,15 @@ import type { InviteMemberInput, ListMembersInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
 export async function getActiveOrganization(ctx: OrgTRPCContext) {
-  const organization = await ctx.db.query.OrganizationsTable.findFirst({
-    where: eq(OrganizationsTable.id, ctx.organizationId),
-  });
+  const [organization, user] = await Promise.all([
+    ctx.db.query.OrganizationsTable.findFirst({
+      where: eq(OrganizationsTable.id, ctx.organizationId),
+    }),
+    ctx.db.query.UsersTable.findFirst({
+      where: eq(UsersTable.id, ctx.session.user.id),
+      columns: { isPlatformOwner: true },
+    }),
+  ]);
 
   if (!organization) {
     throw new TRPCError({
@@ -26,7 +32,13 @@ export async function getActiveOrganization(ctx: OrgTRPCContext) {
     });
   }
 
-  return { ...organization, role: ctx.role };
+  // Whether to *show* the owner-only surfaces. Display only: every owner
+  // route re-checks the flag itself through `platformOwnerProcedure`.
+  return {
+    ...organization,
+    role: ctx.role,
+    isPlatformOwner: user?.isPlatformOwner ?? false,
+  };
 }
 
 /**

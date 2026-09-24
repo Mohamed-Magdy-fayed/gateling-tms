@@ -28,6 +28,8 @@ import { SettingValueForm } from "./components/setting-value-form";
 
 /**
  * Deployment-wide integrations, as one card per system the app talks to.
+ * Only the platform owner (`users.isPlatformOwner`) sees the cards; everyone
+ * else gets a calm empty state, since there is nothing here for them to do.
  *
  * The same flow as every other Gateling system: create the integration on
  * the provider's side, then paste what it hands back in here. The card
@@ -43,11 +45,12 @@ export function SystemSettingsPage() {
   const organizationQuery = useQuery(
     trpc.organizations.getActive.queryOptions(),
   );
-  const isAdmin = organizationQuery.data?.role === "admin";
+  // Display gate only — settings.list/update re-check the flag server-side.
+  const isPlatformOwner = organizationQuery.data?.isPlatformOwner === true;
 
   const settingsQuery = useQuery({
     ...trpc.settings.list.queryOptions(),
-    enabled: isAdmin,
+    enabled: isPlatformOwner,
   });
 
   return (
@@ -57,11 +60,11 @@ export function SystemSettingsPage() {
         <Muted>{t("settings.subtitle")}</Muted>
       </div>
 
-      {organizationQuery.data && !isAdmin ? (
+      {organizationQuery.data && !isPlatformOwner ? (
         <EmptyState
           icon={<ShieldAlertIcon />}
           title={t("settings.title")}
-          description={t("settings.adminOnly")}
+          description={t("settings.ownerOnly")}
         />
       ) : settingsQuery.isError ? (
         <Alert variant="destructive">
@@ -137,13 +140,13 @@ function MeetingsCard({ settings }: { settings: SystemSettingRow[] }) {
             {t("settings.groups.meetings.webhookUrl")}
           </dt>
           <dd>
-            <InlineCode>{`${origin}/api/meetings-webhook`}</InlineCode>
+            <InlineCode dir="ltr">{`${origin}/api/meetings-webhook`}</InlineCode>
           </dd>
           <dt className="text-muted-foreground">
             {t("settings.groups.meetings.returnOrigin")}
           </dt>
           <dd>
-            <InlineCode>{origin}</InlineCode>
+            <InlineCode dir="ltr">{origin}</InlineCode>
           </dd>
         </dl>
 

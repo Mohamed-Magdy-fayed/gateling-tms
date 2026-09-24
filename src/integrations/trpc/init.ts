@@ -5,7 +5,7 @@ import superjson from "superjson";
 import z, { ZodError } from "zod";
 
 import { db } from "@/drizzle";
-import { OrganizationMembershipsTable } from "@/drizzle/schema";
+import { OrganizationMembershipsTable, UsersTable } from "@/drizzle/schema";
 import { getUserSession } from "@/features/core/auth/core";
 import { LOCALE_COOKIE_NAME } from "@/features/core/i18n/lib";
 import { getT } from "@/features/core/i18n/server";
@@ -102,6 +102,30 @@ export const orgAdminProcedure = orgProcedure.use(({ ctx, next }) => {
 
   return next();
 });
+
+// Deployment-wide surfaces (the integration keys every academy's live classes
+// run on) belong to whoever runs the deployment, not to any academy's admin —
+// so this sits on protectedProcedure, independent of the active org. The flag
+// is read from the database on every call rather than carried in the session:
+// the session outlives a revocation, and removing the owner must take effect
+// on the next request, not the next sign-in.
+export const platformOwnerProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    const user = await ctx.db.query.UsersTable.findFirst({
+      where: eq(UsersTable.id, ctx.session.user.id),
+      columns: { isPlatformOwner: true },
+    });
+
+    if (!user?.isPlatformOwner) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: ctx.t("errors.unauthorized"),
+      });
+    }
+
+    return next();
+  },
+);
 
 // Content authoring (courses/levels/lectures/forms) is admin-or-teacher —
 // students can be enrolled in content but never author it. First use of a

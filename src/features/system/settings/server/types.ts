@@ -1,9 +1,6 @@
-import type { OrganizationMembershipRole } from "@/drizzle/schema";
 import type { TRPCContext } from "@/integrations/trpc/init";
 
-/** Context shape after `orgAdminProcedure`'s membership middleware has run. */
-export type OrgTRPCContext = TRPCContext & {
-  organizationId: string;
-  role: OrganizationMembershipRole;
+/** Context shape after `platformOwnerProcedure`'s auth + owner check has run. */
+export type PlatformOwnerTRPCContext = TRPCContext & {
   session: NonNullable<TRPCContext["session"]>;
 };

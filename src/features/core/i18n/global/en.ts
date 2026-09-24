@@ -1206,8 +1206,8 @@ export default {
   settings: {
     title: "Integrations",
     subtitle:
-      "Deployment-wide connections to other Gateling systems. Set once by an admin, they apply to every academy on this deployment.",
-    adminOnly: "Only organization admins can view or change these settings.",
+      "Deployment-wide connections to other Gateling systems. Set once by the platform owner, they apply to every academy on this deployment.",
+    ownerOnly: "These settings are managed by Gateling for every academy on this deployment. There is nothing to set up here.",
     loadFailed: "Couldn't load the settings.",
     saved: "Setting saved.",
     saveFailed: "Couldn't save the setting.",
