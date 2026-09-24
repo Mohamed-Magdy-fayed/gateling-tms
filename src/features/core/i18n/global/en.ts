@@ -1284,6 +1284,7 @@ export default {
     errors: {
       unknown: "That setting doesn't exist.",
       invalidValue: "That value isn't valid for this setting.",
+      reapplyFailed: "Nothing changed. Try again.",
     },
   },
   googleImport: {

@@ -18,3 +18,38 @@ export const updateSystemSettingSchema = z.object({
 export type UpdateSystemSettingInput = z.infer<
   typeof updateSystemSettingSchema
 >;
+
+/** Registry codes are zero-padded numbers; anything longer is not one of ours. */
+const MAX_ACADEMY_SETTING_CODE_LENGTH = 128;
+/** Longer than any enum option a preference will declare. */
+const MAX_ACADEMY_SETTING_TEXT_LENGTH = 128;
+
+// The code is checked against the registry in the mutation (an unknown code is
+// BAD_REQUEST with a translated message), and the value against the schema
+// built from that entry's control — neither is knowable from the input alone.
+const academySettingCodeSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(MAX_ACADEMY_SETTING_CODE_LENGTH);
+
+export const updateAcademySettingSchema = z.object({
+  code: academySettingCodeSchema,
+  value: z.union([
+    z.boolean(),
+    z.number(),
+    z.string().max(MAX_ACADEMY_SETTING_TEXT_LENGTH),
+  ]),
+});
+
+export type UpdateAcademySettingInput = z.infer<
+  typeof updateAcademySettingSchema
+>;
+
+export const resetAcademySettingSchema = z.object({
+  code: academySettingCodeSchema,
+});
+
+export type ResetAcademySettingInput = z.infer<
+  typeof resetAcademySettingSchema
+>;

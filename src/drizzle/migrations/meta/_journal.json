@@ -225,6 +225,13 @@
       "when": 1790269659528,
       "tag": "0031_familiar_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790270514956,
+      "tag": "0032_blushing_wild_pack",
+      "breakpoints": true
     }
   ]
 }

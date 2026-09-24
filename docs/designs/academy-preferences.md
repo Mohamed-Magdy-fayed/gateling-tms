@@ -736,10 +736,11 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Files: src/drizzle/schemas/auth/organizations-table.ts, src/features/core/organizations/server/*, the settings admin section, en.ts/ar.ts
   - Verify: integration test: non-owner FORBIDDEN; the owner grants basic; the academy adds a 51st student
   - Shipped with DT4: `platform.listOrganizations` + `platform.setOrganizationPlan` (in `features/core/organizations/server/platform-*`), migration 0031 adds `planGrantedBy` / `planGrantedAt`, and the Academies section sits under Integrations on `/platform`. Saving the plan an academy already has is a no-op (audit untouched), which is what R11 needs. Tests: `tests/integration/platform-plans.test.ts`.
-- [ ] **T4 (P1, human: ~1 day / CC: ~45min)** — settings — `organization_settings` table, registry (control, appliesTo, requestedBy comment + `gstack-shortcut(dec-28099644)` marker), `readAcademySettings(db, orgId)` + cache wrapper, update/reset on orgAdminProcedure
+- [x] **T4 (P1, human: ~1 day / CC: ~45min)** — settings — `organization_settings` table, registry (control, appliesTo, requestedBy comment + `gstack-shortcut(dec-28099644)` marker), `readAcademySettings(db, orgId)` + cache wrapper, update/reset on orgAdminProcedure
   - Surfaced by: Architecture — R2, R3; Code quality — R4, R5
   - Files: src/drizzle/schemas/system/, src/features/system/settings/{lib,server}/*, generated migration
   - Verify: unit tests for the registry, builder and reader; integration tests for update/reset/reapply enqueue
+  - Shipped: migration 0032 adds `organization_settings`; the registry (`lib/academy-settings-registry.ts`) is empty until T7 names a real preference, and the builder/lookups sit in `lib/academy-settings.ts`. `settings.academy.{list,update,reset}` are on `orgAdminProcedure`. The R10 mechanism landed here too: a reapply save or reset enqueues inside the transaction, only when the effective value changes, and a failed send rolls back with "Nothing changed. Try again." (`settings.errors.reapplyFailed`). Tests: `tests/academy-settings.test.ts`, and `tests/integration/academy-settings.test.ts` against three mocked registry entries. The DT3 UI Alert and the reapply handler double-run test still belong to DT3.
 - [ ] **T5 (P1, human: ~1 day / CC: ~30min)** — settings UI — Academy preferences section with declared controls and the effect hint, en + ar, RTL-safe
   - Surfaced by: Code quality — R4; Architecture — R3
   - Files: src/features/system/settings/admin/*, src/features/core/i18n/global/{en,ar}.ts

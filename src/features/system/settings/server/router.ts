@@ -1,10 +1,33 @@
 import {
   createTRPCRouter,
+  orgAdminProcedure,
   platformOwnerProcedure,
 } from "@/integrations/trpc/init";
+import { resetAcademySetting, updateAcademySetting } from "./academy-mutations";
+import { listAcademySettings } from "./academy-queries";
 import { updateSystemSetting } from "./mutations";
 import { listSystemSettings } from "./queries";
-import { updateSystemSettingSchema } from "./schemas";
+import {
+  resetAcademySettingSchema,
+  updateAcademySettingSchema,
+  updateSystemSettingSchema,
+} from "./schemas";
+
+/**
+ * One academy's own preferences (design doc `academy-preferences.md`), edited
+ * by that academy's admins. The academy is always the caller's active org —
+ * there is no `organizationId` input, so one academy can never reach
+ * another's rows.
+ */
+const academySettingsRouter = createTRPCRouter({
+  list: orgAdminProcedure.query(async ({ ctx }) => listAcademySettings(ctx)),
+  update: orgAdminProcedure
+    .input(updateAcademySettingSchema)
+    .mutation(async ({ ctx, input }) => updateAcademySetting(ctx, input)),
+  reset: orgAdminProcedure
+    .input(resetAcademySettingSchema)
+    .mutation(async ({ ctx, input }) => resetAcademySetting(ctx, input)),
+});
 
 /**
  * Deployment-wide settings, managed by the platform owner only
@@ -21,4 +44,5 @@ export const settingsRouter = createTRPCRouter({
   update: platformOwnerProcedure
     .input(updateSystemSettingSchema)
     .mutation(async ({ ctx, input }) => updateSystemSetting(ctx, input)),
+  academy: academySettingsRouter,
 });

@@ -1226,6 +1226,7 @@ export default {
     errors: {
       unknown: "هذا الإعداد غير موجود.",
       invalidValue: "هذه القيمة غير صالحة لهذا الإعداد.",
+      reapplyFailed: "لم يتغير شيء. حاول مرة أخرى.",
     },
   },
   googleImport: {
