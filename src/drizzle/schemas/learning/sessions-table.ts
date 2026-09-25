@@ -115,7 +115,7 @@ export const SessionsTable = pgTable(
       foreignColumns: [GroupsTable.organizationId, GroupsTable.id],
     }).onDelete("cascade"),
     // The webhook that closes a class looks its session up by the code
-    // Meetings hands back (integrations/inngest/functions/on-meetings-webhook).
+    // Meetings hands back (attendance/server/meetings-webhook.ts).
     index("sessions_meeting_code_idx").on(table.meetingCode),
   ],
 );

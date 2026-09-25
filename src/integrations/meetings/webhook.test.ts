@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createMeetingsWebhookHandler,
   MEETINGS_SIGNATURE_HEADER,
+  meetingsDeliverySchema,
   signMeetingsWebhook,
   verifyMeetingsSignature,
 } from "./webhook";
@@ -29,6 +30,33 @@ const delivery = {
   },
 };
 const body = JSON.stringify(delivery);
+
+describe("meetingsDeliverySchema", () => {
+  it("accepts a room closed by the system (plan cap or idle sweep)", () => {
+    const parsed = meetingsDeliverySchema.safeParse({
+      ...delivery,
+      data: { ...delivery.data, endedBy: "system" },
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts a guest's join with the name they typed", () => {
+    const parsed = meetingsDeliverySchema.safeParse({
+      ...delivery,
+      event: "participant.joined",
+      data: {
+        meeting: { ...delivery.data.meeting, status: "live" },
+        participant: {
+          identity: "guest:abc123",
+          name: "Test name",
+          role: "participant",
+        },
+        at: "2026-09-12T07:20:00.000Z",
+      },
+    });
+    expect(parsed.success).toBe(true);
+  });
+});
 
 describe("verifyMeetingsSignature", () => {
   it("accepts a fresh, correctly signed body", () => {

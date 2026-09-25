@@ -29,12 +29,15 @@ import { inngest } from "../client";
  * The form is fully usable in the meantime; only the pictures are missing, and
  * the answer sheet says so rather than showing broken images.
  */
-export const formMediaImportedEvent = eventType("assessment/form-media-imported", {
-  schema: z.object({
-    organizationId: z.string(),
-    formId: z.string(),
-  }),
-});
+export const formMediaImportedEvent = eventType(
+  "assessment/form-media-imported",
+  {
+    schema: z.object({
+      organizationId: z.string(),
+      formId: z.string(),
+    }),
+  },
+);
 
 /** Per query per run, so one pathological form cannot spend an unbounded step
  * budget in a single execution. Anything beyond it is re-queued. */

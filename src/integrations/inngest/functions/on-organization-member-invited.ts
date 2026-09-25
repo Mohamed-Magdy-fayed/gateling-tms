@@ -5,8 +5,8 @@ import { z } from "zod";
 import { baseUrl } from "@/data/env/server";
 import { db } from "@/drizzle";
 import {
-  organizationMembershipRoleValues,
   OrganizationsTable,
+  organizationMembershipRoleValues,
   UsersTable,
   UserTokensTable,
 } from "@/drizzle/schema";
@@ -35,7 +35,10 @@ export const organizationMemberInvitedEvent = eventType(
 );
 
 export const onOrganizationMemberInvited = inngest.createFunction(
-  { id: "on-organization-member-invited", triggers: [organizationMemberInvitedEvent] },
+  {
+    id: "on-organization-member-invited",
+    triggers: [organizationMemberInvitedEvent],
+  },
   async ({ event, step }) => {
     return step.run("create-token-and-send-invite-email", async () => {
       const { organizationId, email, role, invitedByUserId, locale } =
