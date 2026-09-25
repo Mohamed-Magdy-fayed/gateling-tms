@@ -14,7 +14,7 @@ import type { OrgTRPCContext } from "./types";
  * The register, as the teacher takes it.
  *
  * Gateling Meetings fills in a presence on its own when a student joins under
- * a name that matches the roster (`on-meetings-participant-joined`); this is
+ * a name that matches the roster (`meetings-webhook.ts`); this is
  * the correction for everything it can't see — a phone in the room, a
  * nickname, a sibling's laptop. A `manual` record is final: later webhooks
  * never overwrite its verdict or its lateness.

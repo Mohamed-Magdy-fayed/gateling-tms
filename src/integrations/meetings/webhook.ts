@@ -49,7 +49,8 @@ export const meetingsDeliverySchema = z.object({
   data: z.looseObject({
     meeting: meetingsWebhookMeetingSchema,
     at: z.string().optional(),
-    endedBy: z.enum(["host", "integration", "room"]).optional(),
+    // "system": the plan's meeting-length cap or the idle sweep closed it.
+    endedBy: z.enum(["host", "integration", "room", "system"]).optional(),
     participant: z
       .object({
         identity: z.string(),

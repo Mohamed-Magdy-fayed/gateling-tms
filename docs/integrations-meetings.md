@@ -157,16 +157,17 @@ with "misconfigured".
 ## 5. Webhooks
 
 `POST /api/meetings-webhook` verifies the `X-Meetings-Signature` (HMAC-SHA256
-over `<t>.<raw body>`, five-minute replay window, 64 KB cap) and forwards
-two events to Inngest, each with the delivery id as the event id so Meetings'
-six retries never run it twice:
+over `<t>.<raw body>`, five-minute replay window, 64 KB cap) and handles two
+events **inline** (`attendance/server/meetings-webhook.ts`), not through
+Inngest — the Inngest app has never synced in production, where a queued
+event is accepted and silently never run (STATE.md D178, D181). Every write is
+idempotent, so Meetings' retries (on a 500 or its 10-second timeout) only
+repeat no-ops:
 
-- `meeting.ended` → `meetings/webhook.received`. `on-meetings-webhook` moves
-  the session `ongoing → completed` — a compare-and-set on both the status and
-  the meeting code, so a stale delivery leaves the row alone — then settles
-  the register from the participant log (below).
-- `participant.joined` (non-host only) → `meetings/participant.joined`, handled
-  by `on-meetings-participant-joined`.
+- `meeting.ended` moves the session `ongoing → completed` — a compare-and-set
+  on both the status and the meeting code, so a stale delivery leaves the row
+  alone — then settles the register from the participant log (below).
+- `participant.joined` (non-host only) marks a matched student present.
 
 `meeting.started` and `participant.left` are acknowledged and dropped.
 

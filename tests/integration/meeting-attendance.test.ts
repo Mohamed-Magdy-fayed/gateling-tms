@@ -14,6 +14,8 @@ import {
   reconcileMeetingAttendance,
   recordMeetingJoin,
 } from "@/features/system/live-classes/attendance/server/meeting-sync";
+import { handleParticipantJoined } from "@/features/system/live-classes/attendance/server/meetings-webhook";
+import { buildSessionExternalRef } from "@/features/system/live-classes/sessions/lib/meeting-ref";
 import { createTenant, destroyTenant, type TenantFixture } from "./lib/harness";
 import { seedTenantData } from "./lib/tenant-fixtures";
 
@@ -28,10 +30,11 @@ const at = (time: string) => new Date(`2026-09-01T${time}:00Z`);
 
 let org: TenantFixture;
 let session: MeetingSession;
-const trainees: Record<"omar" | "sara" | "mona", string> = {
+const trainees: Record<"omar" | "sara" | "mona" | "test", string> = {
   omar: "",
   sara: "",
   mona: "",
+  test: "",
 };
 
 async function recordOf(traineeId: string) {
@@ -65,6 +68,7 @@ beforeAll(async () => {
     ["omar", "Omar Khaled"],
     ["sara", "سارة علي"],
     ["mona", "Mona Adel"],
+    ["test", "Test name"],
   ] as const) {
     const [trainee] = await db
       .insert(TraineesTable)
@@ -108,6 +112,34 @@ describe("meeting attendance sync", () => {
     expect(await findSessionForMeeting(db, session.id, "zzz-zzzz-zzz")).toBe(
       null,
     );
+  });
+
+  test("a webhook join under the roster name is recorded end to end", async () => {
+    const meeting = {
+      code: MEETING_CODE,
+      externalRef: buildSessionExternalRef(session.id),
+    };
+
+    expect(
+      await handleParticipantJoined(db, meeting, "Test name", at("18:07")),
+    ).toBe("recorded");
+    expect(await recordOf(trainees.test)).toMatchObject({
+      status: "present",
+      source: "meetings",
+      lateMinutes: 7,
+    });
+
+    expect(
+      await handleParticipantJoined(db, meeting, "Someone Else", at("18:07")),
+    ).toBe("unmatched");
+    expect(
+      await handleParticipantJoined(
+        db,
+        { code: "zzz-zzzz-zzz", externalRef: meeting.externalRef },
+        "Test name",
+        at("18:07"),
+      ),
+    ).toBe("no-session");
   });
 
   test("a join marks the trainee present, with minutes late", async () => {
