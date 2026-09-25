@@ -188,7 +188,17 @@ export function SessionAttendancePage({ sessionId }: { sessionId: string }) {
                     {row.source === "manual" ? (
                       <Tag color="violet">{t("attendance.markedManually")}</Tag>
                     ) : null}
+                    {row.source === "meetings" ? (
+                      <Tag color="neutral">
+                        {t("attendance.markedByMeeting")}
+                      </Tag>
+                    ) : null}
                     <AttendanceStatusTag status={row.status} />
+                    {row.status === "present" && row.lateMinutes > 0 ? (
+                      <Tag color="blue">
+                        {t("attendance.lateBy", { minutes: row.lateMinutes })}
+                      </Tag>
+                    ) : null}
                     {data.canMark ? (
                       <AttendanceRowActions sessionId={session.id} row={row} />
                     ) : null}

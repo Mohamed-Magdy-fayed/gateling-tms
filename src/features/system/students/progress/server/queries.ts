@@ -118,6 +118,7 @@ export async function getTraineeProgress(
         scheduledAt: SessionsTable.scheduledAt,
         status: SessionsTable.status,
         attendance: SessionStudentsTable.status,
+        lateMinutes: SessionStudentsTable.lateMinutes,
       })
       .from(SessionsTable)
       .innerJoin(

@@ -4,7 +4,12 @@ import { z } from "zod";
 
 import { db } from "@/drizzle";
 import { SessionsTable } from "@/drizzle/schema";
+import {
+  findSessionForMeeting,
+  reconcileMeetingAttendance,
+} from "@/features/system/live-classes/attendance/server/meeting-sync";
 import { parseSessionExternalRef } from "@/features/system/live-classes/sessions/lib/meeting-ref";
+import { resolveMeetingsClient } from "@/features/system/live-classes/sessions/server/meetings-config";
 import { inngest } from "../client";
 
 /**
@@ -42,10 +47,13 @@ export const meetingsWebhookReceivedEvent = eventType(
  * A compare-and-set on both the status and the meeting code, not a blind
  * update: a delivery for a room this session no longer points at (recreated
  * after Meetings lost the first one) or for a class already closed by hand
- * must leave the row alone. Attendance is *not* touched — it stays
- * teacher-marked (STATE.md D144); joins through a participant link are
- * anonymous on Meetings' side by design, so there is nothing to derive it
- * from.
+ * must leave the row alone.
+ *
+ * Then the register is settled from Meetings' participant log: every
+ * connection whose typed name matches exactly one trainee on the roster adds
+ * up to that trainee's first join, last leave and minutes in the room. It
+ * runs whether or not the status changed — a class a teacher closed by hand
+ * still had people in it.
  */
 export const onMeetingsWebhook = inngest.createFunction(
   { id: "on-meetings-webhook", triggers: [meetingsWebhookReceivedEvent] },
@@ -58,7 +66,7 @@ export const onMeetingsWebhook = inngest.createFunction(
     // wouldn't change that.
     if (!sessionId) return { outcome: "not-a-session" as const };
 
-    return step.run("complete-session", async () => {
+    const completion = await step.run("complete-session", async () => {
       const [completed] = await db
         .update(SessionsTable)
         .set({ status: "completed", updatedAt: new Date() })
@@ -75,5 +83,30 @@ export const onMeetingsWebhook = inngest.createFunction(
         ? { outcome: "completed" as const, sessionId }
         : { outcome: "unchanged" as const, sessionId };
     });
+
+    const matched = await step.run("settle-attendance", async () => {
+      const session = await findSessionForMeeting(db, sessionId, meeting.code);
+      if (!session) return 0;
+
+      const client = await resolveMeetingsClient(db);
+      if (!client) return 0;
+
+      // A failure throws and Inngest retries this step alone — the session
+      // is already completed by then.
+      const participants = await client.listParticipants(meeting.code);
+      return reconcileMeetingAttendance(
+        db,
+        session,
+        participants.map((participant) => ({
+          displayName: participant.displayName,
+          role: participant.role,
+          joinedAt: new Date(participant.joinedAt),
+          leftAt: participant.leftAt ? new Date(participant.leftAt) : null,
+        })),
+        meeting.endedAt ? new Date(meeting.endedAt) : new Date(),
+      );
+    });
+
+    return { ...completion, matched };
   },
 );

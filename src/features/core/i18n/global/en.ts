@@ -1033,7 +1033,8 @@ export default {
     attendance: "Attendance",
     attendanceDetail: dt("{attended:number} of {recorded:number} attended", {}),
     attendanceNone:
-      "No attendance recorded yet — it fills in when a teacher marks the register.",
+      "No attendance recorded yet — it fills in as students join online or a teacher marks the register.",
+    lateDetail: dt("Late to {late:number} of {attended:number}", {}),
     emptyTitle: "Nothing to measure yet",
     traineeEmptyDescription:
       "Enroll this student in a course or add them to a class, and their progress shows up here.",
@@ -1219,16 +1220,20 @@ export default {
   },
   attendance: {
     title: "Attendance",
-    // Says exactly where the figures come from: the teacher, and only the
-    // teacher. Nothing observes the room (STATE.md D144), so promising
-    // otherwise here would be the kind of claim README rule 9 forbids.
-    lead: "Marked by the teacher. A student on the phone or in the room counts as present just the same.",
+    // Says exactly where the figures come from, and what the automatic part
+    // can't see — so a teacher knows which rows still need them.
+    lead: "Students who join the online class under their exact name are marked present automatically, with how late they were. Mark everyone else yourself.",
     statusOptions: {
       present: "Present",
       absent: "Absent",
+      late: "Late",
       unmarked: "Not marked",
     },
     markedManually: "Set by a teacher",
+    markedByMeeting: "Joined online",
+    lateBy: "{minutes:number} min late",
+    lateMinutesLabel: "Minutes late",
+    saveLate: "Save",
     leftTheClass: "No longer in this class",
     marked: "Attendance updated.",
     markFailed: "Couldn't update attendance. Please try again.",

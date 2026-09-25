@@ -21,11 +21,12 @@ export const attendanceStatusEnum = pgEnum(
   attendanceStatusValues,
 );
 
-// Where a record came from. A teacher's correction outranks anything Zoom
-// reported — a student who dialled in on a phone, or joined under a name Zoom
-// couldn't match, is still present — so `manual` rows are never overwritten by
-// a later webhook.
-export const attendanceSourceValues = ["zoom", "manual"] as const;
+// Where a record came from. A teacher's correction outranks anything the
+// meeting reported — a student who dialled in on a phone, or joined under a
+// name that couldn't be matched, is still present — so `manual` rows never
+// have their verdict overwritten by a later webhook. `zoom` is historical;
+// `meetings` is a Gateling Meetings join matched to the roster by name.
+export const attendanceSourceValues = ["zoom", "manual", "meetings"] as const;
 export type AttendanceSource = (typeof attendanceSourceValues)[number];
 export const attendanceSourceEnum = pgEnum(
   "attendance_source",
@@ -58,6 +59,11 @@ export const SessionStudentsTable = pgTable(
     // Summed across every join/leave pair, so someone who dropped and came
     // back reads as the time they were actually in the room.
     attendedMinutes: integer().notNull().default(0),
+    // How many minutes after the class was due to start the trainee arrived.
+    // Zero is on time. Computed from the first join on an automatic record;
+    // set by the teacher on a manual one. Meaningless on an absence, which
+    // always carries zero.
+    lateMinutes: integer().notNull().default(0),
     markedBy: uuid().references(() => UsersTable.id, { onDelete: "set null" }),
     createdAt,
     updatedAt,

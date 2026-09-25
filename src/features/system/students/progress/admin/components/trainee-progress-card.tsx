@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheckIcon, TrendingUpIcon } from "lucide-react";
+import { CalendarCheckIcon, ClockIcon, TrendingUpIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -101,14 +101,25 @@ export function TraineeProgressCard({ traineeId }: { traineeId: string }) {
                 only classes with something recorded count — a class nobody
                 marked is not evidence this trainee missed it. */}
             {progress.sessions.attendance.recorded > 0 ? (
-              <ProgressMeter
-                label={t("progress.attendance")}
-                detail={t("progress.attendanceDetail", {
-                  attended: progress.sessions.attendance.attended,
-                  recorded: progress.sessions.attendance.recorded,
-                })}
-                percent={progress.sessions.attendance.percentAttended}
-              />
+              <>
+                <ProgressMeter
+                  label={t("progress.attendance")}
+                  detail={t("progress.attendanceDetail", {
+                    attended: progress.sessions.attendance.attended,
+                    recorded: progress.sessions.attendance.recorded,
+                  })}
+                  percent={progress.sessions.attendance.percentAttended}
+                />
+                {progress.sessions.attendance.late > 0 ? (
+                  <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <ClockIcon className="size-3.5" aria-hidden />
+                    {t("progress.lateDetail", {
+                      late: progress.sessions.attendance.late,
+                      attended: progress.sessions.attendance.attended,
+                    })}
+                  </p>
+                ) : null}
+              </>
             ) : (
               <p className="text-muted-foreground text-xs">
                 {t("progress.attendanceNone")}

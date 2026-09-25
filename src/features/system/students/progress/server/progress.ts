@@ -97,12 +97,16 @@ export type SessionProgressRow = {
    * on a group-wide summary, where the rows aren't about one person.
    */
   attendance?: AttendanceStatus | null;
+  /** Minutes late to that class; zero or null is on time. */
+  lateMinutes?: number | null;
 };
 
 export type AttendanceProgressSummary = {
   /** Classes that ran and have something recorded for this trainee. */
   recorded: number;
   attended: number;
+  /** Of the classes attended, how many they arrived late to. */
+  late: number;
   /** 0–100, rounded, over `recorded`. Zero when nothing is recorded. */
   percentAttended: number;
 };
@@ -141,6 +145,7 @@ export function summarizeSessions(
   let upcoming = 0;
   let recorded = 0;
   let attended = 0;
+  let late = 0;
   let nextAt: Date | null = null;
 
   for (const session of sessions) {
@@ -149,7 +154,10 @@ export function summarizeSessions(
 
     if (session.status !== "cancelled" && session.attendance) {
       recorded += 1;
-      if (session.attendance === "present") attended += 1;
+      if (session.attendance === "present") {
+        attended += 1;
+        if ((session.lateMinutes ?? 0) > 0) late += 1;
+      }
     }
 
     const isFutureScheduled =
@@ -177,6 +185,7 @@ export function summarizeSessions(
     attendance: {
       recorded,
       attended,
+      late,
       percentAttended:
         recorded === 0 ? 0 : Math.round((attended / recorded) * 100),
     },

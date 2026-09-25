@@ -27,6 +27,8 @@ export type AttendanceRow = {
   joinedAt: Date | null;
   leftAt: Date | null;
   attendedMinutes: number;
+  /** Minutes after the scheduled start; zero is on time. */
+  lateMinutes: number;
   /**
    * False for a trainee who has attendance recorded for this class but has
    * since left the group — their record stays visible and correctable.
@@ -190,6 +192,7 @@ async function listRegisterRows(
         joinedAt: SessionStudentsTable.joinedAt,
         leftAt: SessionStudentsTable.leftAt,
         attendedMinutes: SessionStudentsTable.attendedMinutes,
+        lateMinutes: SessionStudentsTable.lateMinutes,
       })
       .from(SessionStudentsTable)
       .innerJoin(
@@ -219,6 +222,7 @@ async function listRegisterRows(
       joinedAt: null,
       leftAt: null,
       attendedMinutes: 0,
+      lateMinutes: 0,
       onRoster: true,
     });
   }

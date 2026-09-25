@@ -996,7 +996,9 @@ export default {
       "أرقام الحصص مأخوذة من جدول المجموعة. افتح أي حصة لعرض كشف حضورها وتعديله.",
     attendance: "الحضور",
     attendanceDetail: dt("حضر {attended:number} من {recorded:number}", {}),
-    attendanceNone: "لم يُسجَّل حضور بعد — يظهر عندما يسجّله المعلم.",
+    attendanceNone:
+      "لم يُسجَّل حضور بعد — يظهر عندما ينضم الطلاب أونلاين أو يسجّله المعلم.",
+    lateDetail: dt("تأخر في {late:number} من {attended:number}", {}),
     emptyTitle: "لا يوجد ما يُقاس بعد",
     traineeEmptyDescription:
       "سجّل هذا الطالب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",
@@ -1182,13 +1184,18 @@ export default {
   },
   attendance: {
     title: "الحضور",
-    lead: "يسجّله المعلّم. الطالب الذي حضر بالهاتف أو داخل القاعة حاضر تمامًا مثل غيره.",
+    lead: "الطلاب الذين ينضمون إلى الحصة الأونلاين باسمهم المسجّل تمامًا يُسجَّل حضورهم تلقائيًا مع مدة تأخيرهم. سجّل حضور الباقين بنفسك.",
     statusOptions: {
       present: "حاضر",
       absent: "غائب",
+      late: "متأخر",
       unmarked: "لم يُسجَّل",
     },
     markedManually: "سجّله المعلم",
+    markedByMeeting: "انضم أونلاين",
+    lateBy: "متأخر {minutes:number} دقيقة",
+    lateMinutesLabel: "دقائق التأخير",
+    saveLate: "حفظ",
     leftTheClass: "لم يعد في هذه المجموعة",
     marked: "تم تحديث الحضور.",
     markFailed: "تعذّر تحديث الحضور. حاول مرة أخرى.",

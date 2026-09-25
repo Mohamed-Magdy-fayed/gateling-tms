@@ -158,26 +158,43 @@ with "misconfigured".
 
 `POST /api/meetings-webhook` verifies the `X-Meetings-Signature` (HMAC-SHA256
 over `<t>.<raw body>`, five-minute replay window, 64 KB cap) and forwards
-**only `meeting.ended`** to Inngest as `meetings/webhook.received`, with the
-delivery id as the event id so Meetings' six retries never run it twice.
-`on-meetings-webhook` then moves the session `ongoing → completed` — a
-compare-and-set on both the status and the meeting code, so a stale delivery
-leaves the row alone.
+two events to Inngest, each with the delivery id as the event id so Meetings'
+six retries never run it twice:
+
+- `meeting.ended` → `meetings/webhook.received`. `on-meetings-webhook` moves
+  the session `ongoing → completed` — a compare-and-set on both the status and
+  the meeting code, so a stale delivery leaves the row alone — then settles
+  the register from the participant log (below).
+- `participant.joined` (non-host only) → `meetings/participant.joined`, handled
+  by `on-meetings-participant-joined`.
+
+`meeting.started` and `participant.left` are acknowledged and dropped.
 
 The secret is read from the settings table per delivery. Without one the
 endpoint answers a bare 503, so Meetings keeps retrying instead of dropping
 the event — and the Integrations page warns that classes will start but not
 be marked completed.
 
-### Attendance stays teacher-marked
+### Automatic attendance, by name (STATE.md D180)
 
-`participant.joined` / `.left` are acknowledged and dropped. Students who
-come in through a participant link or the share link are **anonymous on
-Meetings' side by design** — `GET /meetings/:code/participants` carries an
-`externalId` only for the host — so there is nothing to derive a register
-from, and the app promises nothing it can't deliver (STATE.md D144, blueprint
-rule 9). The `session_students.source` enum keeps its historical values;
-nothing writes anything but `manual`.
+Guests carry no `externalId`, so the only identity a join has is the name the
+student typed (or their account name, on a signed-in join link). A join counts
+**only** when that name — normalized for case, spacing, punctuation, harakat
+and the Arabic letter variants people swap (أ/إ/آ, ى/ي, ة/ه) — equals exactly
+one roster trainee's name or linked account name. The pure rules live in
+`attendance/lib/meeting-attendance.ts`, the writes in
+`attendance/server/meeting-sync.ts`.
+
+- **On join:** the trainee is marked present (`source: "meetings"`) with
+  `joinedAt` and `lateMinutes` (whole minutes after `scheduledAt`). A rejoin
+  keeps the earliest arrival.
+- **On room close:** `GET /meetings/:code/participants` is read and every
+  matched trainee's `joinedAt`, `leftAt` and `attendedMinutes` are settled
+  (overlapping connections merged). This also catches joins whose webhook was
+  lost.
+- **Never:** overwriting a teacher's `manual` verdict or lateness (timings
+  still fill in), marking an unmatched trainee absent, or matching an
+  ambiguous or partial name. Those rows stay for the teacher.
 
 ## 6. Local testing
 
