@@ -1,6 +1,12 @@
 "use client";
 
-import { AlertTriangleIcon, CalendarRangeIcon, ListIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertTriangleIcon,
+  CalendarIcon,
+  CalendarRangeIcon,
+  ListIcon,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -10,19 +16,26 @@ import {
   parseSessionJoinResultCode,
   SESSION_JOIN_RESULT_PARAM,
 } from "@/features/system/live-classes/sessions/lib/join-result";
+import {
+  SESSION_VIEWS,
+  type SessionView,
+  viewAnchorParams,
+} from "@/features/system/live-classes/sessions/lib/view-anchor";
+import { todayInZone } from "@/features/system/live-classes/sessions/lib/week";
+import { useTRPC } from "@/integrations/trpc/client";
 import { SessionsAgenda } from "./components/sessions-agenda";
+import { SessionsMonthView } from "./components/sessions-month-view";
 import { SessionsWeekView } from "./components/sessions-week-view";
 
 const VIEW_PARAM = "view";
-const VIEW_VALUES = ["week", "list"] as const;
-type View = (typeof VIEW_VALUES)[number];
+type View = SessionView;
 
 function isView(value: string | null): value is View {
-  return (VIEW_VALUES as readonly string[]).includes(value ?? "");
+  return (SESSION_VIEWS as readonly string[]).includes(value ?? "");
 }
 
 /**
- * The Live Classes area: one set of sessions, two ways to look at it.
+ * The Live Classes area: one set of sessions, three ways to look at it.
  *
  * The week grid is the scheduling tool — where staff see the shape of a
  * week, move classes, and check a teacher's availability. The list is the
@@ -35,6 +48,10 @@ export function LiveClassesPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const trpc = useTRPC();
+  const { data: organization } = useQuery(
+    trpc.organizations.getActive.queryOptions(),
+  );
 
   const requestedView = searchParams.get(VIEW_PARAM);
   const view: View = isView(requestedView) ? requestedView : "week";
@@ -47,7 +64,15 @@ export function LiveClassesPage() {
 
   function changeView(next: string) {
     if (!isView(next)) return;
-    const params = new URLSearchParams(searchParams.toString());
+    // Keep your place: the week you were on opens its month, and back.
+    const timeZone = organization?.timeZone ?? "UTC";
+    const params = viewAnchorParams(
+      view,
+      next,
+      searchParams,
+      todayInZone(new Date(), timeZone),
+      timeZone,
+    );
     params.set(VIEW_PARAM, next);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
@@ -72,6 +97,11 @@ export function LiveClassesPage() {
               icon: <CalendarRangeIcon className="size-3.5" />,
             },
             {
+              value: "month",
+              label: t("sessions.view.month"),
+              icon: <CalendarIcon className="size-3.5" />,
+            },
+            {
               value: "list",
               label: t("sessions.view.list"),
               icon: <ListIcon className="size-3.5" />,
@@ -89,7 +119,13 @@ export function LiveClassesPage() {
         </Alert>
       ) : null}
 
-      {view === "week" ? <SessionsWeekView /> : <SessionsAgenda />}
+      {view === "week" ? (
+        <SessionsWeekView />
+      ) : view === "month" ? (
+        <SessionsMonthView />
+      ) : (
+        <SessionsAgenda />
+      )}
     </div>
   );
 }

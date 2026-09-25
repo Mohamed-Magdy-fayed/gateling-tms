@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { organizationMembershipRoleValues } from "@/drizzle/schema";
+import {
+  organizationMembershipRoleValues,
+  organizationPlanValues,
+} from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
 import { idSchema } from "@/lib/id-schema";
 
@@ -78,6 +81,7 @@ export const listMembersInput = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
+  roles: z.array(z.enum(organizationMembershipRoleValues)).optional(),
 });
 
 export const inviteMemberSchema = z.object({
@@ -102,6 +106,21 @@ export const switchActiveOrganizationSchema = z.object({
   organizationId: idSchema,
 });
 
+// Platform owner only (`platform.*`). Same paging shape as the members list,
+// minus sorting: the Academies list is always newest first.
+export const listPlatformOrganizationsInput = z.object({
+  page: z.number().int().min(1).default(1),
+  perPage: z.number().int().min(1).max(100).default(20),
+  globalFilter: z.string().trim().max(128).optional(),
+});
+
+// The one input anywhere that names an organization other than the caller's
+// active one — deliberately, and only behind platformOwnerProcedure.
+export const setOrganizationPlanSchema = z.object({
+  organizationId: idSchema,
+  plan: z.enum(organizationPlanValues),
+});
+
 export type OrganizationProfileInput = z.infer<
   typeof organizationProfileSchema
 >;
@@ -112,4 +131,10 @@ export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
 export type RemoveMemberInput = z.infer<typeof removeMemberSchema>;
 export type SwitchActiveOrganizationInput = z.infer<
   typeof switchActiveOrganizationSchema
+>;
+export type ListPlatformOrganizationsInput = z.infer<
+  typeof listPlatformOrganizationsInput
+>;
+export type SetOrganizationPlanInput = z.infer<
+  typeof setOrganizationPlanSchema
 >;

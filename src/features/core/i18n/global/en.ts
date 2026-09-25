@@ -15,7 +15,7 @@ export default {
     certificates: "Certificates",
     liveClasses: "Live Classes",
     settings: "Settings",
-    systemSettings: "Integrations",
+    platform: "Platform",
     assessments: "Assessments",
   },
   actions: {
@@ -288,8 +288,8 @@ export default {
     },
   },
   organizations: {
-    pageTitle: "Organization settings",
-    pageLead: "Manage your organization's profile, plan, and members.",
+    pageTitle: "Settings",
+    pageLead: "Manage your academy's profile, plan, and members.",
     validation: {
       invalidWebsite: "Enter a valid website URL.",
       invalidTimeZone: "Choose a valid time zone.",
@@ -302,9 +302,9 @@ export default {
       enterprise: "Enterprise",
     },
     profile: {
-      editTitle: "Edit organization",
-      editDescription: "Update your organization's profile details.",
-      nameLabel: "Organization name",
+      editTitle: "Edit academy",
+      editDescription: "Update your academy's profile details.",
+      nameLabel: "Academy name",
       businessNameLabel: "Business name",
       phoneLabel: "Phone",
       websiteLabel: "Website",
@@ -314,8 +314,8 @@ export default {
       currencyLabel: "Currency",
       currencyHint:
         "Student payments are recorded and totalled in this currency.",
-      saveSuccess: "Organization updated.",
-      saveFailed: "Could not update the organization.",
+      saveSuccess: "Academy updated.",
+      saveFailed: "Could not update the academy.",
     },
     switcher: {
       label: "Select organization",
@@ -337,20 +337,20 @@ export default {
       changeRole: "Change role",
       inviteButton: "Invite member",
       inviteTitle: "Invite a member",
-      inviteDescription: "Send an email invitation to join this organization.",
+      inviteDescription: "Send an email invitation to join this academy.",
       inviteEmailLabel: "Email",
       inviteRoleLabel: "Role",
       inviteSent: "Invitation sent.",
       inviteFailed: "Could not send the invitation.",
-      alreadyMember: "This person is already a member of this organization.",
+      alreadyMember: "This person is already a member of this academy.",
       roleUpdated: "Role updated.",
       roleUpdateFailed: "Could not update the role.",
       removed: "Member removed.",
       removeFailed: "Could not remove this member.",
       removeConfirmTitle: "Remove member?",
       removeConfirmDescription:
-        "Remove {name} from this organization. They will lose access immediately.",
-      lastAdmin: "An organization must have at least one admin.",
+        "Remove {name} from this academy. They will lose access immediately.",
+      lastAdmin: "An academy must have at least one admin.",
     },
     invite: {
       invalid: "This invitation link is invalid or has expired.",
@@ -373,7 +373,7 @@ export default {
     },
     usage: {
       title: "Plan and usage",
-      description: "What this organization is using on its current plan.",
+      description: "What this academy is using on its current plan.",
       students: "Students",
       courses: "Courses",
       storage: "Storage",
@@ -383,6 +383,7 @@ export default {
       megabytes: dt("{amount:number} MB", {}),
       gigabytes: dt("{amount:number} GB", {}),
       comingSoon: "Paid plans with higher limits are coming soon.",
+      providedByGateling: "Plan provided by Gateling.",
       seePlans: "See plans",
       studentsReached: dt(
         "You've reached this plan's limit of {limit:number} students.",
@@ -411,6 +412,20 @@ export default {
         ctaLabel: "Accept invitation",
         ignore:
           "If you weren't expecting this invitation, you can ignore this email.",
+      },
+      planGranted: {
+        subject: "Your Gateling plan is now {plan}",
+        intro:
+          "{organizationName} is now on the {plan} plan, provided by Gateling.",
+        limits: "It includes {students}, {courses} and {storage} of storage.",
+        students: "up to {count} students",
+        studentsUnlimited: "unlimited students",
+        courses: "up to {count} courses",
+        coursesUnlimited: "unlimited courses",
+        gigabytes: "{amount} GB",
+        ctaLabel: "View plan and usage",
+        notice:
+          "Everything your academy already has stays as it is. If you have questions about this change, reply to this email.",
       },
     },
   },
@@ -539,7 +554,7 @@ export default {
     record: "Record payment",
     edit: "Edit payment",
     formDescription:
-      "Amounts are in {currency}. The currency is set in Organization settings.",
+      "Amounts are in {currency}. The currency is set in Settings.",
     amount: "Amount ({currency})",
     paidAt: "Paid on",
     method: "Method",
@@ -1018,7 +1033,8 @@ export default {
     attendance: "Attendance",
     attendanceDetail: dt("{attended:number} of {recorded:number} attended", {}),
     attendanceNone:
-      "No attendance recorded yet — it fills in when a teacher marks the register.",
+      "No attendance recorded yet — it fills in as students join online or a teacher marks the register.",
+    lateDetail: dt("Late to {late:number} of {attended:number}", {}),
     emptyTitle: "Nothing to measure yet",
     traineeEmptyDescription:
       "Enroll this student in a course or add them to a class, and their progress shows up here.",
@@ -1129,6 +1145,7 @@ export default {
     },
     view: {
       week: "Week",
+      month: "Month",
       list: "List",
     },
     calendar: {
@@ -1147,6 +1164,28 @@ export default {
       moved: "Class moved.",
       moveFailed: "Couldn't move the class.",
       openGroup: "Open group",
+      loadFailed: "Couldn't load the schedule.",
+      retry: "Retry",
+    },
+    month: {
+      previousMonth: "Previous month",
+      nextMonth: "Next month",
+      today: "Today",
+      classCount: dt("{count:plural} this month", {
+        plural: { count: { one: "{?} class", other: "{?} classes" } },
+      }),
+      more: dt("+{count:number} more", {}),
+      openDay: dt("{count:plural} on {date}", {
+        plural: {
+          count: { one: "{?} more class", other: "{?} more classes" },
+        },
+      }),
+      emptyMonth: "No classes this month.",
+      emptyForTeacher: "No classes for {name} this month.",
+      clearFilter: "Clear filter",
+      openInWeek: "Open in week view",
+      overlapTitle: "Teacher booked twice",
+      overlapLabel: "{name} has overlapping classes on this day",
     },
     edit: {
       title: "Edit class",
@@ -1181,16 +1220,20 @@ export default {
   },
   attendance: {
     title: "Attendance",
-    // Says exactly where the figures come from: the teacher, and only the
-    // teacher. Nothing observes the room (STATE.md D144), so promising
-    // otherwise here would be the kind of claim README rule 9 forbids.
-    lead: "Marked by the teacher. A student on the phone or in the room counts as present just the same.",
+    // Says exactly where the figures come from, and what the automatic part
+    // can't see — so a teacher knows which rows still need them.
+    lead: "Students who join the online class under their exact name are marked present automatically, with how late they were. Mark everyone else yourself.",
     statusOptions: {
       present: "Present",
       absent: "Absent",
+      late: "Late",
       unmarked: "Not marked",
     },
     markedManually: "Set by a teacher",
+    markedByMeeting: "Joined online",
+    lateBy: "{minutes:number} min late",
+    lateMinutesLabel: "Minutes late",
+    saveLate: "Save",
     leftTheClass: "No longer in this class",
     marked: "Attendance updated.",
     markFailed: "Couldn't update attendance. Please try again.",
@@ -1204,10 +1247,12 @@ export default {
     notFoundDescription: "This class doesn't exist, or it was removed.",
   },
   settings: {
-    title: "Integrations",
+    title: "Platform",
     subtitle:
-      "Deployment-wide connections to other Gateling systems. Set once by an admin, they apply to every academy on this deployment.",
-    adminOnly: "Only organization admins can view or change these settings.",
+      "Deployment-wide settings, managed by the platform owner. They apply to every academy on this deployment.",
+    integrationsTitle: "Integrations",
+    ownerOnly:
+      "These settings are managed by Gateling for every academy on this deployment. There is nothing to set up here.",
     loadFailed: "Couldn't load the settings.",
     saved: "Setting saved.",
     saveFailed: "Couldn't save the setting.",
@@ -1233,6 +1278,47 @@ export default {
         },
       },
     },
+    academies: {
+      title: "Academies",
+      description:
+        "Every academy on this deployment. Set a plan to grant it without payment; its limits follow the new plan straight away.",
+      searchHint: "Search by academy name, code or email",
+      columnAcademy: "Academy",
+      columnAdminEmail: "Admin email",
+      columnPlan: "Plan",
+      columnStudents: "Students",
+      columnGranted: "Granted",
+      studentsUsed: "{used:string} / {limit:string}",
+      unlimited: "Unlimited",
+      grantedBy: "by {email:string}, {date:string}",
+      notGranted: "—",
+      noAdmin: "—",
+      yours: "Yours",
+      showDetails: "Show details for {name:string}",
+      hideDetails: "Hide details for {name:string}",
+      planFor: "Plan for {name:string}",
+      empty: "No academies yet",
+      loadFailed: "Couldn't load the academies.",
+      retry: "Try again",
+      confirmTitle: "Change the plan for {name:string}?",
+      confirmDescription:
+        "{from:string} → {to:string}. The new limits apply straight away.",
+      confirmDowngrade:
+        "Nothing is deleted. The academy keeps everything it has, but can't add more past the new limits:",
+      overStudents: dt(
+        "{used:number} students, above the {limit:number} limit: they keep access, but no new students can be added.",
+        {},
+      ),
+      overCourses: dt(
+        "{used:number} courses, above the {limit:number} limit: they stay, but no new courses can be added.",
+        {},
+      ),
+      overStorage:
+        "{used:string} stored, above the {limit:string} limit: files stay, but nothing new can be uploaded.",
+      confirm: "Change plan",
+      updated: "Plan updated.",
+      updateFailed: "Couldn't change the plan.",
+    },
     names: {
       "00001": "Meetings API URL",
       "00002": "Meetings API key",
@@ -1249,6 +1335,58 @@ export default {
     errors: {
       unknown: "That setting doesn't exist.",
       invalidValue: "That value isn't valid for this setting.",
+      reapplyFailed: "Nothing changed. Try again.",
+    },
+  },
+  academySettings: {
+    title: "Academy preferences",
+    description:
+      "How Gateling works for your academy. Anything you haven't changed follows Gateling's default.",
+    loadFailed: "Couldn't load your academy's preferences.",
+    retry: "Try again",
+    save: "Save",
+    saving: "Saving…",
+    saved: "Preference saved.",
+    saveFailed:
+      "Couldn't save the preference, so it's back to its previous value.",
+    on: "On",
+    off: "Off",
+    custom: "Custom",
+    defaultIs: "Default: {value:string}",
+    range: "{min:string}–{max:string} {unit:string}",
+    amount: "{value:string} {unit:string}",
+    invalidNumber:
+      "Enter a number from {min:string} to {max:string}, in steps of {step:string}.",
+    effectFuture:
+      "Applies to new classes only. Classes already scheduled stay as they are.",
+    effectReapply: "Also updates upcoming classes that are already scheduled.",
+    reapplyTitle: "This updates upcoming classes. Continue?",
+    reapplyDescription:
+      "“{name:string}” changes to {value:string}. Classes already scheduled are updated in the background.",
+    reapplyConfirm: "Update classes",
+    reset: "Reset to default",
+    resetTitle: "Reset “{name:string}” to the default?",
+    resetDescription:
+      "It goes back to {value:string} and follows Gateling's default from now on.",
+    resetReapply: "Classes already scheduled are updated in the background.",
+    resetConfirm: "Reset",
+    resetDone: "Back to the default.",
+    resetFailed: "Couldn't reset the preference.",
+    "00001": {
+      label: "Default class length",
+      description:
+        "How long a new group time slot runs when you add it. You can still change each slot.",
+      unit: "minutes",
+    },
+    groups: {
+      scheduling: {
+        title: "Scheduling",
+        description: "How classes are planned from each group's schedule.",
+      },
+      attendance: {
+        title: "Attendance",
+        description: "How attendance is taken and counted.",
+      },
     },
   },
   googleImport: {

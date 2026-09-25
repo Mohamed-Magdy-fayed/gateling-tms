@@ -24,9 +24,19 @@ import {
   isMeetingHost,
   sessionJoinPath,
 } from "../lib/session-links";
-import { weekBoundsInZone, weekStartOf } from "../lib/week";
+import {
+  monthBoundsInZone,
+  monthStartOf,
+  todayInZone,
+  weekBoundsInZone,
+  weekStartOf,
+} from "../lib/week";
 import { isLiveClassesEnabled } from "./meetings-config";
-import type { ListSessionsInput, WeekSessionsInput } from "./schemas";
+import type {
+  ListSessionsInput,
+  MonthSessionsInput,
+  WeekSessionsInput,
+} from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
 const sessionColumns = {
@@ -149,6 +159,49 @@ export async function listWeekSessions(
   ctx: OrgTRPCContext,
   input: WeekSessionsInput,
 ) {
+  const timeZone = await organizationTimeZone(ctx);
+  const weekStart = weekStartOf(input.weekStart, timeZone);
+  const bounds = weekBoundsInZone(weekStart, timeZone);
+  if (!bounds) throw invalidDate(ctx);
+
+  return {
+    weekStart,
+    timeZone,
+    ...(await loadRangeSessions(ctx, bounds, input.teacherId)),
+  };
+}
+
+/**
+ * One month of classes as the month grid draws it: every whole
+ * Saturday-to-Friday week that touches the month, so the leading and
+ * trailing days from the neighbouring months are filled in too.
+ *
+ * `month` is snapped to the 1st, and when it's left out the server picks
+ * the current month on the academy's clock — the client can't know that
+ * zone before its organization query lands, and a guess in UTC fetches the
+ * wrong month for the first minutes of every month in Cairo.
+ */
+export async function listMonthSessions(
+  ctx: OrgTRPCContext,
+  input: MonthSessionsInput,
+) {
+  const timeZone = await organizationTimeZone(ctx);
+  const monthStart = monthStartOf(
+    input.month ?? todayInZone(new Date(), timeZone),
+  );
+  const bounds = monthBoundsInZone(monthStart, timeZone);
+  if (!bounds) throw invalidDate(ctx);
+
+  return {
+    monthStart,
+    gridStart: bounds.gridStart,
+    gridEnd: bounds.gridEnd,
+    timeZone,
+    ...(await loadRangeSessions(ctx, bounds, input.teacherId)),
+  };
+}
+
+async function organizationTimeZone(ctx: OrgTRPCContext): Promise<string> {
   const organization = await ctx.db.query.OrganizationsTable.findFirst({
     where: eq(OrganizationsTable.id, ctx.organizationId),
     columns: { timeZone: true },
@@ -159,24 +212,33 @@ export async function listWeekSessions(
       message: ctx.t("errors.notFound"),
     });
   }
+  return organization.timeZone;
+}
 
-  const weekStart = weekStartOf(input.weekStart, organization.timeZone);
-  const bounds = weekBoundsInZone(weekStart, organization.timeZone);
-  if (!bounds) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: ctx.t("groups.validation.date"),
-    });
-  }
+function invalidDate(ctx: OrgTRPCContext) {
+  return new TRPCError({
+    code: "BAD_REQUEST",
+    message: ctx.t("groups.validation.date"),
+  });
+}
 
+/**
+ * The classes inside `[start, end)` that this viewer may see — the calendar
+ * views' shared query. The teacher filter is applied here rather than in
+ * the client: a range can hold more classes than the agenda pages through,
+ * and the calendar wants exactly what it will draw.
+ */
+async function loadRangeSessions(
+  ctx: OrgTRPCContext,
+  bounds: { start: Date; end: Date },
+  teacherId: string | undefined,
+) {
   const rows = await selectSessions(
     ctx,
     and(
       eq(SessionsTable.organizationId, ctx.organizationId),
       ownClassesOnlyForStudents(ctx),
-      input.teacherId
-        ? eq(SessionsTable.teacherId, input.teacherId)
-        : undefined,
+      teacherId ? eq(SessionsTable.teacherId, teacherId) : undefined,
       gte(SessionsTable.scheduledAt, bounds.start),
       lt(SessionsTable.scheduledAt, bounds.end),
     ),
@@ -184,8 +246,6 @@ export async function listWeekSessions(
   );
 
   return {
-    weekStart,
-    timeZone: organization.timeZone,
     rows: rows.map((row) => toSessionRow(ctx, row)),
     liveClassesEnabled: await isLiveClassesEnabled(ctx.db),
   };

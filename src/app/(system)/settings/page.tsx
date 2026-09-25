@@ -1,5 +1,5 @@
-import { SystemSettingsPage } from "@/features/system/settings/admin";
+import { OrganizationsSettingsPage } from "@/features/core/organizations/nextjs";
 
 export default function SettingsPage() {
-  return <SystemSettingsPage />;
+  return <OrganizationsSettingsPage />;
 }

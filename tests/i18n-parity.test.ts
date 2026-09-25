@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import ar from "@/features/core/i18n/global/ar";
 import en from "@/features/core/i18n/global/en";
+import { listAcademySettingDefinitions } from "@/features/system/settings/lib/academy-settings";
+import type { AcademySettingDefinition } from "@/features/system/settings/lib/academy-settings-registry";
 
 /**
  * `LanguageMessages` is an index-signature type, so a key present in `en.ts`
@@ -64,5 +66,53 @@ describe("translation dictionaries", () => {
     );
 
     expect(blanks).toEqual([]);
+  });
+});
+
+/**
+ * Academy preferences read their copy from `academySettings.<code>.*` with a
+ * key built at runtime (design 10A), which the type checker can't see. This
+ * holds every registered preference to having all of it, in both languages.
+ */
+describe("academy preference copy", () => {
+  const requiredPaths = (entry: AcademySettingDefinition) => [
+    "label",
+    "description",
+    ...(entry.control.kind === "enum"
+      ? entry.control.options.map((option) => `options.${option}`)
+      : []),
+    ...(entry.control.kind === "number" ? ["unit"] : []),
+  ];
+
+  test("every registered preference has its label, description, options and unit", () => {
+    const missing = Object.entries({ en, ar }).flatMap(([locale, dictionary]) =>
+      listAcademySettingDefinitions().flatMap((entry) =>
+        requiredPaths(entry)
+          .map((path) => `academySettings.${entry.code}.${path}`)
+          .filter((key) => typeof messageAt(dictionary, key) !== "string")
+          .map((key) => `${locale}.${key}`),
+      ),
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  test("every preference group has a card title and description", () => {
+    const groups = new Set(
+      listAcademySettingDefinitions().map((entry) => entry.group),
+    );
+    for (const group of groups) {
+      for (const dictionary of [en, ar]) {
+        expect(
+          typeof messageAt(dictionary, `academySettings.groups.${group}.title`),
+        ).toBe("string");
+        expect(
+          typeof messageAt(
+            dictionary,
+            `academySettings.groups.${group}.description`,
+          ),
+        ).toBe("string");
+      }
+    }
   });
 });

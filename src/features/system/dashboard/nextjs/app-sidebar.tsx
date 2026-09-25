@@ -30,11 +30,16 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
   const pathname = usePathname() ?? "/";
   const { t, dir } = useTranslation();
 
+  // Display gate only: the owner's routes re-check the flag server-side.
+  const generalNavItems = GENERAL_NAV_ITEMS.filter(
+    (item) => !item.platformOwnerOnly || user.isPlatformOwner,
+  );
+
   // The item whose href is the longest prefix of the current path is the
   // active one. A plain prefix test would light up both "Students"
   // (/students) and "Groups" (/students/groups) on the groups page, since
   // the students area's sub-pages live under the students list's own path.
-  const activeHref = [...SYSTEM_NAV_ITEMS, ...GENERAL_NAV_ITEMS]
+  const activeHref = [...SYSTEM_NAV_ITEMS, ...generalNavItems]
     .map((item) => item.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
@@ -51,7 +56,11 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
       dir={dir}
     >
       <SidebarHeader>
-        <OrganizationSwitcher activeOrganizationId={activeOrganizationId} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <OrganizationSwitcher activeOrganizationId={activeOrganizationId} />
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -80,7 +89,7 @@ export function AppSidebar({ user, activeOrganizationId }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {GENERAL_NAV_ITEMS.map(({ href, translationKey, Icon }) => (
+              {generalNavItems.map(({ href, translationKey, Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={isActive(href)}

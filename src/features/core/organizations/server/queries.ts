@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { likeContains } from "@/drizzle/lib/search";
 import {
@@ -15,9 +15,15 @@ import type { InviteMemberInput, ListMembersInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
 export async function getActiveOrganization(ctx: OrgTRPCContext) {
-  const organization = await ctx.db.query.OrganizationsTable.findFirst({
-    where: eq(OrganizationsTable.id, ctx.organizationId),
-  });
+  const [organization, user] = await Promise.all([
+    ctx.db.query.OrganizationsTable.findFirst({
+      where: eq(OrganizationsTable.id, ctx.organizationId),
+    }),
+    ctx.db.query.UsersTable.findFirst({
+      where: eq(UsersTable.id, ctx.session.user.id),
+      columns: { isPlatformOwner: true },
+    }),
+  ]);
 
   if (!organization) {
     throw new TRPCError({
@@ -26,7 +32,13 @@ export async function getActiveOrganization(ctx: OrgTRPCContext) {
     });
   }
 
-  return { ...organization, role: ctx.role };
+  // Whether to *show* the owner-only surfaces. Display only: every owner
+  // route re-checks the flag itself through `platformOwnerProcedure`.
+  return {
+    ...organization,
+    role: ctx.role,
+    isPlatformOwner: user?.isPlatformOwner ?? false,
+  };
 }
 
 /**
@@ -44,6 +56,7 @@ export async function getOrganizationUsage(ctx: OrgTRPCContext) {
     where: eq(OrganizationsTable.id, ctx.organizationId),
     columns: {
       plan: true,
+      planGrantedBy: true,
       studentCount: true,
       courseCount: true,
       storageBytes: true,
@@ -61,6 +74,9 @@ export async function getOrganizationUsage(ctx: OrgTRPCContext) {
 
   return {
     plan: organization.plan,
+    // Set once the platform owner has granted a plan by hand (R8); the usage
+    // card then says the plan comes from Gateling instead of "coming soon".
+    isGranted: organization.planGrantedBy !== null,
     usage: {
       students: organization.studentCount,
       courses: organization.courseCount,
@@ -115,9 +131,14 @@ export async function resolveDefaultActiveOrganizationId(
 }
 
 function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
-  const base = eq(
-    OrganizationMembershipsTable.organizationId,
-    ctx.organizationId,
+  // A role filter narrows the org's members; it never widens past them. The
+  // calendar's teacher list asks for staff only, so a large academy's
+  // students can't push teachers off the one page it loads.
+  const base = and(
+    eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+    input.roles?.length
+      ? inArray(OrganizationMembershipsTable.role, input.roles)
+      : undefined,
   );
   const query = input.globalFilter?.trim();
   if (!query) return base;

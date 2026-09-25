@@ -13,11 +13,11 @@ import type { OrgTRPCContext } from "./types";
 /**
  * The register, as the teacher takes it.
  *
- * This is the *only* way attendance is recorded (STATE.md D144): students
- * join Gateling Meetings anonymously by design — its participant log names
- * only the host — so nothing can observe who was in the room. The record is
- * still stamped `manual`, which keeps the column honest about where the
- * verdict came from and leaves room for an automatic source if that changes.
+ * Gateling Meetings fills in a presence on its own when a student joins under
+ * a name that matches the roster (`on-meetings-participant-joined`); this is
+ * the correction for everything it can't see — a phone in the room, a
+ * nickname, a sibling's laptop. A `manual` record is final: later webhooks
+ * never overwrite its verdict or its lateness.
  */
 export async function markAttendance(
   ctx: OrgTRPCContext,
@@ -97,6 +97,11 @@ export async function markAttendance(
     });
   }
 
+  // An absence carries no lateness. A presence keeps whatever is recorded
+  // unless the teacher gave a number — confirming an automatic presence must
+  // not erase the minutes the meeting measured.
+  const lateMinutes = input.status === "absent" ? 0 : input.lateMinutes;
+
   await ctx.db
     .insert(SessionStudentsTable)
     .values({
@@ -105,6 +110,7 @@ export async function markAttendance(
       traineeId: input.traineeId,
       status: input.status,
       source: "manual",
+      lateMinutes: lateMinutes ?? 0,
       markedBy: ctx.session.user.id,
     })
     .onConflictDoUpdate({
@@ -112,14 +118,14 @@ export async function markAttendance(
       set: {
         status: input.status,
         source: "manual",
+        ...(lateMinutes === undefined ? {} : { lateMinutes }),
         markedBy: ctx.session.user.id,
         updatedAt: new Date(),
       },
     });
 
-  // `joinedAt`/`leftAt`/`attendedMinutes` are left exactly as they are. No
-  // writer fills them any more (D144), but rows seeded or recorded before the
-  // provider change still carry them, and a correction to the verdict is not a
-  // reason to erase the timings that were observed alongside it.
+  // `joinedAt`/`leftAt`/`attendedMinutes` are left exactly as they are: a
+  // correction to the verdict is not a reason to erase the timings the
+  // meeting observed alongside it.
   return { status: input.status };
 }

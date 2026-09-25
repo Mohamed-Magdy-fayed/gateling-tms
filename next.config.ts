@@ -48,8 +48,16 @@ const nextConfig: NextConfig = {
   // before the rename land on the same pages. Most specific first: the two
   // trainee rules must win over the catch-all, which would otherwise send
   // /learning-flow/trainees to a /students/trainees that doesn't exist.
+  //
+  // Academy settings used to live at /organizations, before /settings (then
+  // the platform owner's page, now /platform) took its name.
   async redirects() {
     return [
+      {
+        source: "/organizations",
+        destination: "/settings",
+        permanent: true,
+      },
       {
         source: "/learning-flow/trainees/:id",
         destination: "/students/:id",

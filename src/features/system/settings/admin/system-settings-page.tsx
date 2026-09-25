@@ -19,15 +19,20 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { H2, InlineCode, Muted } from "@/components/ui/typography";
+import { H3, InlineCode } from "@/components/ui/typography";
+import { EntityPageHeader } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
 import { SYSTEM_SETTING_CODE } from "@/features/system/settings/lib/system-settings-registry";
 import type { SystemSettingRow } from "@/features/system/settings/server";
 import { useTRPC } from "@/integrations/trpc/client";
+import { AcademiesSection } from "./components/academies-section";
 import { SettingValueForm } from "./components/setting-value-form";
 
 /**
- * Deployment-wide integrations, as one card per system the app talks to.
+ * The platform owner's page ("Platform"): deployment-wide integrations, as
+ * one card per system the app talks to. Only the platform owner
+ * (`users.isPlatformOwner`) sees the cards; everyone else gets a calm empty
+ * state, since there is nothing here for them to do.
  *
  * The same flow as every other Gateling system: create the integration on
  * the provider's side, then paste what it hands back in here. The card
@@ -36,34 +41,48 @@ import { SettingValueForm } from "./components/setting-value-form";
  * values they *get* from it, so the whole setup reads top to bottom on one
  * screen.
  */
-export function SystemSettingsPage() {
+export function SystemSettingsPage({
+  isPlatformOwner,
+}: {
+  // Display gate only — settings.list/update re-check the flag server-side.
+  isPlatformOwner: boolean;
+}) {
   const { t } = useTranslation();
-  const trpc = useTRPC();
-
-  const organizationQuery = useQuery(
-    trpc.organizations.getActive.queryOptions(),
-  );
-  const isAdmin = organizationQuery.data?.role === "admin";
-
-  const settingsQuery = useQuery({
-    ...trpc.settings.list.queryOptions(),
-    enabled: isAdmin,
-  });
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <H2>{t("settings.title")}</H2>
-        <Muted>{t("settings.subtitle")}</Muted>
-      </div>
+      <EntityPageHeader
+        title={t("settings.title")}
+        lead={t("settings.subtitle")}
+      />
 
-      {organizationQuery.data && !isAdmin ? (
+      {isPlatformOwner ? (
+        <>
+          <IntegrationsSection />
+          <AcademiesSection />
+        </>
+      ) : (
         <EmptyState
           icon={<ShieldAlertIcon />}
           title={t("settings.title")}
-          description={t("settings.adminOnly")}
+          description={t("settings.ownerOnly")}
         />
-      ) : settingsQuery.isError ? (
+      )}
+    </div>
+  );
+}
+
+function IntegrationsSection() {
+  const { t } = useTranslation();
+  const trpc = useTRPC();
+  const settingsQuery = useQuery(trpc.settings.list.queryOptions());
+
+  return (
+    <section aria-labelledby="platform-integrations" className="space-y-3">
+      <H3 id="platform-integrations" className="text-lg">
+        {t("settings.integrationsTitle")}
+      </H3>
+      {settingsQuery.isError ? (
         <Alert variant="destructive">
           <AlertTriangleIcon />
           <AlertDescription>{t("settings.loadFailed")}</AlertDescription>
@@ -73,7 +92,7 @@ export function SystemSettingsPage() {
       ) : (
         <MeetingsCard settings={settingsQuery.data} />
       )}
-    </div>
+    </section>
   );
 }
 
@@ -137,13 +156,13 @@ function MeetingsCard({ settings }: { settings: SystemSettingRow[] }) {
             {t("settings.groups.meetings.webhookUrl")}
           </dt>
           <dd>
-            <InlineCode>{`${origin}/api/meetings-webhook`}</InlineCode>
+            <InlineCode dir="ltr">{`${origin}/api/meetings-webhook`}</InlineCode>
           </dd>
           <dt className="text-muted-foreground">
             {t("settings.groups.meetings.returnOrigin")}
           </dt>
           <dd>
-            <InlineCode>{origin}</InlineCode>
+            <InlineCode dir="ltr">{origin}</InlineCode>
           </dd>
         </dl>
 

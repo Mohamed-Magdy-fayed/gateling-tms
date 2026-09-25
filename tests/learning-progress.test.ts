@@ -105,7 +105,7 @@ describe("summarizeSessions", () => {
       upcoming: 0,
       nextAt: null,
       percentComplete: 0,
-      attendance: { recorded: 0, attended: 0, percentAttended: 0 },
+      attendance: { recorded: 0, attended: 0, late: 0, percentAttended: 0 },
     });
   });
 
@@ -144,6 +144,7 @@ describe("summarizeSessions", () => {
           scheduledAt: new Date("2026-03-05T18:00:00Z"),
           status: "completed",
           attendance: "present",
+          lateMinutes: 12,
         },
         {
           scheduledAt: new Date("2026-03-07T18:00:00Z"),
@@ -158,8 +159,25 @@ describe("summarizeSessions", () => {
     expect(summary.attendance).toEqual({
       recorded: 3,
       attended: 2,
+      late: 1,
       percentAttended: 67,
     });
+  });
+
+  test("a lateness on an absence is not counted as late", () => {
+    const summary = summarizeSessions(
+      [
+        {
+          scheduledAt: new Date("2026-03-01T18:00:00Z"),
+          status: "completed",
+          attendance: "absent",
+          lateMinutes: 5,
+        },
+      ],
+      now,
+    );
+
+    expect(summary.attendance.late).toBe(0);
   });
 
   test("a cancelled class counts toward attendance on neither side", () => {

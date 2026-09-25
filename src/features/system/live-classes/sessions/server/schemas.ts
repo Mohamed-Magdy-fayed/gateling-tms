@@ -27,6 +27,17 @@ export const weekSessionsInput = z.object({
   teacherId: idSchema.optional(),
 });
 
+/**
+ * One month of the calendar. `month` is any local date in the month (the
+ * server snaps it to the 1st); left out, it means the current month on the
+ * academy's clock — which the server knows and the client may not yet,
+ * right after midnight on the 1st.
+ */
+export const monthSessionsInput = z.object({
+  month: z.iso.date(translationKey("groups.validation.date")).optional(),
+  teacherId: idSchema.optional(),
+});
+
 export const sessionsByGroupSchema = z.object({
   groupId: z.uuid(),
 });
@@ -79,5 +90,6 @@ export const sessionUpdateSchema = z.object({
 
 export type ListSessionsInput = z.infer<typeof listSessionsInput>;
 export type WeekSessionsInput = z.infer<typeof weekSessionsInput>;
+export type MonthSessionsInput = z.infer<typeof monthSessionsInput>;
 export type SessionsByGroupInput = z.infer<typeof sessionsByGroupSchema>;
 export type SessionUpdateInput = z.infer<typeof sessionUpdateSchema>;

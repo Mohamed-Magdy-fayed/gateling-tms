@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
+  type OrganizationMembershipRole,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UsersTable,
@@ -107,6 +108,55 @@ export async function createTenant(
     email,
     caller: createCaller(buildContext(user.id, organization.id)),
   };
+}
+
+/**
+ * A second member of an existing fixture tenant, with its own caller. For
+ * testing role gates: the tenant's own caller is always its admin.
+ *
+ * The membership cascades with the org, but the user does not — pass the
+ * returned `userId` to `destroyMember` in teardown.
+ */
+export async function createMember(
+  tenant: TenantFixture,
+  role: OrganizationMembershipRole,
+): Promise<{ userId: string; caller: TenantFixture["caller"] }> {
+  const [user] = await db
+    .insert(UsersTable)
+    .values({
+      email: `member-${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@integration.test`,
+      name: `Integration ${role}`,
+      emailVerifiedAt: new Date(),
+      createdBy: "integration-test",
+    })
+    .returning({ id: UsersTable.id });
+
+  await db.insert(OrganizationMembershipsTable).values({
+    organizationId: tenant.organizationId,
+    userId: user.id,
+    role,
+  });
+
+  return {
+    userId: user.id,
+    caller: createCaller(buildContext(user.id, tenant.organizationId)),
+  };
+}
+
+export async function destroyMember(userId: string) {
+  await db.delete(UsersTable).where(eq(UsersTable.id, userId));
+}
+
+/**
+ * Marks a fixture user as the platform owner, the way the owner data
+ * migration does for the real one. The flag is read from the database on
+ * every call, so an existing caller for this user picks it up immediately.
+ */
+export async function flagPlatformOwner(userId: string) {
+  await db
+    .update(UsersTable)
+    .set({ isPlatformOwner: true })
+    .where(eq(UsersTable.id, userId));
 }
 
 /** Removes a fixture tenant. Every tenant-owned row cascades with the org. */

@@ -15,7 +15,7 @@ export default {
     certificates: "الشهادات",
     liveClasses: "الحصص المباشرة",
     settings: "الإعدادات",
-    systemSettings: "الربط مع الأنظمة",
+    platform: "المنصة",
     assessments: "التقييمات",
   },
   actions: {
@@ -288,8 +288,8 @@ export default {
     },
   },
   organizations: {
-    pageTitle: "إعدادات المؤسسة",
-    pageLead: "إدارة الملف الشخصي للمؤسسة والخطة والأعضاء.",
+    pageTitle: "الإعدادات",
+    pageLead: "إدارة الملف الشخصي لأكاديميتك وخطتها وأعضائها.",
     validation: {
       invalidWebsite: "أدخل رابط موقع إلكتروني صالحًا.",
       invalidTimeZone: "اختر منطقة زمنية صالحة.",
@@ -302,9 +302,9 @@ export default {
       enterprise: "مؤسسي",
     },
     profile: {
-      editTitle: "تعديل المؤسسة",
-      editDescription: "تحديث بيانات الملف الشخصي لمؤسستك.",
-      nameLabel: "اسم المؤسسة",
+      editTitle: "تعديل الأكاديمية",
+      editDescription: "تحديث بيانات الملف الشخصي لأكاديميتك.",
+      nameLabel: "اسم الأكاديمية",
       businessNameLabel: "الاسم التجاري",
       phoneLabel: "الهاتف",
       websiteLabel: "الموقع الإلكتروني",
@@ -312,8 +312,8 @@ export default {
       timeZoneHint: "تُعرض جداول الفصول ومواعيد الجلسات وفق هذا التوقيت.",
       currencyLabel: "العملة",
       currencyHint: "تُسجَّل مدفوعات الطلاب وتُجمع بهذه العملة.",
-      saveSuccess: "تم تحديث المؤسسة.",
-      saveFailed: "تعذر تحديث المؤسسة.",
+      saveSuccess: "تم تحديث الأكاديمية.",
+      saveFailed: "تعذر تحديث الأكاديمية.",
     },
     switcher: {
       label: "اختر مؤسسة",
@@ -336,20 +336,20 @@ export default {
       inviteButton: "دعوة عضو",
       inviteTitle: "دعوة عضو جديد",
       inviteDescription:
-        "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه المؤسسة.",
+        "أرسل دعوة عبر البريد الإلكتروني للانضمام إلى هذه الأكاديمية.",
       inviteEmailLabel: "البريد الإلكتروني",
       inviteRoleLabel: "الدور",
       inviteSent: "تم إرسال الدعوة.",
       inviteFailed: "تعذر إرسال الدعوة.",
-      alreadyMember: "هذا الشخص عضو بالفعل في هذه المؤسسة.",
+      alreadyMember: "هذا الشخص عضو بالفعل في هذه الأكاديمية.",
       roleUpdated: "تم تحديث الدور.",
       roleUpdateFailed: "تعذر تحديث الدور.",
       removed: "تمت إزالة العضو.",
       removeFailed: "تعذر إزالة هذا العضو.",
       removeConfirmTitle: "إزالة العضو؟",
       removeConfirmDescription:
-        "إزالة {name} من هذه المؤسسة. سيفقد وصوله فورًا.",
-      lastAdmin: "يجب أن يكون للمؤسسة مدير واحد على الأقل.",
+        "إزالة {name} من هذه الأكاديمية. سيفقد وصوله فورًا.",
+      lastAdmin: "يجب أن يكون للأكاديمية مدير واحد على الأقل.",
     },
     invite: {
       invalid: "رابط هذه الدعوة غير صالح أو منتهي الصلاحية.",
@@ -366,7 +366,7 @@ export default {
     },
     usage: {
       title: "الخطة والاستخدام",
-      description: "ما تستخدمه هذه المؤسسة ضمن خطتها الحالية.",
+      description: "ما تستخدمه هذه الأكاديمية ضمن خطتها الحالية.",
       students: "الطلاب",
       courses: "الدورات",
       storage: "التخزين",
@@ -376,6 +376,7 @@ export default {
       megabytes: dt("{amount:number} ميجابايت", {}),
       gigabytes: dt("{amount:number} جيجابايت", {}),
       comingSoon: "خطط مدفوعة بحدود أعلى قريبًا.",
+      providedByGateling: "هذه الخطة مقدّمة من Gateling.",
       seePlans: "عرض الخطط",
       studentsReached: dt(
         "لقد وصلت إلى حد هذه الخطة وهو {limit:number} طالب.",
@@ -403,6 +404,21 @@ export default {
           "دعاك {inviterName} للانضمام إلى {organizationName} على Gateling-TMS.",
         ctaLabel: "قبول الدعوة",
         ignore: "إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.",
+      },
+      planGranted: {
+        subject: "خطتك في Gateling أصبحت الآن {plan}",
+        intro:
+          "أصبحت {organizationName} الآن على خطة {plan}، مقدّمة من Gateling.",
+        limits:
+          "تشمل الخطة {students}، و{courses}، و{storage} من مساحة التخزين.",
+        students: "حتى {count} طالب",
+        studentsUnlimited: "عددًا غير محدود من الطلاب",
+        courses: "حتى {count} دورة",
+        coursesUnlimited: "عددًا غير محدود من الدورات",
+        gigabytes: "{amount} جيجابايت",
+        ctaLabel: "عرض الخطة والاستخدام",
+        notice:
+          "كل ما لدى أكاديميتك يبقى كما هو. إذا كانت لديك أسئلة عن هذا التغيير، يمكنك الرد على هذه الرسالة.",
       },
     },
   },
@@ -527,8 +543,7 @@ export default {
     totalPaid: "إجمالي المدفوع",
     record: "تسجيل دفعة",
     edit: "تعديل الدفعة",
-    formDescription:
-      "المبالغ بعملة {currency}. تُحدَّد العملة من إعدادات المؤسسة.",
+    formDescription: "المبالغ بعملة {currency}. تُحدَّد العملة من الإعدادات.",
     amount: "المبلغ ({currency})",
     paidAt: "تاريخ الدفع",
     method: "طريقة الدفع",
@@ -981,7 +996,9 @@ export default {
       "أرقام الحصص مأخوذة من جدول المجموعة. افتح أي حصة لعرض كشف حضورها وتعديله.",
     attendance: "الحضور",
     attendanceDetail: dt("حضر {attended:number} من {recorded:number}", {}),
-    attendanceNone: "لم يُسجَّل حضور بعد — يظهر عندما يسجّله المعلم.",
+    attendanceNone:
+      "لم يُسجَّل حضور بعد — يظهر عندما ينضم الطلاب أونلاين أو يسجّله المعلم.",
+    lateDetail: dt("تأخر في {late:number} من {attended:number}", {}),
     emptyTitle: "لا يوجد ما يُقاس بعد",
     traineeEmptyDescription:
       "سجّل هذا الطالب في دورة أو أضفه إلى مجموعة ليظهر تقدمه هنا.",
@@ -1080,6 +1097,7 @@ export default {
     },
     view: {
       week: "الأسبوع",
+      month: "الشهر",
       list: "قائمة",
     },
     calendar: {
@@ -1096,6 +1114,44 @@ export default {
       moved: "تم نقل الحصة.",
       moveFailed: "تعذّر نقل الحصة.",
       openGroup: "فتح المجموعة",
+      loadFailed: "تعذّر تحميل الجدول.",
+      retry: "إعادة المحاولة",
+    },
+    month: {
+      previousMonth: "الشهر السابق",
+      nextMonth: "الشهر التالي",
+      today: "اليوم",
+      classCount: dt("{count:plural} هذا الشهر", {
+        plural: {
+          count: {
+            zero: "لا حصص",
+            one: "حصة واحدة",
+            two: "حصتان",
+            few: "{?} حصص",
+            many: "{?} حصة",
+            other: "{?} حصة",
+          },
+        },
+      }),
+      more: dt("+{count:number} أخرى", {}),
+      openDay: dt("{count:plural} في {date}", {
+        plural: {
+          count: {
+            zero: "لا حصص أخرى",
+            one: "حصة أخرى",
+            two: "حصتان أخريان",
+            few: "{?} حصص أخرى",
+            many: "{?} حصة أخرى",
+            other: "{?} حصة أخرى",
+          },
+        },
+      }),
+      emptyMonth: "لا توجد حصص هذا الشهر.",
+      emptyForTeacher: "لا توجد حصص لـ {name} هذا الشهر.",
+      clearFilter: "إزالة التصفية",
+      openInWeek: "فتح في عرض الأسبوع",
+      overlapTitle: "المعلّم محجوز مرتين",
+      overlapLabel: "لدى {name} حصص متداخلة في هذا اليوم",
     },
     edit: {
       title: "تعديل الحصة",
@@ -1128,13 +1184,18 @@ export default {
   },
   attendance: {
     title: "الحضور",
-    lead: "يسجّله المعلّم. الطالب الذي حضر بالهاتف أو داخل القاعة حاضر تمامًا مثل غيره.",
+    lead: "الطلاب الذين ينضمون إلى الحصة الأونلاين باسمهم المسجّل تمامًا يُسجَّل حضورهم تلقائيًا مع مدة تأخيرهم. سجّل حضور الباقين بنفسك.",
     statusOptions: {
       present: "حاضر",
       absent: "غائب",
+      late: "متأخر",
       unmarked: "لم يُسجَّل",
     },
     markedManually: "سجّله المعلم",
+    markedByMeeting: "انضم أونلاين",
+    lateBy: "متأخر {minutes:number} دقيقة",
+    lateMinutesLabel: "دقائق التأخير",
+    saveLate: "حفظ",
     leftTheClass: "لم يعد في هذه المجموعة",
     marked: "تم تحديث الحضور.",
     markFailed: "تعذّر تحديث الحضور. حاول مرة أخرى.",
@@ -1147,10 +1208,12 @@ export default {
     notFoundDescription: "هذه الحصة غير موجودة أو تم حذفها.",
   },
   settings: {
-    title: "الربط مع الأنظمة",
+    title: "المنصة",
     subtitle:
-      "روابط على مستوى النظام كله مع أنظمة Gateling الأخرى. يضبطها مدير مرة واحدة وتسري على كل الأكاديميات على هذا النظام.",
-    adminOnly: "يمكن لمديري المؤسسة فقط عرض هذه الإعدادات أو تغييرها.",
+      "إعدادات على مستوى النظام كله يديرها مالك المنصة، وتسري على كل الأكاديميات على هذا النظام.",
+    integrationsTitle: "الربط مع الأنظمة",
+    ownerOnly:
+      "تدير Gateling هذه الإعدادات لكل الأكاديميات على هذا النظام. لا يوجد ما تحتاج إلى ضبطه هنا.",
     loadFailed: "تعذّر تحميل الإعدادات.",
     saved: "تم حفظ الإعداد.",
     saveFailed: "تعذّر حفظ الإعداد.",
@@ -1175,6 +1238,47 @@ export default {
         },
       },
     },
+    academies: {
+      title: "الأكاديميات",
+      description:
+        "كل الأكاديميات على هذا النظام. اختر خطة لتمنحها لأكاديمية دون دفع؛ تسري حدود الخطة الجديدة فورًا.",
+      searchHint: "ابحث باسم الأكاديمية أو رمزها أو البريد الإلكتروني",
+      columnAcademy: "الأكاديمية",
+      columnAdminEmail: "بريد المسؤول",
+      columnPlan: "الخطة",
+      columnStudents: "الطلاب",
+      columnGranted: "المنح",
+      studentsUsed: "{used:string} / {limit:string}",
+      unlimited: "غير محدود",
+      grantedBy: "بواسطة {email:string}، {date:string}",
+      notGranted: "—",
+      noAdmin: "—",
+      yours: "أكاديميتك",
+      showDetails: "عرض تفاصيل {name:string}",
+      hideDetails: "إخفاء تفاصيل {name:string}",
+      planFor: "خطة {name:string}",
+      empty: "لا توجد أكاديميات بعد",
+      loadFailed: "تعذّر تحميل الأكاديميات.",
+      retry: "حاول مرة أخرى",
+      confirmTitle: "تغيير خطة {name:string}؟",
+      confirmDescription:
+        "{from:string} ← {to:string}. تسري الحدود الجديدة فورًا.",
+      confirmDowngrade:
+        "لن يُحذف أي شيء. تحتفظ الأكاديمية بكل ما لديها، لكن لا يمكنها إضافة المزيد بعد تجاوز الحدود الجديدة:",
+      overStudents: dt(
+        "{used:number} طالبًا، أعلى من حد {limit:number}: يحتفظون بإمكانية الوصول، لكن لا يمكن إضافة طلاب جدد.",
+        {},
+      ),
+      overCourses: dt(
+        "{used:number} دورة، أعلى من حد {limit:number}: تبقى الدورات، لكن لا يمكن إضافة دورات جديدة.",
+        {},
+      ),
+      overStorage:
+        "{used:string} مخزّنة، أعلى من حد {limit:string}: تبقى الملفات، لكن لا يمكن رفع ملفات جديدة.",
+      confirm: "تغيير الخطة",
+      updated: "تم تحديث الخطة.",
+      updateFailed: "تعذّر تغيير الخطة.",
+    },
     names: {
       "00001": "رابط Meetings API",
       "00002": "مفتاح Meetings API",
@@ -1191,6 +1295,57 @@ export default {
     errors: {
       unknown: "هذا الإعداد غير موجود.",
       invalidValue: "هذه القيمة غير صالحة لهذا الإعداد.",
+      reapplyFailed: "لم يتغير شيء. حاول مرة أخرى.",
+    },
+  },
+  academySettings: {
+    title: "تفضيلات الأكاديمية",
+    description:
+      "طريقة عمل Gateling في أكاديميتك. كل ما لم تغيّره يتبع الإعداد الافتراضي في Gateling.",
+    loadFailed: "تعذّر تحميل تفضيلات أكاديميتك.",
+    retry: "حاول مرة أخرى",
+    save: "حفظ",
+    saving: "جارٍ الحفظ…",
+    saved: "تم حفظ التفضيل.",
+    saveFailed: "تعذّر حفظ التفضيل، فعاد إلى قيمته السابقة.",
+    on: "مفعّل",
+    off: "متوقف",
+    custom: "مخصص",
+    defaultIs: "الافتراضي: {value:string}",
+    range: "{min:string}–{max:string} {unit:string}",
+    amount: "{value:string} {unit:string}",
+    invalidNumber:
+      "أدخل رقمًا من {min:string} إلى {max:string}، بزيادات قدرها {step:string}.",
+    effectFuture:
+      "ينطبق على الحصص الجديدة فقط. الحصص المجدولة بالفعل تبقى كما هي.",
+    effectReapply: "يحدّث أيضًا الحصص القادمة المجدولة بالفعل.",
+    reapplyTitle: "سيؤدي هذا إلى تحديث الحصص القادمة. هل تريد المتابعة؟",
+    reapplyDescription:
+      "سيتغير «{name:string}» إلى {value:string}. تُحدَّث الحصص المجدولة بالفعل في الخلفية.",
+    reapplyConfirm: "تحديث الحصص",
+    reset: "إعادة إلى الافتراضي",
+    resetTitle: "إعادة «{name:string}» إلى الافتراضي؟",
+    resetDescription:
+      "سيعود إلى {value:string} ويتبع الإعداد الافتراضي في Gateling من الآن فصاعدًا.",
+    resetReapply: "تُحدَّث الحصص المجدولة بالفعل في الخلفية.",
+    resetConfirm: "إعادة",
+    resetDone: "عاد إلى الإعداد الافتراضي.",
+    resetFailed: "تعذّرت إعادة التفضيل.",
+    "00001": {
+      label: "مدة الحصة الافتراضية",
+      description:
+        "مدة أي موعد جديد تضيفه لجدول المجموعة. يمكنك دائمًا تعديل كل موعد.",
+      unit: "دقيقة",
+    },
+    groups: {
+      scheduling: {
+        title: "الجدولة",
+        description: "طريقة تخطيط الحصص من جدول كل مجموعة.",
+      },
+      attendance: {
+        title: "الحضور",
+        description: "طريقة تسجيل الحضور واحتسابه.",
+      },
     },
   },
   googleImport: {

@@ -15,7 +15,7 @@ import {
  * theme script, the tRPC client), and the assessment builder (Base UI overlays,
  * which are what forced `style-src 'unsafe-inline'`).
  */
-const AUTHENTICATED_PAGES = ["/dashboard", "/assessments", "/organizations"];
+const AUTHENTICATED_PAGES = ["/dashboard", "/assessments", "/settings"];
 
 type Violation = { page: string; message: string };
 

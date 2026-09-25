@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import type { GroupScheduleSlot } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
+import { defaultScheduleSlot } from "../../lib/default-schedule-slot";
 
 /** Index matches JS `Date#getDay()`, which is what schedule.ts expands. */
 const DAY_KEYS = [
@@ -25,13 +26,9 @@ const DAY_KEYS = [
   "saturday",
 ] as const;
 
-const DEFAULT_SLOT: GroupScheduleSlot = {
-  day: 1,
-  startTime: "18:00",
-  endTime: "20:00",
-};
-
 type GroupScheduleEditorProps = {
+  /** How long a newly added slot runs — the academy's default class length. */
+  classMinutes: number;
   disabled?: boolean;
   onChange: (schedule: GroupScheduleSlot[]) => void;
   value: GroupScheduleSlot[];
@@ -46,6 +43,7 @@ type GroupScheduleEditorProps = {
  * something they already think of as one rule.
  */
 export function GroupScheduleEditor({
+  classMinutes,
   disabled,
   onChange,
   value,
@@ -73,7 +71,9 @@ export function GroupScheduleEditor({
           variant="outline"
           size="sm"
           disabled={disabled}
-          onClick={() => onChange([...value, DEFAULT_SLOT])}
+          onClick={() =>
+            onChange([...value, defaultScheduleSlot(classMinutes)])
+          }
         >
           <PlusIcon className="size-3.5" />
           {t("groups.slots.addSlot")}

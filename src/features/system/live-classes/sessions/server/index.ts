@@ -8,6 +8,7 @@ export {
 export { updateSession } from "./mutations";
 export {
   listGroupSessions,
+  listMonthSessions,
   listSessions,
   listWeekSessions,
   ownClassesOnlyForStudents,
@@ -16,6 +17,8 @@ export {
 export { sessionsRouter } from "./router";
 export {
   listSessionsInput,
+  type MonthSessionsInput,
+  monthSessionsInput,
   type SessionScope,
   type SessionUpdateInput,
   sessionScopeValues,

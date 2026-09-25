@@ -5,8 +5,8 @@ import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "@/features/core/i18n/client";
 import type { SessionRow } from "@/features/system/live-classes/sessions/server";
 import { cn } from "@/lib/utils";
+import { sessionAppearance } from "../session-appearance";
 import { minutesToPx, type Placement } from "./geometry";
-import { groupColor } from "./group-colors";
 
 type PointerHandlers = {
   onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
@@ -61,7 +61,7 @@ export function SessionBlock({
   onOpen,
 }: SessionBlockProps) {
   const { t } = useTranslation();
-  const color = groupColor(session.groupId);
+  const { color, statusClassName } = sessionAppearance(session);
   const heightPx = minutesToPx(placement.durationMinutes);
   const compact = heightPx < COMPACT_HEIGHT_PX;
   const width = 100 / lanes;
@@ -79,9 +79,7 @@ export function SessionBlock({
         editable
           ? "cursor-grab touch-none active:cursor-grabbing"
           : "cursor-pointer",
-        session.status === "cancelled" && "opacity-50 line-through",
-        session.status === "completed" && "opacity-70",
-        session.status === "ongoing" && "ring-2 ring-primary",
+        statusClassName,
         isDragging && "z-20 cursor-grabbing shadow-lg ring-2 ring-primary/60",
         isPending && !isDragging && "opacity-70",
       )}

@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  boolean,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -29,6 +30,10 @@ import {
  * A user is global, not org-bound — organization access is decided by
  * `organization_memberships`. `parentId` supports a future student→parent
  * relationship (no UI in v1, column only).
+ *
+ * `isPlatformOwner` marks whoever runs this deployment (Gateling itself), not
+ * an academy role: it gates the deployment-wide settings, whatever org is
+ * active. Set only by a data migration — there is no route that writes it.
  */
 export const UsersTable = pgTable(
   "users",
@@ -44,6 +49,7 @@ export const UsersTable = pgTable(
     emailVerifiedAt: timestamp({ withTimezone: true }),
     lastSignInAt: timestamp({ withTimezone: true }),
     dateOfBirth: timestamp({ withTimezone: true }),
+    isPlatformOwner: boolean().notNull().default(false),
     createdAt,
     createdBy,
     updatedAt,
