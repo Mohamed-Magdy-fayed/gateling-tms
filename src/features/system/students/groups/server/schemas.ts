@@ -54,6 +54,9 @@ export const groupScheduleSlotSchema = z
 const optionalReference = z.union([idSchema, z.literal("")]).nullable();
 
 export const groupMutationSchema = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   name: z
     .string()
     .trim()
@@ -128,11 +131,17 @@ export const groupStudentImportRowSchema = z.object({
 });
 
 export const groupStudentImportPreviewInput = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   fileName: z.string().min(1).max(256),
   base64: z.string().min(1).max(MAX_IMPORT_BASE64_LENGTH),
 });
 
 export const groupStudentImportCommitInput = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   rows: z.array(z.record(z.string(), z.string())).min(1).max(MAX_IMPORT_ROWS),
 });
 

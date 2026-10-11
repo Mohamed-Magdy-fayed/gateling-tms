@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   CertificatesTable,
   CoursesTable,
@@ -7,6 +7,7 @@ import {
   GroupsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import type {
   CertificateDeleteInput,
   CertificateMutationInput,
@@ -42,7 +43,10 @@ async function assertGroupInOrg(ctx: OrgTRPCContext, groupId: string) {
   const group = await ctx.db.query.GroupsTable.findFirst({
     where: and(
       eq(GroupsTable.id, groupId),
-      eq(GroupsTable.organizationId, ctx.organizationId),
+      and(
+        eq(GroupsTable.organizationId, ctx.organizationId),
+        inArray(GroupsTable.branchId, ctx.branchIds),
+      ),
     ),
     columns: { id: true },
   });
@@ -78,7 +82,10 @@ export async function issueCertificate(
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, input.traineeId),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
     columns: { id: true },
@@ -105,7 +112,10 @@ export async function issueCertificate(
         .from(EnrollmentsTable)
         .where(
           and(
-            eq(EnrollmentsTable.organizationId, ctx.organizationId),
+            and(
+              eq(EnrollmentsTable.organizationId, ctx.organizationId),
+              inArray(EnrollmentsTable.branchId, ctx.branchIds),
+            ),
             eq(EnrollmentsTable.traineeId, input.traineeId),
             eq(EnrollmentsTable.courseId, courseId),
           ),
@@ -131,6 +141,7 @@ export async function issueCertificate(
       .insert(CertificatesTable)
       .values({
         organizationId: ctx.organizationId,
+        branchId: await branchOf(trx, ctx, "trainee", input.traineeId),
         traineeId: input.traineeId,
         courseId,
         groupId,
@@ -154,7 +165,10 @@ export async function deleteCertificate(
     .where(
       and(
         eq(CertificatesTable.id, input.id),
-        eq(CertificatesTable.organizationId, ctx.organizationId),
+        and(
+          eq(CertificatesTable.organizationId, ctx.organizationId),
+          inArray(CertificatesTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: CertificatesTable.id });

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { TeacherAvailabilityTable, UsersTable } from "@/drizzle/schema";
 import type { AvailabilitySlot } from "../lib/slots";
 import type { ListTeacherAvailabilityInput } from "./schemas";
@@ -33,7 +33,10 @@ export async function listTeacherAvailability(
     .leftJoin(UsersTable, eq(UsersTable.id, TeacherAvailabilityTable.teacherId))
     .where(
       and(
-        eq(TeacherAvailabilityTable.organizationId, ctx.organizationId),
+        and(
+          eq(TeacherAvailabilityTable.organizationId, ctx.organizationId),
+          inArray(TeacherAvailabilityTable.branchId, ctx.branchIds),
+        ),
         input.teacherId
           ? eq(TeacherAvailabilityTable.teacherId, input.teacherId)
           : undefined,

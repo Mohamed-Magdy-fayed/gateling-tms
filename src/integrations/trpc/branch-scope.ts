@@ -2,8 +2,8 @@ import { and, asc, eq } from "drizzle-orm";
 import type { db as database } from "@/drizzle";
 import {
   BranchesTable,
-  type OrganizationMembershipRole,
   OrganizationMembershipBranchesTable,
+  type OrganizationMembershipRole,
 } from "@/drizzle/schema";
 import { type BranchScope, resolveBranchAccess } from "./org-access";
 
@@ -33,7 +33,10 @@ export async function loadBranchScope(
       .from(OrganizationMembershipBranchesTable)
       .where(
         and(
-          eq(OrganizationMembershipBranchesTable.organizationId, input.organizationId),
+          eq(
+            OrganizationMembershipBranchesTable.organizationId,
+            input.organizationId,
+          ),
           eq(OrganizationMembershipBranchesTable.userId, input.userId),
         ),
       ),

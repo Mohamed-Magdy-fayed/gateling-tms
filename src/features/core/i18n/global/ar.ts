@@ -52,6 +52,8 @@ export default {
     unauthorized: "غير مصرح لك بتنفيذ هذا الإجراء.",
     validationFailed: "يرجى مراجعة الحقول المظللة والمحاولة مرة أخرى.",
     noActiveOrganization: "ليس لديك صلاحية الوصول لهذه المؤسسة.",
+    chooseBranch: "اختر فرعًا أولًا — تم تحديد 'كل الفروع'.",
+    branchOutOfScope: "ليس لديك صلاحية الوصول لهذا الفرع.",
   },
   forms: {
     validation: {

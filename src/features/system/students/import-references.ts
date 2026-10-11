@@ -6,6 +6,9 @@ import { matchKey, type TraineeDirectory } from "./import-reference-keys";
 /** Reads run either on the request connection or inside a commit's transaction. */
 export type Reader = typeof database | Transaction;
 
+/** What an import may read: the academy, narrowed to the request's branches. */
+export type ImportScope = { organizationId: string; branchIds: string[] };
+
 /**
  * Advisory-lock seed for group creation, distinct from the group-schedule
  * lock's seed 0 (`on-group-schedule-changed.ts`) so the two never contend on
@@ -20,7 +23,7 @@ const GROUP_CREATE_LOCK_SEED = 1;
  */
 export async function findTraineeDirectory(
   reader: Reader,
-  organizationId: string,
+  scope: ImportScope,
   emailKeys: string[],
   nameKeys: string[],
 ): Promise<TraineeDirectory> {
@@ -48,7 +51,8 @@ export async function findTraineeDirectory(
     .from(TraineesTable)
     .where(
       and(
-        eq(TraineesTable.organizationId, organizationId),
+        eq(TraineesTable.organizationId, scope.organizationId),
+        inArray(TraineesTable.branchId, scope.branchIds),
         isNull(TraineesTable.deletedAt),
         or(...identityMatches),
       ),
@@ -80,9 +84,10 @@ export async function findTraineeDirectory(
  */
 export async function resolveGroupIds(
   trx: Transaction,
-  organizationId: string,
+  scope: ImportScope & { writeBranchId: string },
   names: string[],
 ): Promise<Map<string, string>> {
+  const { organizationId } = scope;
   const idByKey = new Map<string, string>();
   if (names.length === 0) return idByKey;
 
@@ -103,6 +108,7 @@ export async function resolveGroupIds(
     .where(
       and(
         eq(GroupsTable.organizationId, organizationId),
+        inArray(GroupsTable.branchId, scope.branchIds),
         inArray(
           sql`lower(${GroupsTable.name})`,
           names.map((name) => matchKey(name)),
@@ -121,7 +127,13 @@ export async function resolveGroupIds(
 
   const created = await trx
     .insert(GroupsTable)
-    .values(missing.map((name) => ({ organizationId, name })))
+    .values(
+      missing.map((name) => ({
+        organizationId,
+        branchId: scope.writeBranchId,
+        name,
+      })),
+    )
     .returning({ id: GroupsTable.id, name: GroupsTable.name });
 
   for (const group of created) idByKey.set(matchKey(group.name), group.id);

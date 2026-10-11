@@ -3,6 +3,8 @@ import { and, DrizzleQueryError, eq } from "drizzle-orm";
 import type { PostgresError } from "postgres";
 import type { db as Database } from "@/drizzle";
 import {
+  BranchesTable,
+  DEFAULT_BRANCH_NAME,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UsersTable,
@@ -87,6 +89,13 @@ export async function createOrganizationForUser(
           organizationId: organization.id,
           userId,
           role: "admin",
+        });
+
+        // Every academy has at least one branch: students, groups and
+        // classes all live in one (docs/designs/academy-branches.md).
+        await trx.insert(BranchesTable).values({
+          organizationId: organization.id,
+          name: DEFAULT_BRANCH_NAME,
         });
 
         return organization.id;

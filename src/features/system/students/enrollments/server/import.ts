@@ -23,12 +23,17 @@ import {
   type WorkbookTable,
 } from "@/features/core/import/server";
 import { findCourseIdsByName } from "@/features/system/content-library/courses/server/import-lookup";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
 import {
   distinctNames,
   matchKey,
   optionalMatchKey,
 } from "../../import-reference-keys";
-import { findTraineeDirectory, type Reader } from "../../import-references";
+import {
+  findTraineeDirectory,
+  type ImportScope,
+  type Reader,
+} from "../../import-references";
 import {
   DEFAULT_IMPORT_ENROLLMENT_STATUS,
   type ExistingEnrollment,
@@ -62,9 +67,10 @@ function translateLabel(ctx: OrgTRPCContext, key: MessageKey): string {
 
 async function loadReferences(
   reader: Reader,
-  organizationId: string,
+  scope: ImportScope,
   rows: ImportedEnrollmentRow[],
 ): Promise<ImportReferences> {
+  const { organizationId } = scope;
   const emailKeys = [
     ...new Set(
       rows
@@ -82,7 +88,7 @@ async function loadReferences(
 
   const trainees = await findTraineeDirectory(
     reader,
-    organizationId,
+    scope,
     emailKeys,
     nameKeys,
   );
@@ -209,9 +215,11 @@ export async function previewEnrollmentImport(
   if (!parsed.ok) throw importFileError(ctx, parsed.problem);
 
   const { reviewed, unknownHeaders } = reviewEnrollmentFile(ctx, parsed.table);
+  // One branch per import — see trainees/server/import.ts.
+  const branchId = requireWriteBranch(ctx, input.branchId);
   const references = await loadReferences(
     ctx.db,
-    ctx.organizationId,
+    { organizationId: ctx.organizationId, branchIds: [branchId] },
     reviewed.valid,
   );
   const existing = await findExistingEnrollments(
@@ -314,9 +322,11 @@ export async function commitEnrollmentImport(
   input: EnrollmentImportCommitInput,
 ): Promise<ImportCommitResult> {
   const rows = validateCommitRows(ctx, input.rows);
+  const branchId = requireWriteBranch(ctx, input.branchId);
+  const scope = { organizationId: ctx.organizationId, branchIds: [branchId] };
 
   return ctx.db.transaction(async (trx) => {
-    const references = await loadReferences(trx, ctx.organizationId, rows);
+    const references = await loadReferences(trx, scope, rows);
     const traineeIds = [
       ...new Set([
         ...references.trainees.byEmail.values(),
@@ -348,6 +358,7 @@ export async function commitEnrollmentImport(
 
     const inserts: {
       organizationId: string;
+      branchId: string;
       traineeId: string;
       courseId: string;
       status: EnrollmentStatus;
@@ -370,7 +381,10 @@ export async function commitEnrollmentImport(
             .where(
               and(
                 eq(EnrollmentsTable.id, enrollmentId),
-                eq(EnrollmentsTable.organizationId, ctx.organizationId),
+                and(
+                  eq(EnrollmentsTable.organizationId, ctx.organizationId),
+                  inArray(EnrollmentsTable.branchId, ctx.branchIds),
+                ),
               ),
             );
         }
@@ -380,6 +394,8 @@ export async function commitEnrollmentImport(
 
       inserts.push({
         organizationId: ctx.organizationId,
+        // Every matched trainee is in this branch (the lookup was scoped to it).
+        branchId,
         traineeId: target.traineeId,
         courseId: target.courseId,
         status: target.status ?? DEFAULT_IMPORT_ENROLLMENT_STATUS,

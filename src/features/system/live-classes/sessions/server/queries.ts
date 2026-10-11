@@ -107,7 +107,10 @@ export async function listSessions(
 ) {
   const now = new Date();
   const whereClause = and(
-    eq(SessionsTable.organizationId, ctx.organizationId),
+    and(
+      eq(SessionsTable.organizationId, ctx.organizationId),
+      inArray(SessionsTable.branchId, ctx.branchIds),
+    ),
     ownClassesOnlyForStudents(ctx),
     input.groupId ? eq(SessionsTable.groupId, input.groupId) : undefined,
     input.scope === "upcoming"
@@ -236,7 +239,10 @@ async function loadRangeSessions(
   const rows = await selectSessions(
     ctx,
     and(
-      eq(SessionsTable.organizationId, ctx.organizationId),
+      and(
+        eq(SessionsTable.organizationId, ctx.organizationId),
+        inArray(SessionsTable.branchId, ctx.branchIds),
+      ),
       ownClassesOnlyForStudents(ctx),
       teacherId ? eq(SessionsTable.teacherId, teacherId) : undefined,
       gte(SessionsTable.scheduledAt, bounds.start),
@@ -259,7 +265,10 @@ export async function listGroupSessions(ctx: OrgTRPCContext, groupId: string) {
   const rows = await selectSessions(
     ctx,
     and(
-      eq(SessionsTable.organizationId, ctx.organizationId),
+      and(
+        eq(SessionsTable.organizationId, ctx.organizationId),
+        inArray(SessionsTable.branchId, ctx.branchIds),
+      ),
       eq(SessionsTable.groupId, groupId),
       ownClassesOnlyForStudents(ctx),
     ),
@@ -296,7 +305,12 @@ export function ownClassesOnlyForStudents(ctx: OrgTRPCContext) {
         isNull(TraineesTable.deletedAt),
       ),
     )
-    .where(eq(GroupStudentsTable.organizationId, ctx.organizationId));
+    .where(
+      and(
+        eq(GroupStudentsTable.organizationId, ctx.organizationId),
+        inArray(GroupStudentsTable.branchId, ctx.branchIds),
+      ),
+    );
 
   return inArray(SessionsTable.groupId, ownGroupIds);
 }

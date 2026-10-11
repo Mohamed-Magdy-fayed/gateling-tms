@@ -23,7 +23,8 @@ import {
   type WorkbookTable,
 } from "@/features/core/import/server";
 import { PLAN_LIMITS } from "@/features/core/organizations/server";
-import { resolveGroupIds } from "../../import-references";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
+import { type ImportScope, resolveGroupIds } from "../../import-references";
 import {
   distinctGroupNames,
   type ExistingTrainees,
@@ -63,7 +64,7 @@ function translateLabel(ctx: OrgTRPCContext, key: MessageKey): string {
  */
 async function findExistingTrainees(
   reader: Reader,
-  organizationId: string,
+  scope: ImportScope,
   rows: ImportedRow[],
 ): Promise<ExistingTrainees> {
   const ids = [...new Set(rows.map((row) => row.parsed.id).filter(Boolean))];
@@ -91,7 +92,8 @@ async function findExistingTrainees(
     .from(TraineesTable)
     .where(
       and(
-        eq(TraineesTable.organizationId, organizationId),
+        eq(TraineesTable.organizationId, scope.organizationId),
+        inArray(TraineesTable.branchId, scope.branchIds),
         isNull(TraineesTable.deletedAt),
         or(...identityMatches),
       ),
@@ -174,9 +176,12 @@ export async function previewTraineeImport(
   if (!parsed.ok) throw importFileError(ctx, parsed.problem);
 
   const { reviewed, unknownHeaders } = reviewTraineeFile(ctx, parsed.table);
+  // An import targets exactly one branch, and matches existing students only
+  // inside it, so it can never tie one branch's student to another's group.
+  const branchId = requireWriteBranch(ctx, input.branchId);
   const existing = await findExistingTrainees(
     ctx.db,
-    ctx.organizationId,
+    { organizationId: ctx.organizationId, branchIds: [branchId] },
     reviewed.valid,
   );
   const resolved = resolveRows(reviewed, existing);
@@ -253,6 +258,8 @@ export async function commitTraineeImport(
 ): Promise<ImportCommitResult> {
   const rows = validateCommitRows(ctx, input.rows);
   const actor = actorLabel(ctx);
+  const branchId = requireWriteBranch(ctx, input.branchId);
+  const scope = { organizationId: ctx.organizationId, branchIds: [branchId] };
 
   return ctx.db.transaction(async (trx) => {
     // Same lock as createTrainee: two concurrent imports must not both read
@@ -273,7 +280,7 @@ export async function commitTraineeImport(
       });
     }
 
-    const existing = await findExistingTrainees(trx, ctx.organizationId, rows);
+    const existing = await findExistingTrainees(trx, scope, rows);
     // The same resolution the preview ran, so the commit can't accept a row
     // the review screen rejected — an unknown id, or a second row targeting a
     // trainee an earlier row already claims.
@@ -319,7 +326,10 @@ export async function commitTraineeImport(
         .where(
           and(
             eq(TraineesTable.id, traineeId),
-            eq(TraineesTable.organizationId, ctx.organizationId),
+            and(
+              eq(TraineesTable.organizationId, ctx.organizationId),
+              inArray(TraineesTable.branchId, ctx.branchIds),
+            ),
             isNull(TraineesTable.deletedAt),
           ),
         );
@@ -334,6 +344,7 @@ export async function commitTraineeImport(
         .values(
           createIndexes.map((index) => ({
             organizationId: ctx.organizationId,
+            branchId,
             name: rows[index].parsed.name,
             phone: rows[index].parsed.phone || null,
             email: rows[index].parsed.email || null,
@@ -357,7 +368,7 @@ export async function commitTraineeImport(
 
     const groupIdByKey = await resolveGroupIds(
       trx,
-      ctx.organizationId,
+      { ...scope, writeBranchId: branchId },
       distinctGroupNames(rows),
     );
 
@@ -367,6 +378,7 @@ export async function commitTraineeImport(
         if (!groupId) return null;
         return {
           organizationId: ctx.organizationId,
+          branchId,
           groupId,
           traineeId: traineeIdByRow[index],
         };

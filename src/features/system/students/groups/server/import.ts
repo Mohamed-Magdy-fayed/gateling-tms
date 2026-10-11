@@ -16,6 +16,7 @@ import {
   reviewImportTable,
   type WorkbookTable,
 } from "@/features/core/import/server";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
 import {
   distinctNames,
   matchKey,
@@ -23,6 +24,7 @@ import {
 } from "../../import-reference-keys";
 import {
   findTraineeDirectory,
+  type ImportScope,
   type Reader,
   resolveGroupIds,
 } from "../../import-references";
@@ -53,7 +55,7 @@ function translateLabel(ctx: OrgTRPCContext, key: MessageKey): string {
  */
 async function loadReferences(
   reader: Reader,
-  organizationId: string,
+  scope: ImportScope,
   rows: ImportedGroupStudentRow[],
 ): Promise<GroupStudentReferences> {
   const emailKeys = [
@@ -74,9 +76,10 @@ async function loadReferences(
     rows.map((row) => row.parsed.groupName),
   ).map((name) => matchKey(name));
 
+  const { organizationId } = scope;
   const trainees = await findTraineeDirectory(
     reader,
-    organizationId,
+    scope,
     emailKeys,
     nameKeys,
   );
@@ -93,6 +96,7 @@ async function loadReferences(
     .where(
       and(
         eq(GroupsTable.organizationId, organizationId),
+        inArray(GroupsTable.branchId, scope.branchIds),
         inArray(sql`lower(${GroupsTable.name})`, groupNameKeys),
       ),
     )
@@ -166,9 +170,11 @@ export async function previewGroupStudentImport(
     ctx,
     parsed.table,
   );
+  // One branch per import — see trainees/server/import.ts.
+  const branchId = requireWriteBranch(ctx, input.branchId);
   const references = await loadReferences(
     ctx.db,
-    ctx.organizationId,
+    { organizationId: ctx.organizationId, branchIds: [branchId] },
     reviewed.valid,
   );
   const resolved = resolveGroupStudentRows(reviewed, references);
@@ -219,9 +225,11 @@ export async function commitGroupStudentImport(
   input: GroupStudentImportCommitInput,
 ): Promise<ImportCommitResult> {
   const rows = validateCommitRows(ctx, input.rows);
+  const branchId = requireWriteBranch(ctx, input.branchId);
+  const scope = { organizationId: ctx.organizationId, branchIds: [branchId] };
 
   return ctx.db.transaction(async (trx) => {
-    const references = await loadReferences(trx, ctx.organizationId, rows);
+    const references = await loadReferences(trx, scope, rows);
     const resolved = resolveGroupStudentRows(
       { valid: rows, invalid: [] },
       references,
@@ -236,12 +244,13 @@ export async function commitGroupStudentImport(
 
     const groupIdByKey = await resolveGroupIds(
       trx,
-      ctx.organizationId,
+      { ...scope, writeBranchId: branchId },
       distinctNames(rows.map((row) => row.parsed.groupName)),
     );
 
     const rosterRows: {
       organizationId: string;
+      branchId: string;
       groupId: string;
       traineeId: string;
     }[] = [];
@@ -272,6 +281,7 @@ export async function commitGroupStudentImport(
 
       rosterRows.push({
         organizationId: ctx.organizationId,
+        branchId,
         groupId,
         traineeId: target.traineeId,
       });

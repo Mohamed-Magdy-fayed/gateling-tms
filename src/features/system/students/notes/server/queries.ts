@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { TraineeNotesTable } from "@/drizzle/schema";
 import type { ListTraineeNotesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -27,7 +27,10 @@ export async function listTraineeNotes(
     .from(TraineeNotesTable)
     .where(
       and(
-        eq(TraineeNotesTable.organizationId, ctx.organizationId),
+        and(
+          eq(TraineeNotesTable.organizationId, ctx.organizationId),
+          inArray(TraineeNotesTable.branchId, ctx.branchIds),
+        ),
         eq(TraineeNotesTable.traineeId, input.traineeId),
       ),
     )

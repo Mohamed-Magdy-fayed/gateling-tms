@@ -1,10 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   EnrollmentsTable,
   PaymentsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import type {
   PaymentDeleteInput,
   PaymentMutationInput,
@@ -22,7 +23,10 @@ async function assertTraineeInOrg(ctx: OrgTRPCContext, traineeId: string) {
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, traineeId),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
     columns: { id: true },
@@ -50,7 +54,10 @@ async function assertEnrollmentBelongsTo(
   const enrollment = await ctx.db.query.EnrollmentsTable.findFirst({
     where: and(
       eq(EnrollmentsTable.id, enrollmentId),
-      eq(EnrollmentsTable.organizationId, ctx.organizationId),
+      and(
+        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        inArray(EnrollmentsTable.branchId, ctx.branchIds),
+      ),
       eq(EnrollmentsTable.traineeId, traineeId),
     ),
     columns: { id: true },
@@ -89,6 +96,7 @@ export async function createPayment(
     .insert(PaymentsTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: await branchOf(ctx.db, ctx, "trainee", input.traineeId),
       traineeId: input.traineeId,
       ...values,
       createdBy: actorLabel(ctx),
@@ -118,7 +126,10 @@ export async function updatePayment(
     .where(
       and(
         eq(PaymentsTable.id, input.id),
-        eq(PaymentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PaymentsTable.organizationId, ctx.organizationId),
+          inArray(PaymentsTable.branchId, ctx.branchIds),
+        ),
         eq(PaymentsTable.traineeId, input.traineeId),
       ),
     )
@@ -145,7 +156,10 @@ export async function deletePayment(
     .where(
       and(
         eq(PaymentsTable.id, input.id),
-        eq(PaymentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PaymentsTable.organizationId, ctx.organizationId),
+          inArray(PaymentsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: PaymentsTable.id });

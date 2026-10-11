@@ -52,6 +52,8 @@ export default {
     unauthorized: "You are not authorized to perform this action.",
     validationFailed: "Please check the highlighted fields and try again.",
     noActiveOrganization: "You don't have access to this organization.",
+    chooseBranch: "Choose a branch first — 'All branches' is selected.",
+    branchOutOfScope: "You don't have access to that branch.",
   },
   forms: {
     validation: {

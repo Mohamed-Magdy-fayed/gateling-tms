@@ -7,6 +7,7 @@ import {
   OrganizationMembershipsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
 import { regenerateGroupSessions } from "./regenerate-sessions";
 import type {
   GroupAddStudentsInput,
@@ -121,6 +122,7 @@ export async function createGroup(
     .insert(GroupsTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: requireWriteBranch(ctx, input.branchId),
       name: input.name,
       courseId: input.courseId || null,
       teacherId: input.teacherId || null,
@@ -156,7 +158,10 @@ export async function updateGroup(
     .where(
       and(
         eq(GroupsTable.id, input.id),
-        eq(GroupsTable.organizationId, ctx.organizationId),
+        and(
+          eq(GroupsTable.organizationId, ctx.organizationId),
+          inArray(GroupsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: GroupsTable.id });
@@ -192,7 +197,10 @@ export async function regenerateGroupSessionsForOrg(
   const group = await ctx.db.query.GroupsTable.findFirst({
     where: and(
       eq(GroupsTable.id, input.id),
-      eq(GroupsTable.organizationId, ctx.organizationId),
+      and(
+        eq(GroupsTable.organizationId, ctx.organizationId),
+        inArray(GroupsTable.branchId, ctx.branchIds),
+      ),
     ),
     columns: { id: true },
   });
@@ -228,7 +236,10 @@ export async function deleteGroup(
       .where(
         and(
           eq(GroupsTable.id, input.id),
-          eq(GroupsTable.organizationId, ctx.organizationId),
+          and(
+            eq(GroupsTable.organizationId, ctx.organizationId),
+            inArray(GroupsTable.branchId, ctx.branchIds),
+          ),
         ),
       )
       .returning({ id: GroupsTable.id });
@@ -250,12 +261,15 @@ export async function addGroupStudents(
 ) {
   return ctx.db.transaction(async (trx) => {
     const [group] = await trx
-      .select({ id: GroupsTable.id })
+      .select({ id: GroupsTable.id, branchId: GroupsTable.branchId })
       .from(GroupsTable)
       .where(
         and(
           eq(GroupsTable.id, input.groupId),
-          eq(GroupsTable.organizationId, ctx.organizationId),
+          and(
+            eq(GroupsTable.organizationId, ctx.organizationId),
+            inArray(GroupsTable.branchId, ctx.branchIds),
+          ),
         ),
       );
 
@@ -268,14 +282,19 @@ export async function addGroupStudents(
 
     // Filtering to trainees that actually exist in this org (and aren't soft
     // deleted) is what stops a crafted request adding another org's trainee,
-    // and keeps a stale client list from failing the whole batch.
+    // and keeps a stale client list from failing the whole batch. A group only
+    // takes students of its own branch.
     const trainees = await trx
       .select({ id: TraineesTable.id })
       .from(TraineesTable)
       .where(
         and(
           inArray(TraineesTable.id, input.traineeIds),
-          eq(TraineesTable.organizationId, ctx.organizationId),
+          and(
+            eq(TraineesTable.organizationId, ctx.organizationId),
+            inArray(TraineesTable.branchId, ctx.branchIds),
+          ),
+          eq(TraineesTable.branchId, group.branchId),
           isNull(TraineesTable.deletedAt),
         ),
       );
@@ -292,6 +311,7 @@ export async function addGroupStudents(
       .values(
         trainees.map((trainee) => ({
           organizationId: ctx.organizationId,
+          branchId: group.branchId,
           groupId: input.groupId,
           traineeId: trainee.id,
         })),
@@ -317,7 +337,10 @@ export async function removeGroupStudent(
       and(
         eq(GroupStudentsTable.groupId, input.groupId),
         eq(GroupStudentsTable.traineeId, input.traineeId),
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          inArray(GroupStudentsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: GroupStudentsTable.id });

@@ -1,5 +1,15 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+} from "drizzle-orm";
 import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
@@ -15,7 +25,10 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListTraineesInput) {
   const search = input.globalFilter?.trim();
 
   return and(
-    eq(TraineesTable.organizationId, ctx.organizationId),
+    and(
+      eq(TraineesTable.organizationId, ctx.organizationId),
+      inArray(TraineesTable.branchId, ctx.branchIds),
+    ),
     isNull(TraineesTable.deletedAt),
     inDateRange(TraineesTable.createdAt, input.createdAt),
     search
@@ -96,7 +109,10 @@ export async function listTraineeGroups(
     .where(
       and(
         eq(GroupStudentsTable.traineeId, traineeId),
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          inArray(GroupStudentsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .orderBy(asc(GroupsTable.name), asc(GroupsTable.id));
@@ -106,7 +122,10 @@ export async function getTrainee(ctx: OrgTRPCContext, id: string) {
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, id),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
   });

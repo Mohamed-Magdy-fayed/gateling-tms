@@ -96,5 +96,11 @@ export const organizationMembershipBranchesRelations = relations(
   }),
 );
 
+/**
+ * The branch every academy starts with (and that the migration created for
+ * existing ones). Stored data, not a UI label: admins rename it in Settings.
+ */
+export const DEFAULT_BRANCH_NAME = "Main";
+
 export type Branch = typeof BranchesTable.$inferSelect;
 export type NewBranch = typeof BranchesTable.$inferInsert;

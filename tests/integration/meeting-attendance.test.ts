@@ -58,6 +58,7 @@ beforeAll(async () => {
     .insert(GroupsTable)
     .values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       name: "Meeting Group",
       courseId: data.courseId,
       schedule: [{ day: 2, startTime: "18:00", endTime: "19:00" }],
@@ -74,6 +75,7 @@ beforeAll(async () => {
       .insert(TraineesTable)
       .values({
         organizationId: org.organizationId,
+        branchId: org.branchId,
         name,
         createdBy: org.userId,
       })
@@ -81,6 +83,7 @@ beforeAll(async () => {
     trainees[key] = trainee.id;
     await db.insert(GroupStudentsTable).values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       groupId: group.id,
       traineeId: trainee.id,
     });
@@ -90,6 +93,7 @@ beforeAll(async () => {
     .insert(SessionsTable)
     .values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       groupId: group.id,
       scheduledAt: at("18:00"),
       durationMinutes: 60,
@@ -171,6 +175,7 @@ describe("meeting attendance sync", () => {
   test("a join never overrides a teacher's verdict", async () => {
     await db.insert(SessionStudentsTable).values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       sessionId: session.id,
       traineeId: trainees.mona,
       status: "absent",

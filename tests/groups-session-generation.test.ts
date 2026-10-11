@@ -14,10 +14,9 @@ vi.mock("@/integrations/inngest/client", () => ({
 }));
 
 const regenerateGroupSessions = vi.fn();
-vi.mock(
-  "@/features/system/students/groups/server/regenerate-sessions",
-  () => ({ regenerateGroupSessions }),
-);
+vi.mock("@/features/system/students/groups/server/regenerate-sessions", () => ({
+  regenerateGroupSessions,
+}));
 
 const { createGroup, updateGroup } = await import(
   "../src/features/system/students/groups/server/mutations"
@@ -25,6 +24,7 @@ const { createGroup, updateGroup } = await import(
 
 const GROUP_ID = "11111111-1111-4111-8111-111111111111";
 const ORGANIZATION_ID = "22222222-2222-4222-8222-222222222222";
+const BRANCH_ID = "33333333-3333-4333-8333-333333333333";
 
 /**
  * Just enough of the org tRPC context for the two mutations under test: no
@@ -36,6 +36,9 @@ function stubContext() {
 
   return {
     organizationId: ORGANIZATION_ID,
+    // One branch selected, so new rows have somewhere to go.
+    branchIds: [BRANCH_ID],
+    activeBranchId: BRANCH_ID,
     t: (key: string) => key,
     db: {
       insert: () => ({ values: () => ({ returning }) }),
@@ -112,7 +115,9 @@ describe("session generation does not depend on the queue", () => {
   });
 
   test("a failed generation is reported, not swallowed", async () => {
-    regenerateGroupSessions.mockRejectedValue(new Error("database unreachable"));
+    regenerateGroupSessions.mockRejectedValue(
+      new Error("database unreachable"),
+    );
 
     const result = await createGroup(stubContext(), input);
 

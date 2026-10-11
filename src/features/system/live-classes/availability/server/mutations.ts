@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   OrganizationMembershipsTable,
   TeacherAvailabilityTable,
 } from "@/drizzle/schema";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
 import { normalizeAvailability } from "../lib/slots";
 import type { SetTeacherAvailabilityInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -57,6 +58,8 @@ export async function setTeacherAvailability(
   }
 
   const slots = normalizeAvailability(input.slots);
+  // Availability is per branch: replacing it touches only the chosen branch.
+  const branchId = requireWriteBranch(ctx, input.branchId);
 
   await ctx.db.transaction(async (trx) => {
     await trx
@@ -64,6 +67,7 @@ export async function setTeacherAvailability(
       .where(
         and(
           eq(TeacherAvailabilityTable.organizationId, ctx.organizationId),
+          eq(TeacherAvailabilityTable.branchId, branchId),
           eq(TeacherAvailabilityTable.teacherId, input.teacherId),
         ),
       );
@@ -73,6 +77,7 @@ export async function setTeacherAvailability(
     await trx.insert(TeacherAvailabilityTable).values(
       slots.map((slot) => ({
         organizationId: ctx.organizationId,
+        branchId,
         teacherId: input.teacherId,
         day: slot.day,
         startTime: slot.startTime,

@@ -30,6 +30,8 @@ import {
 export type MeetingSession = {
   id: string;
   organizationId: string;
+  // Attendance a meeting records lives in its class's branch.
+  branchId: string;
   groupId: string;
   scheduledAt: Date;
 };
@@ -48,6 +50,7 @@ export async function findSessionForMeeting(
     .select({
       id: SessionsTable.id,
       organizationId: SessionsTable.organizationId,
+      branchId: SessionsTable.branchId,
       groupId: SessionsTable.groupId,
       scheduledAt: SessionsTable.scheduledAt,
     })
@@ -118,6 +121,7 @@ export async function recordMeetingJoin(
     .insert(SessionStudentsTable)
     .values({
       organizationId: session.organizationId,
+      branchId: session.branchId,
       sessionId: session.id,
       traineeId,
       status: "present",
@@ -199,6 +203,7 @@ async function upsertSettledAttendance(
     .insert(SessionStudentsTable)
     .values({
       organizationId: session.organizationId,
+      branchId: session.branchId,
       sessionId: session.id,
       traineeId,
       status: "present",

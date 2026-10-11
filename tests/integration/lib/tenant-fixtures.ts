@@ -52,6 +52,7 @@ export type TenantData = Awaited<ReturnType<typeof seedTenantData>>;
 
 export async function seedTenantData(tenant: TenantFixture) {
   const organizationId = tenant.organizationId;
+  const branchId = tenant.branchId;
 
   const [course] = await db
     .insert(CoursesTable)
@@ -85,6 +86,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(TraineesTable)
     .values({
       organizationId,
+      branchId,
       name: "Isolation Trainee",
       email: `trainee-${organizationId}@integration.test`,
       createdBy: ACTOR,
@@ -95,6 +97,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(GroupsTable)
     .values({
       organizationId,
+      branchId,
       name: "Isolation Group",
       courseId: course.id,
       schedule: [{ day: 1, startTime: "18:00", endTime: "20:00" }],
@@ -103,13 +106,19 @@ export async function seedTenantData(tenant: TenantFixture) {
 
   const [groupStudent] = await db
     .insert(GroupStudentsTable)
-    .values({ organizationId, groupId: group.id, traineeId: trainee.id })
+    .values({
+      organizationId,
+      branchId,
+      groupId: group.id,
+      traineeId: trainee.id,
+    })
     .returning({ id: GroupStudentsTable.id });
 
   const [enrollment] = await db
     .insert(EnrollmentsTable)
     .values({
       organizationId,
+      branchId,
       traineeId: trainee.id,
       courseId: course.id,
       status: "ongoing",
@@ -120,6 +129,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(EnrollmentLevelsTable)
     .values({
       organizationId,
+      branchId,
       enrollmentId: enrollment.id,
       levelId: level.id,
       status: "inProgress",
@@ -190,6 +200,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(PlacementTestsTable)
     .values({
       organizationId,
+      branchId,
       traineeId: trainee.id,
       formId: form.id,
       status: "pending",
@@ -200,6 +211,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(CertificatesTable)
     .values({
       organizationId,
+      branchId,
       traineeId: trainee.id,
       courseId: course.id,
       groupId: group.id,
@@ -211,6 +223,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(TraineeNotesTable)
     .values({
       organizationId,
+      branchId,
       traineeId: trainee.id,
       body: "Isolation note",
       createdBy: ACTOR,
@@ -221,6 +234,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(PaymentsTable)
     .values({
       organizationId,
+      branchId,
       traineeId: trainee.id,
       enrollmentId: enrollment.id,
       amount: 1500,
@@ -237,6 +251,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(SessionsTable)
     .values({
       organizationId,
+      branchId,
       groupId: group.id,
       scheduledAt: new Date("2026-09-01T18:00:00Z"),
       durationMinutes: 120,
@@ -247,6 +262,7 @@ export async function seedTenantData(tenant: TenantFixture) {
     .insert(SessionStudentsTable)
     .values({
       organizationId,
+      branchId,
       sessionId: session.id,
       traineeId: trainee.id,
       status: "present",

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, gte, lt, ne } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lt, ne } from "drizzle-orm";
 import {
   CertificatesTable,
   CoursesTable,
@@ -52,7 +52,12 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
     ctx.db
       .select({ value: count() })
       .from(GroupsTable)
-      .where(eq(GroupsTable.organizationId, ctx.organizationId)),
+      .where(
+        and(
+          eq(GroupsTable.organizationId, ctx.organizationId),
+          inArray(GroupsTable.branchId, ctx.branchIds),
+        ),
+      ),
     ctx.db
       .select({
         id: SessionsTable.id,
@@ -68,7 +73,10 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
       .leftJoin(UsersTable, eq(UsersTable.id, SessionsTable.teacherId))
       .where(
         and(
-          eq(SessionsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionsTable.organizationId, ctx.organizationId),
+            inArray(SessionsTable.branchId, ctx.branchIds),
+          ),
           gte(SessionsTable.scheduledAt, start),
           lt(SessionsTable.scheduledAt, end),
           // A called-off class isn't part of today's plan, but it stays
@@ -122,7 +130,12 @@ export async function getRecentActivity(ctx: OrgTRPCContext) {
         eq(TraineesTable.id, EnrollmentsTable.traineeId),
       )
       .innerJoin(CoursesTable, eq(CoursesTable.id, EnrollmentsTable.courseId))
-      .where(eq(EnrollmentsTable.organizationId, ctx.organizationId))
+      .where(
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
+      )
       .orderBy(desc(EnrollmentsTable.createdAt), desc(EnrollmentsTable.id))
       .limit(RECENT_ACTIVITY_LIMIT),
     ctx.db
@@ -138,7 +151,12 @@ export async function getRecentActivity(ctx: OrgTRPCContext) {
         TraineesTable,
         eq(TraineesTable.id, CertificatesTable.traineeId),
       )
-      .where(eq(CertificatesTable.organizationId, ctx.organizationId))
+      .where(
+        and(
+          eq(CertificatesTable.organizationId, ctx.organizationId),
+          inArray(CertificatesTable.branchId, ctx.branchIds),
+        ),
+      )
       .orderBy(desc(CertificatesTable.issuedAt), desc(CertificatesTable.id))
       .limit(RECENT_ACTIVITY_LIMIT),
   ]);

@@ -15,7 +15,11 @@ describe("resolveBranchAccess", () => {
         assignedBranchIds: [],
         requestedBranchId: null,
       }),
-    ).toEqual({ branchIds: academy, activeBranchId: null, visibleBranchIds: academy });
+    ).toEqual({
+      branchIds: academy,
+      activeBranchId: null,
+      visibleBranchIds: academy,
+    });
   });
 
   test("an admin who picked a branch is scoped to it", () => {
@@ -26,7 +30,11 @@ describe("resolveBranchAccess", () => {
         assignedBranchIds: [],
         requestedBranchId: "maadi",
       }),
-    ).toEqual({ branchIds: ["maadi"], activeBranchId: "maadi", visibleBranchIds: academy });
+    ).toEqual({
+      branchIds: ["maadi"],
+      activeBranchId: "maadi",
+      visibleBranchIds: academy,
+    });
   });
 
   test("an admin's assignments never narrow what they see", () => {
@@ -93,24 +101,39 @@ describe("resolveBranchAccess", () => {
       assignedBranchIds: [],
       requestedBranchId: null,
     });
-    expect(access).toEqual({ branchIds: ["main"], activeBranchId: "main", visibleBranchIds: ["main"] });
+    expect(access).toEqual({
+      branchIds: ["main"],
+      activeBranchId: "main",
+      visibleBranchIds: ["main"],
+    });
   });
 });
 
 describe("pickWriteBranch", () => {
   test("uses the active branch when the caller doesn't name one", () => {
-    expect(pickWriteBranch({ branchIds: ["maadi"], activeBranchId: "maadi" }, undefined)).toBe("maadi");
+    expect(
+      pickWriteBranch(
+        { branchIds: ["maadi"], activeBranchId: "maadi" },
+        undefined,
+      ),
+    ).toBe("maadi");
   });
 
   test("accepts a named branch inside the current scope", () => {
-    expect(pickWriteBranch({ branchIds: academy, activeBranchId: null }, "online")).toBe("online");
+    expect(
+      pickWriteBranch({ branchIds: academy, activeBranchId: null }, "online"),
+    ).toBe("online");
   });
 
   test("refuses a named branch outside the current scope", () => {
-    expect(pickWriteBranch({ branchIds: ["nasr"], activeBranchId: "nasr" }, "maadi")).toBeNull();
+    expect(
+      pickWriteBranch({ branchIds: ["nasr"], activeBranchId: "nasr" }, "maadi"),
+    ).toBeNull();
   });
 
   test("needs an explicit branch when several are in scope", () => {
-    expect(pickWriteBranch({ branchIds: academy, activeBranchId: null }, undefined)).toBeNull();
+    expect(
+      pickWriteBranch({ branchIds: academy, activeBranchId: null }, undefined),
+    ).toBeNull();
   });
 });

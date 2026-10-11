@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Transaction } from "@/drizzle";
 import { OrganizationsTable, TraineesTable } from "@/drizzle/schema";
 import { assertCanAddStudent } from "@/features/core/organizations/server";
+import { requireWriteBranch } from "@/integrations/trpc/branch-write";
 import type {
   TraineeDeleteInput,
   TraineeMutationInput,
@@ -54,6 +55,7 @@ export async function insertTrainee(
     .insert(TraineesTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: requireWriteBranch(ctx, input.branchId),
       name: input.name,
       phone: input.phone || null,
       email: input.email || null,
@@ -91,7 +93,10 @@ export async function updateTrainee(
     .where(
       and(
         eq(TraineesTable.id, input.id),
-        eq(TraineesTable.organizationId, ctx.organizationId),
+        and(
+          eq(TraineesTable.organizationId, ctx.organizationId),
+          inArray(TraineesTable.branchId, ctx.branchIds),
+        ),
         isNull(TraineesTable.deletedAt),
       ),
     )
@@ -121,7 +126,10 @@ export async function deleteTrainee(
       .where(
         and(
           eq(TraineesTable.id, input.id),
-          eq(TraineesTable.organizationId, ctx.organizationId),
+          and(
+            eq(TraineesTable.organizationId, ctx.organizationId),
+            inArray(TraineesTable.branchId, ctx.branchIds),
+          ),
           isNull(TraineesTable.deletedAt),
         ),
       )

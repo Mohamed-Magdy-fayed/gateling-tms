@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   FormResponsesTable,
   FormsTable,
@@ -47,7 +47,10 @@ export async function listPlacementTests(
     .where(
       and(
         eq(PlacementTestsTable.traineeId, traineeId),
-        eq(PlacementTestsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          inArray(PlacementTestsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .orderBy(desc(PlacementTestsTable.createdAt), desc(PlacementTestsTable.id));
@@ -69,7 +72,10 @@ export async function getPlacementTest(ctx: OrgTRPCContext, id: string) {
     .where(
       and(
         eq(PlacementTestsTable.id, id),
-        eq(PlacementTestsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          inArray(PlacementTestsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 

@@ -15,7 +15,10 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListGroupsInput) {
   const search = input.globalFilter?.trim();
 
   return and(
-    eq(GroupsTable.organizationId, ctx.organizationId),
+    and(
+      eq(GroupsTable.organizationId, ctx.organizationId),
+      inArray(GroupsTable.branchId, ctx.branchIds),
+    ),
     search ? ilike(GroupsTable.name, likeContains(search)) : undefined,
     input.statuses?.length
       ? inArray(GroupsTable.status, input.statuses)
@@ -119,7 +122,10 @@ export async function getGroup(ctx: OrgTRPCContext, id: string) {
     .where(
       and(
         eq(GroupsTable.id, id),
-        eq(GroupsTable.organizationId, ctx.organizationId),
+        and(
+          eq(GroupsTable.organizationId, ctx.organizationId),
+          inArray(GroupsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 
@@ -157,7 +163,10 @@ export async function listGroupStudents(ctx: OrgTRPCContext, groupId: string) {
     .where(
       and(
         eq(GroupStudentsTable.groupId, groupId),
-        eq(GroupStudentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          inArray(GroupStudentsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .orderBy(asc(TraineesTable.name), asc(TraineesTable.id));

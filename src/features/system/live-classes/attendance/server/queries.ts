@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   type AttendanceSource,
   type AttendanceStatus,
@@ -104,7 +104,10 @@ export async function getSessionAttendance(
     .where(
       and(
         eq(SessionsTable.id, sessionId),
-        eq(SessionsTable.organizationId, ctx.organizationId),
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          inArray(SessionsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 
@@ -179,7 +182,10 @@ async function listRegisterRows(
       )
       .where(
         and(
-          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(GroupStudentsTable.organizationId, ctx.organizationId),
+            inArray(GroupStudentsTable.branchId, ctx.branchIds),
+          ),
           eq(GroupStudentsTable.groupId, groupId),
         ),
       ),
@@ -205,7 +211,10 @@ async function listRegisterRows(
       )
       .where(
         and(
-          eq(SessionStudentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionStudentsTable.organizationId, ctx.organizationId),
+            inArray(SessionStudentsTable.branchId, ctx.branchIds),
+          ),
           eq(SessionStudentsTable.sessionId, sessionId),
         ),
       ),

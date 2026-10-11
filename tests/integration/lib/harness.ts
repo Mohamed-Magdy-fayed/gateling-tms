@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
+  BranchesTable,
   type OrganizationMembershipRole,
   OrganizationMembershipsTable,
   OrganizationsTable,
@@ -18,6 +19,7 @@ const createCaller = createCallerFactory(appRouter);
 
 export type TenantFixture = {
   organizationId: string;
+  branchId: string;
   userId: string;
   email: string;
   caller: ReturnType<typeof createCaller>;
@@ -38,7 +40,11 @@ export type TenantFixture = {
  * session for org A therefore still cannot reach org B's rows unless the
  * queries themselves leak them, which is the whole point.
  */
-function buildContext(userId: string, organizationId: string): TRPCContext {
+function buildContext(
+  userId: string,
+  organizationId: string,
+  activeBranchId: string | null = null,
+): TRPCContext {
   const { t } = createI18n(mainTranslations, "en", "en");
 
   return {
@@ -47,6 +53,7 @@ function buildContext(userId: string, organizationId: string): TRPCContext {
       exp: Math.floor(Date.now() / 1000) + 3600,
       hasPassword: true,
       activeOrganizationId: organizationId,
+      activeBranchId,
       user: {
         id: userId,
         email: `${userId}@integration.test`,
@@ -97,6 +104,11 @@ export async function createTenant(
     role: "admin",
   });
 
+  const [branch] = await db
+    .insert(BranchesTable)
+    .values({ organizationId: organization.id, name: "Main" })
+    .returning({ id: BranchesTable.id });
+
   await db
     .update(OrganizationsTable)
     .set({ ownerId: user.id })
@@ -104,6 +116,7 @@ export async function createTenant(
 
   return {
     organizationId: organization.id,
+    branchId: branch.id,
     userId: user.id,
     email,
     caller: createCaller(buildContext(user.id, organization.id)),
@@ -141,6 +154,18 @@ export async function createMember(
     userId: user.id,
     caller: createCaller(buildContext(user.id, tenant.organizationId)),
   };
+}
+
+/**
+ * A caller for an existing user with a given branch selected (null = All
+ * branches) — the session preference orgProcedure then validates.
+ */
+export function callerFor(
+  userId: string,
+  organizationId: string,
+  activeBranchId: string | null,
+): TenantFixture["caller"] {
+  return createCaller(buildContext(userId, organizationId, activeBranchId));
 }
 
 export async function destroyMember(userId: string) {

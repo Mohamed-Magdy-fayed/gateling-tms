@@ -1,11 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   GroupStudentsTable,
   SessionStudentsTable,
   SessionsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import { canMarkAttendance } from "./queries";
 import type { MarkAttendanceInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -33,7 +34,10 @@ export async function markAttendance(
     .where(
       and(
         eq(SessionsTable.id, input.sessionId),
-        eq(SessionsTable.organizationId, ctx.organizationId),
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          inArray(SessionsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 
@@ -73,7 +77,10 @@ export async function markAttendance(
       )
       .where(
         and(
-          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(GroupStudentsTable.organizationId, ctx.organizationId),
+            inArray(GroupStudentsTable.branchId, ctx.branchIds),
+          ),
           eq(GroupStudentsTable.groupId, session.groupId),
           eq(GroupStudentsTable.traineeId, input.traineeId),
         ),
@@ -83,7 +90,10 @@ export async function markAttendance(
       .from(SessionStudentsTable)
       .where(
         and(
-          eq(SessionStudentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionStudentsTable.organizationId, ctx.organizationId),
+            inArray(SessionStudentsTable.branchId, ctx.branchIds),
+          ),
           eq(SessionStudentsTable.sessionId, input.sessionId),
           eq(SessionStudentsTable.traineeId, input.traineeId),
         ),
@@ -106,6 +116,7 @@ export async function markAttendance(
     .insert(SessionStudentsTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: await branchOf(ctx.db, ctx, "session", input.sessionId),
       sessionId: input.sessionId,
       traineeId: input.traineeId,
       status: input.status,

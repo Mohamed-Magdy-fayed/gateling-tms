@@ -58,14 +58,30 @@ export function resolveBranchAccess(input: {
     };
   }
   if (visible.length === 1) {
-    return { branchIds: visible, activeBranchId: visible[0], visibleBranchIds: visible };
+    return {
+      branchIds: visible,
+      activeBranchId: visible[0],
+      visibleBranchIds: visible,
+    };
   }
   // A requested branch the member can't see falls back to their own, so a
   // stale or forged selection never widens access.
-  if (input.requestedBranchId && input.role !== "admin" && assigned.length > 0) {
-    return { branchIds: [visible[0]], activeBranchId: visible[0], visibleBranchIds: visible };
+  if (
+    input.requestedBranchId &&
+    input.role !== "admin" &&
+    assigned.length > 0
+  ) {
+    return {
+      branchIds: [visible[0]],
+      activeBranchId: visible[0],
+      visibleBranchIds: visible,
+    };
   }
-  return { branchIds: visible, activeBranchId: null, visibleBranchIds: visible };
+  return {
+    branchIds: visible,
+    activeBranchId: null,
+    visibleBranchIds: visible,
+  };
 }
 
 /**
@@ -78,7 +94,9 @@ export function pickWriteBranch(
   requestedBranchId: string | null | undefined,
 ): string | null {
   if (requestedBranchId) {
-    return scope.branchIds.includes(requestedBranchId) ? requestedBranchId : null;
+    return scope.branchIds.includes(requestedBranchId)
+      ? requestedBranchId
+      : null;
   }
   return scope.activeBranchId;
 }

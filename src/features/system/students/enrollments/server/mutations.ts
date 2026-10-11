@@ -9,6 +9,7 @@ import {
   TraineesTable,
 } from "@/drizzle/schema";
 import { insertTrainee } from "@/features/system/students/trainees/server";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import {
   assertValidTransition,
   ENROLLMENT_TRANSITIONS,
@@ -47,7 +48,10 @@ async function resolveTraineeId(
     .where(
       and(
         eq(TraineesTable.id, input.traineeId),
-        eq(TraineesTable.organizationId, ctx.organizationId),
+        and(
+          eq(TraineesTable.organizationId, ctx.organizationId),
+          inArray(TraineesTable.branchId, ctx.branchIds),
+        ),
         isNull(TraineesTable.deletedAt),
       ),
     )
@@ -109,7 +113,10 @@ export async function createEnrollment(
         ? undefined
         : await trx.query.EnrollmentsTable.findFirst({
             where: and(
-              eq(EnrollmentsTable.organizationId, ctx.organizationId),
+              and(
+                eq(EnrollmentsTable.organizationId, ctx.organizationId),
+                inArray(EnrollmentsTable.branchId, ctx.branchIds),
+              ),
               eq(EnrollmentsTable.traineeId, traineeId),
               eq(EnrollmentsTable.courseId, input.courseId),
               inArray(EnrollmentsTable.status, ACTIVE_ENROLLMENT_STATUSES),
@@ -128,6 +135,9 @@ export async function createEnrollment(
       .insert(EnrollmentsTable)
       .values({
         organizationId: ctx.organizationId,
+        // The student's branch — a student created inline above is visible
+        // to this transaction already.
+        branchId: await branchOf(trx, ctx, "trainee", traineeId),
         traineeId,
         courseId: input.courseId,
         status: input.status,
@@ -154,7 +164,10 @@ export async function updateEnrollmentStatus(
       .where(
         and(
           eq(EnrollmentsTable.id, input.id),
-          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(EnrollmentsTable.organizationId, ctx.organizationId),
+            inArray(EnrollmentsTable.branchId, ctx.branchIds),
+          ),
         ),
       )
       .for("update");
@@ -200,7 +213,10 @@ export async function setEnrollmentLevelStatus(
     .where(
       and(
         eq(EnrollmentsTable.id, input.enrollmentId),
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 
@@ -236,6 +252,7 @@ export async function setEnrollmentLevelStatus(
     .insert(EnrollmentLevelsTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: await branchOf(ctx.db, ctx, "enrollment", input.enrollmentId),
       enrollmentId: input.enrollmentId,
       levelId: input.levelId,
       status: input.status,
@@ -266,7 +283,10 @@ export async function deleteEnrollment(
     .where(
       and(
         eq(EnrollmentsTable.id, input.id),
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: EnrollmentsTable.id });

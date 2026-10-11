@@ -78,6 +78,7 @@ export async function regenerateGroupSessions({
     const [group] = await trx
       .select({
         id: GroupsTable.id,
+        branchId: GroupsTable.branchId,
         status: GroupsTable.status,
         schedule: GroupsTable.schedule,
         startDate: GroupsTable.startDate,
@@ -199,6 +200,8 @@ export async function regenerateGroupSessions({
       .values(
         insertable.map((occurrence) => ({
           organizationId,
+          // A class always lives in its group's branch.
+          branchId: group.branchId,
           groupId,
           scheduledAt: occurrence.scheduledAt,
           plannedAt: occurrence.scheduledAt,

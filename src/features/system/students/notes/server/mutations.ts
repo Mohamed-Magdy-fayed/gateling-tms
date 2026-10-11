@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { TraineeNotesTable, TraineesTable } from "@/drizzle/schema";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import type {
   TraineeNoteDeleteInput,
   TraineeNoteMutationInput,
@@ -24,7 +25,10 @@ export async function createTraineeNote(
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, input.traineeId),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
     columns: { id: true },
@@ -41,6 +45,7 @@ export async function createTraineeNote(
     .insert(TraineeNotesTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: await branchOf(ctx.db, ctx, "trainee", input.traineeId),
       traineeId: input.traineeId,
       body: input.body,
       createdBy: actorLabel(ctx),
@@ -60,7 +65,10 @@ export async function updateTraineeNote(
     .where(
       and(
         eq(TraineeNotesTable.id, input.id),
-        eq(TraineeNotesTable.organizationId, ctx.organizationId),
+        and(
+          eq(TraineeNotesTable.organizationId, ctx.organizationId),
+          inArray(TraineeNotesTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: TraineeNotesTable.id });
@@ -84,7 +92,10 @@ export async function deleteTraineeNote(
     .where(
       and(
         eq(TraineeNotesTable.id, input.id),
-        eq(TraineeNotesTable.organizationId, ctx.organizationId),
+        and(
+          eq(TraineeNotesTable.organizationId, ctx.organizationId),
+          inArray(TraineeNotesTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: TraineeNotesTable.id });

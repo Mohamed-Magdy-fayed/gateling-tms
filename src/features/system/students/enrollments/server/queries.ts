@@ -26,7 +26,10 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListEnrollmentsInput) {
   const search = input.globalFilter?.trim();
 
   return and(
-    eq(EnrollmentsTable.organizationId, ctx.organizationId),
+    and(
+      eq(EnrollmentsTable.organizationId, ctx.organizationId),
+      inArray(EnrollmentsTable.branchId, ctx.branchIds),
+    ),
     input.traineeId
       ? eq(EnrollmentsTable.traineeId, input.traineeId)
       : undefined,
@@ -159,7 +162,10 @@ export async function getEnrollment(ctx: OrgTRPCContext, id: string) {
     .where(
       and(
         eq(EnrollmentsTable.id, id),
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 

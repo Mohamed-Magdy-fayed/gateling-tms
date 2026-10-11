@@ -32,7 +32,10 @@ export async function getTraineeProgress(
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, traineeId),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
     columns: { id: true },
@@ -54,7 +57,10 @@ export async function getTraineeProgress(
     .from(EnrollmentsTable)
     .where(
       and(
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
         eq(EnrollmentsTable.traineeId, traineeId),
       ),
     )
@@ -135,7 +141,10 @@ export async function getTraineeProgress(
       )
       .where(
         and(
-          eq(SessionsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionsTable.organizationId, ctx.organizationId),
+            inArray(SessionsTable.branchId, ctx.branchIds),
+          ),
           eq(GroupStudentsTable.traineeId, traineeId),
         ),
       ),
@@ -171,7 +180,10 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
   const group = await ctx.db.query.GroupsTable.findFirst({
     where: and(
       eq(GroupsTable.id, groupId),
-      eq(GroupsTable.organizationId, ctx.organizationId),
+      and(
+        eq(GroupsTable.organizationId, ctx.organizationId),
+        inArray(GroupsTable.branchId, ctx.branchIds),
+      ),
     ),
     columns: { id: true, courseId: true },
   });
@@ -192,7 +204,10 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
       .from(SessionsTable)
       .where(
         and(
-          eq(SessionsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionsTable.organizationId, ctx.organizationId),
+            inArray(SessionsTable.branchId, ctx.branchIds),
+          ),
           eq(SessionsTable.groupId, groupId),
         ),
       ),
@@ -211,7 +226,10 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
       )
       .where(
         and(
-          eq(GroupStudentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(GroupStudentsTable.organizationId, ctx.organizationId),
+            inArray(GroupStudentsTable.branchId, ctx.branchIds),
+          ),
           eq(GroupStudentsTable.groupId, groupId),
         ),
       )
@@ -243,7 +261,10 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
     .from(EnrollmentsTable)
     .where(
       and(
-        eq(EnrollmentsTable.organizationId, ctx.organizationId),
+        and(
+          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          inArray(EnrollmentsTable.branchId, ctx.branchIds),
+        ),
         eq(EnrollmentsTable.courseId, courseId),
         inArray(
           EnrollmentsTable.traineeId,
@@ -293,7 +314,10 @@ export async function getGroupProgress(ctx: OrgTRPCContext, groupId: string) {
           .from(EnrollmentLevelsTable)
           .where(
             and(
-              eq(EnrollmentLevelsTable.organizationId, ctx.organizationId),
+              and(
+                eq(EnrollmentLevelsTable.organizationId, ctx.organizationId),
+                inArray(EnrollmentLevelsTable.branchId, ctx.branchIds),
+              ),
               inArray(EnrollmentLevelsTable.enrollmentId, currentEnrollmentIds),
             ),
           )

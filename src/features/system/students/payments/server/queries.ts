@@ -1,4 +1,4 @@
-import { and, desc, eq, sum } from "drizzle-orm";
+import { and, desc, eq, inArray, sum } from "drizzle-orm";
 import {
   CoursesTable,
   EnrollmentsTable,
@@ -23,7 +23,10 @@ export async function listPayments(
   input: ListPaymentsInput,
 ) {
   const whereClause = and(
-    eq(PaymentsTable.organizationId, ctx.organizationId),
+    and(
+      eq(PaymentsTable.organizationId, ctx.organizationId),
+      inArray(PaymentsTable.branchId, ctx.branchIds),
+    ),
     eq(PaymentsTable.traineeId, input.traineeId),
   );
 

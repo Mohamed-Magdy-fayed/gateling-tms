@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   EnrollmentLevelsTable,
   EnrollmentsTable,
@@ -14,6 +14,7 @@ import {
   getScorableQuestions,
   scoreFormResponse,
 } from "@/features/system/assessments/responses/server";
+import { branchOf } from "@/integrations/trpc/branch-of";
 import {
   assertValidTransition,
   PLACEMENT_TEST_TRANSITIONS,
@@ -92,7 +93,10 @@ export async function createPlacementTest(
   const trainee = await ctx.db.query.TraineesTable.findFirst({
     where: and(
       eq(TraineesTable.id, input.traineeId),
-      eq(TraineesTable.organizationId, ctx.organizationId),
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.branchId, ctx.branchIds),
+      ),
       isNull(TraineesTable.deletedAt),
     ),
     columns: { id: true },
@@ -111,6 +115,7 @@ export async function createPlacementTest(
     .insert(PlacementTestsTable)
     .values({
       organizationId: ctx.organizationId,
+      branchId: await branchOf(ctx.db, ctx, "trainee", input.traineeId),
       traineeId: input.traineeId,
       formId: input.formId,
       scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
@@ -152,7 +157,10 @@ export async function recordPlacementAttempt(
     .where(
       and(
         eq(PlacementTestsTable.id, input.id),
-        eq(PlacementTestsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          inArray(PlacementTestsTable.branchId, ctx.branchIds),
+        ),
       ),
     );
 
@@ -177,7 +185,10 @@ export async function recordPlacementAttempt(
       .where(
         and(
           eq(PlacementTestsTable.id, input.id),
-          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          and(
+            eq(PlacementTestsTable.organizationId, ctx.organizationId),
+            inArray(PlacementTestsTable.branchId, ctx.branchIds),
+          ),
         ),
       )
       .for("update");
@@ -264,7 +275,10 @@ export async function reviewPlacementTest(
       .where(
         and(
           eq(PlacementTestsTable.id, input.id),
-          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          and(
+            eq(PlacementTestsTable.organizationId, ctx.organizationId),
+            inArray(PlacementTestsTable.branchId, ctx.branchIds),
+          ),
         ),
       )
       .for("update");
@@ -305,7 +319,10 @@ export async function reviewPlacementTest(
       .from(EnrollmentsTable)
       .where(
         and(
-          eq(EnrollmentsTable.organizationId, ctx.organizationId),
+          and(
+            eq(EnrollmentsTable.organizationId, ctx.organizationId),
+            inArray(EnrollmentsTable.branchId, ctx.branchIds),
+          ),
           eq(EnrollmentsTable.traineeId, current.traineeId),
           eq(EnrollmentsTable.courseId, level.courseId),
           eq(EnrollmentsTable.status, "placementTest"),
@@ -328,6 +345,7 @@ export async function reviewPlacementTest(
       .insert(EnrollmentLevelsTable)
       .values({
         organizationId: ctx.organizationId,
+        branchId: await branchOf(trx, ctx, "enrollment", enrollment.id),
         enrollmentId: enrollment.id,
         levelId: input.assignedLevelId,
         status: "inProgress",
@@ -355,7 +373,10 @@ export async function cancelPlacementTest(
       .where(
         and(
           eq(PlacementTestsTable.id, input.id),
-          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          and(
+            eq(PlacementTestsTable.organizationId, ctx.organizationId),
+            inArray(PlacementTestsTable.branchId, ctx.branchIds),
+          ),
         ),
       )
       .for("update");
@@ -394,7 +415,10 @@ export async function deletePlacementTest(
     .where(
       and(
         eq(PlacementTestsTable.id, input.id),
-        eq(PlacementTestsTable.organizationId, ctx.organizationId),
+        and(
+          eq(PlacementTestsTable.organizationId, ctx.organizationId),
+          inArray(PlacementTestsTable.branchId, ctx.branchIds),
+        ),
       ),
     )
     .returning({ id: PlacementTestsTable.id });

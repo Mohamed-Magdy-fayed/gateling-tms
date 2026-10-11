@@ -1,5 +1,5 @@
 import { type TRPC_ERROR_CODE_KEY, TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { env } from "@/data/env/server";
 import {
   GroupsTable,
@@ -158,7 +158,10 @@ export async function startSessionMeeting(
     .where(
       and(
         eq(SessionsTable.id, session.id),
-        eq(SessionsTable.organizationId, ctx.organizationId),
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          inArray(SessionsTable.branchId, ctx.branchIds),
+        ),
         isNull(SessionsTable.meetingCode),
       ),
     )
@@ -319,7 +322,10 @@ async function loadSession(
     .where(
       and(
         eq(SessionsTable.id, sessionId),
-        eq(SessionsTable.organizationId, ctx.organizationId),
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          inArray(SessionsTable.branchId, ctx.branchIds),
+        ),
         visibleToViewer ? ownClassesOnlyForStudents(ctx) : undefined,
       ),
     );

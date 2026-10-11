@@ -31,6 +31,7 @@ async function createGroupWithSchedule(
     .insert(GroupsTable)
     .values({
       organizationId: tenant.organizationId,
+      branchId: tenant.branchId,
       name: "Generation Group",
       startDate: isoDateWeeksFromNow(1),
       sessionCount: 6,
@@ -148,6 +149,7 @@ describe("session generation", () => {
     const past = new Date(Date.now() - A_WEEK_MS);
     await db.insert(SessionsTable).values({
       organizationId: tenant.organizationId,
+      branchId: tenant.branchId,
       groupId,
       scheduledAt: past,
       durationMinutes: 90,
@@ -190,6 +192,7 @@ describe("session generation", () => {
     await db.insert(SessionsTable).values([
       {
         organizationId: tenant.organizationId,
+        branchId: tenant.branchId,
         groupId,
         scheduledAt: past,
         durationMinutes: 90,
@@ -197,6 +200,7 @@ describe("session generation", () => {
       },
       {
         organizationId: tenant.organizationId,
+        branchId: tenant.branchId,
         groupId,
         scheduledAt: claimed,
         durationMinutes: 90,

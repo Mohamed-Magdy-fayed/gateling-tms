@@ -60,6 +60,8 @@ export const enrollmentMutationSchema = z
     }),
     courseId: z.uuid(translationKey("forms.validation.required")),
     status: z.enum(enrollmentStatusValues),
+    // Branch of a student created inline; an existing student keeps theirs.
+    branchId: idSchema.nullish(),
   })
   .superRefine((value, ctx) => {
     if (value.traineeMode === "existing") {
@@ -158,11 +160,17 @@ export const enrollmentImportRowSchema = z.object({
 });
 
 export const enrollmentImportPreviewInput = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   fileName: z.string().min(1).max(256),
   base64: z.string().min(1).max(MAX_IMPORT_BASE64_LENGTH),
 });
 
 export const enrollmentImportCommitInput = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   rows: z.array(z.record(z.string(), z.string())).min(1).max(MAX_IMPORT_ROWS),
 });
 

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, DrizzleQueryError, eq, sql } from "drizzle-orm";
+import { and, DrizzleQueryError, eq, inArray, sql } from "drizzle-orm";
 import type { PostgresError } from "postgres";
 import { OrganizationMembershipsTable, SessionsTable } from "@/drizzle/schema";
 import { isSessionEditable } from "../lib/session-editing";
@@ -32,7 +32,10 @@ export async function updateSession(
   const session = await ctx.db.query.SessionsTable.findFirst({
     where: and(
       eq(SessionsTable.id, input.id),
-      eq(SessionsTable.organizationId, ctx.organizationId),
+      and(
+        eq(SessionsTable.organizationId, ctx.organizationId),
+        inArray(SessionsTable.branchId, ctx.branchIds),
+      ),
     ),
     columns: { id: true, status: true },
   });
@@ -86,7 +89,10 @@ export async function updateSession(
       .where(
         and(
           eq(SessionsTable.id, input.id),
-          eq(SessionsTable.organizationId, ctx.organizationId),
+          and(
+            eq(SessionsTable.organizationId, ctx.organizationId),
+            inArray(SessionsTable.branchId, ctx.branchIds),
+          ),
           // Re-checked in the write itself, so a class that started between
           // the read above and this statement is not dragged mid-lesson.
           eq(SessionsTable.status, "scheduled"),

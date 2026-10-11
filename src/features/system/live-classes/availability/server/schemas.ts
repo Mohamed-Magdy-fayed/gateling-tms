@@ -43,6 +43,9 @@ export const listTeacherAvailabilityInput = z.object({
  * round trip, and no way for two quick edits to leave a half-applied state.
  */
 export const setTeacherAvailabilitySchema = z.object({
+  // Which branch a new row goes into; required only while "All branches"
+  // is selected (see requireWriteBranch).
+  branchId: idSchema.nullish(),
   teacherId: idSchema,
   slots: z
     .array(availabilitySlotSchema)

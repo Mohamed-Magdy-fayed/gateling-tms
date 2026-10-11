@@ -41,6 +41,7 @@ beforeAll(async () => {
     .insert(GroupsTable)
     .values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       name: "Other Group",
       courseId: data.courseId,
       schedule: [{ day: 3, startTime: "18:00", endTime: "19:00" }],
@@ -50,6 +51,7 @@ beforeAll(async () => {
     .insert(SessionsTable)
     .values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       groupId: otherGroup.id,
       scheduledAt: new Date("2026-09-02T18:00:00Z"),
       durationMinutes: 60,
@@ -63,6 +65,7 @@ beforeAll(async () => {
     .insert(TraineesTable)
     .values({
       organizationId: org.organizationId,
+      branchId: org.branchId,
       userId: student.userId,
       name: "Visible Student",
       email: `student-${student.userId}@integration.test`,
@@ -71,6 +74,7 @@ beforeAll(async () => {
     .returning({ id: TraineesTable.id });
   await db.insert(GroupStudentsTable).values({
     organizationId: org.organizationId,
+    branchId: org.branchId,
     groupId: data.groupId,
     traineeId: trainee.id,
   });
