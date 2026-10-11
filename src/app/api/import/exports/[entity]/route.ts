@@ -51,7 +51,10 @@ export async function GET(
   const fileName = `${template.entity}-${stamp}.${format}`;
 
   const headers = template.columns.map((column) => translate(column.labelKey));
-  const records = await loadRows(db, access.organizationId);
+  const records = await loadRows(db, {
+    organizationId: access.organizationId,
+    branchIds: access.branchIds,
+  });
   const rows = records.map((record) =>
     template.columns.map((column) => record[column.key] ?? ""),
   );

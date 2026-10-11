@@ -16,7 +16,7 @@ import type { ExportRowLoader } from "@/features/core/import/server/export-regis
  */
 export const loadTraineeExportRows: ExportRowLoader = async (
   db,
-  organizationId,
+  { organizationId, branchIds },
 ) => {
   const trainees = await db
     .select({
@@ -29,6 +29,7 @@ export const loadTraineeExportRows: ExportRowLoader = async (
     .where(
       and(
         eq(TraineesTable.organizationId, organizationId),
+        inArray(TraineesTable.branchId, branchIds),
         isNull(TraineesTable.deletedAt),
       ),
     )

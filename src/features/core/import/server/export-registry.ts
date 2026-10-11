@@ -16,8 +16,14 @@ import { traineeImportTemplate } from "@/features/system/students/trainees/serve
  */
 export type ExportRowLoader = (
   db: typeof database,
-  organizationId: string,
+  scope: ExportScope,
 ) => Promise<Record<string, string>[]>;
+
+/**
+ * What an export may read: the academy, and — for branch-owned data — the
+ * branches the request is scoped to, so an export follows the switcher.
+ */
+export type ExportScope = { organizationId: string; branchIds: string[] };
 
 /**
  * Every entity whose data can be exported in its import template's shape,

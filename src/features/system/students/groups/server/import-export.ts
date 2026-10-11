@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
   GroupStudentsTable,
   GroupsTable,
@@ -13,7 +13,7 @@ import type { ExportRowLoader } from "@/features/core/import/server/export-regis
  */
 export const loadGroupStudentExportRows: ExportRowLoader = async (
   db,
-  organizationId,
+  { organizationId, branchIds },
 ) => {
   const memberships = await db
     .select({
@@ -30,7 +30,12 @@ export const loadGroupStudentExportRows: ExportRowLoader = async (
         isNull(TraineesTable.deletedAt),
       ),
     )
-    .where(eq(GroupStudentsTable.organizationId, organizationId))
+    .where(
+      and(
+        eq(GroupStudentsTable.organizationId, organizationId),
+        inArray(GroupStudentsTable.branchId, branchIds),
+      ),
+    )
     .orderBy(
       asc(GroupsTable.name),
       asc(TraineesTable.name),

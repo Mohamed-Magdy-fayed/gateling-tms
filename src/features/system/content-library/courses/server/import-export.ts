@@ -9,7 +9,7 @@ import type { ExportRowLoader } from "@/features/core/import/server/export-regis
  */
 export const loadCourseExportRows: ExportRowLoader = async (
   db,
-  organizationId,
+  { organizationId },
 ) => {
   const courses = await db
     .select({

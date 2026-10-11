@@ -9,7 +9,7 @@ import type { ExportRowLoader } from "@/features/core/import/server/export-regis
  */
 export const loadLevelExportRows: ExportRowLoader = async (
   db,
-  organizationId,
+  { organizationId },
 ) => {
   const levels = await db
     .select({
