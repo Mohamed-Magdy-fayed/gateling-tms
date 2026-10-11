@@ -36,18 +36,11 @@ import {
 } from "../../constants";
 import { CONTENT_CREATED_AT } from "./content";
 import { stableId } from "./determinism";
+import { showcaseSeedDecision } from "./guard";
 import { planShowcase } from "./plan";
 import { advanceUntouched, insertMissing } from "./write";
 
 const TIME_ZONE = "Africa/Cairo";
-
-/** Production must never get demo data, whatever the build command says. */
-function isProduction(): boolean {
-  return (
-    process.env.VERCEL_ENV === "production" ||
-    process.env.VERCEL_TARGET_ENV === "production"
-  );
-}
 
 /**
  * The showcase admin is a real person who signs in with Google. Google sign-in
@@ -121,8 +114,11 @@ async function ensureOrganization(adminId: string) {
  * forward in time — see docs/seeding-and-demo-data.md.
  */
 export async function seedShowcaseProfile() {
-  if (isProduction()) {
-    console.info("showcase: skipped — never seeded into production.");
+  const decision = showcaseSeedDecision(process.env);
+  if (!decision.allowed) {
+    console.info(
+      `showcase: skipped — runs only on preview (${decision.reason}).`,
+    );
     return { profile: "showcase" as const };
   }
 

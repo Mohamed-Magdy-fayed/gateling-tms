@@ -84,9 +84,11 @@ Africa/Cairo, EGP), with two years of history ending today. Run with `npm run se
   a portal account, placement tests and trainee notes. Every enrollment status is present at once:
   upcoming cohorts in placement and waiting, running ones ongoing, past ones completed, plus
   dropped (`cancelled`) and `postponed` seats.
-- **Production never gets it.** `cli.ts` exits 0 before touching the database when `VERCEL_ENV` or
-  `VERCEL_TARGET_ENV` is `production`, and the profile repeats the check — so one build command
-  can serve both environments.
+- **Only preview gets it — fail-closed.** On Vercel it runs only when `VERCEL_ENV=preview`;
+  production, development, or a missing `VERCEL_ENV` all skip with exit 0, decided in `cli.ts`
+  before anything touches the database (`showcase/guard.ts`, tested in
+  `tests/seed-showcase-guard.test.ts`). Off Vercel (local Docker) it runs unless the env claims
+  production. So one build command can serve both environments.
 
 How it stays safe to run on every build — different from `seedIfMissing`'s natural keys, because
 2,000 trainees and 37,000 attendance rows can't afford a lookup per row:

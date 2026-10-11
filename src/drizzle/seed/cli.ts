@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { config as loadEnv } from "dotenv";
+import { showcaseSeedDecision } from "./profiles/showcase/guard";
 
 loadEnv({
   path: process.env.DOTENV_CONFIG_PATH ?? path.resolve(process.cwd(), ".env"),
@@ -80,13 +81,14 @@ async function run() {
 
   // Checked before anything imports the database (and validates the env):
   // a production build that runs `npm run seed` must be a clean no-op.
-  if (
-    commandName === "showcase" &&
-    (process.env.VERCEL_ENV === "production" ||
-      process.env.VERCEL_TARGET_ENV === "production")
-  ) {
-    console.log("Seed skipped: the showcase profile never runs in production.");
-    return;
+  if (commandName === "showcase") {
+    const decision = showcaseSeedDecision(process.env);
+    if (!decision.allowed) {
+      console.log(
+        `Seed skipped: showcase runs only on preview (${decision.reason}).`,
+      );
+      return;
+    }
   }
 
   const command = commands[commandName];
