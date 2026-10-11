@@ -12,7 +12,10 @@ export type ShowcaseCourse = {
   description: string;
   /** Fee in the academy's currency (EGP) for the whole course. */
   price: number;
-  /** Each level is `sessionsPerLevel` sessions, one lecture per session. */
+  /**
+   * Each level is `sessionsPerLevel` sessions, one lecture per session (the
+   * first lectures of the level's list). Courses run 4–8 sessions in all.
+   */
   sessionsPerLevel: number;
   durationMinutes: number;
   /** How often a new cohort of this course opens, relative to the others. */
@@ -27,7 +30,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "Our core programme from first words to confident independent use, aligned to the CEFR.",
     price: 4800,
-    sessionsPerLevel: 6,
+    sessionsPerLevel: 2,
     durationMinutes: 90,
     weight: 45,
     levels: [
@@ -83,7 +86,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "Playful, story-led English for ages 7–12, with songs, games and short projects.",
     price: 3600,
-    sessionsPerLevel: 6,
+    sessionsPerLevel: 2,
     durationMinutes: 60,
     weight: 15,
     levels: [
@@ -128,7 +131,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "Exam-focused preparation for all four IELTS papers, with timed mock tests and feedback.",
     price: 5500,
-    sessionsPerLevel: 8,
+    sessionsPerLevel: 4,
     durationMinutes: 120,
     weight: 15,
     levels: [
@@ -166,7 +169,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "Practical English for the workplace: meetings, emails, presentations and negotiation.",
     price: 4200,
-    sessionsPerLevel: 6,
+    sessionsPerLevel: 3,
     durationMinutes: 90,
     weight: 10,
     levels: [
@@ -200,7 +203,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "Small-group speaking practice on everyday and current topics to build fluency.",
     price: 1800,
-    sessionsPerLevel: 8,
+    sessionsPerLevel: 4,
     durationMinutes: 60,
     weight: 10,
     levels: [
@@ -225,7 +228,7 @@ export const SHOWCASE_COURSES: ShowcaseCourse[] = [
     description:
       "A focused grammar bootcamp that fixes the most common accuracy problems fast.",
     price: 2200,
-    sessionsPerLevel: 8,
+    sessionsPerLevel: 5,
     durationMinutes: 90,
     weight: 5,
     levels: [
@@ -412,68 +415,30 @@ export const QUESTION_BANK: ShowcaseQuestion[] = [
   },
 ];
 
-export type ShowcaseTeacher = {
-  key: string;
-  name: string;
-  email: string;
-  /** Two non-overlapping daily start times, "HH:mm". */
-  times: [string, string];
-};
+/** The academy's branches (docs/designs/academy-branches.md). */
+export const SHOWCASE_BRANCHES = [
+  {
+    key: "nasr",
+    name: "Nasr City",
+    address: "14 Abbas El Akkad St, Nasr City, Cairo",
+    phone: "+20222700100",
+  },
+  {
+    key: "maadi",
+    name: "Maadi",
+    address: "Road 9, Maadi, Cairo",
+    phone: "+20223580200",
+  },
+  { key: "online", name: "Online", address: null, phone: null },
+] as const;
+export type ShowcaseBranch = (typeof SHOWCASE_BRANCHES)[number];
 
-export const SHOWCASE_TEACHERS: ShowcaseTeacher[] = [
-  {
-    key: "sarah",
-    name: "Sarah Mitchell",
-    email: "sarah.mitchell@horizon-academy.example",
-    times: ["10:00", "17:30"],
-  },
-  {
-    key: "omar",
-    name: "Omar Farouk",
-    email: "omar.farouk@horizon-academy.example",
-    times: ["12:30", "20:00"],
-  },
-  {
-    key: "laila",
-    name: "Laila Hassan",
-    email: "laila.hassan@horizon-academy.example",
-    times: ["15:00", "20:00"],
-  },
-  {
-    key: "james",
-    name: "James Carter",
-    email: "james.carter@horizon-academy.example",
-    times: ["10:00", "15:00"],
-  },
-  {
-    key: "nadia",
-    name: "Nadia Youssef",
-    email: "nadia.youssef@horizon-academy.example",
-    times: ["12:30", "17:30"],
-  },
-  {
-    key: "karim",
-    name: "Karim Mansour",
-    email: "karim.mansour@horizon-academy.example",
-    times: ["10:00", "20:00"],
-  },
-  {
-    key: "emily",
-    name: "Emily Brooks",
-    email: "emily.brooks@horizon-academy.example",
-    times: ["15:00", "17:30"],
-  },
-  {
-    key: "youssef",
-    name: "Youssef Adel",
-    email: "youssef.adel@horizon-academy.example",
-    times: ["12:30", "15:00"],
-  },
-];
+/** Class start times a teacher can be given, "HH:mm". */
+export const TEACHING_TIMES = ["09:30", "12:00", "14:30", "17:00", "19:30"];
 
 /**
- * Pairs of weekdays (0 = Sunday … 6 = Saturday) that never share a day, so a
- * teacher's groups on different pairs can't collide.
+ * Pairs of weekdays (0 = Sunday … 6 = Saturday) covering the working week,
+ * Saturday to Thursday. A group meets on one pair.
  */
 export const DAY_PAIRS: [number, number][] = [
   [6, 1],
@@ -626,4 +591,20 @@ export const PLACEMENT_FEEDBACK = [
   "Good comprehension, limited vocabulary. Starting from level one.",
   "Confident speaker with grammar gaps. Level one with extra practice.",
   "Clear pass on the written part; speaking needs warming up.",
+];
+
+/**
+ * The open question on every final exam. It has no accepted wordings, so the
+ * automatic pass can't score it and the response waits for a teacher.
+ */
+export const SHORT_ANSWER_PROMPT =
+  "In three or four sentences, describe how you will keep using English after this course.";
+
+export const SHORT_ANSWER_REPLIES = [
+  "I will watch series without subtitles and keep a notebook of new words. I also want to join the conversation club next term.",
+  "My job needs emails in English every day, so I will practise writing them carefully and ask my manager for feedback.",
+  "I plan to read one short book every month and talk with my cousin who lives in Canada on video calls.",
+  "I will take the IELTS exam next year, so I will keep doing practice tests and listening to podcasts on the way to work.",
+  "I want to help my children with their homework, so I will study with them and use English at home sometimes.",
+  "I will use English when I travel and try to speak more in meetings instead of staying quiet.",
 ];

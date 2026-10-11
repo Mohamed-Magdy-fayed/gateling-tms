@@ -1,6 +1,6 @@
 import type { GroupScheduleSlot } from "@/drizzle/schema";
 import { generateSessionOccurrences } from "@/features/system/students/groups/server/schedule";
-import { DAY_PAIRS, SHOWCASE_TEACHERS, type ShowcaseTeacher } from "./catalog";
+import { DAY_PAIRS, type ShowcaseBranch } from "./catalog";
 import type { PlannedCourse } from "./content";
 import {
   addDays,
@@ -9,28 +9,33 @@ import {
   stableId,
   toCalendarDate,
 } from "./determinism";
+import type { ShowcaseTeacher } from "./teachers";
 
 /**
  * The academy's history starts here and is fixed: cohort `k` always opens on
- * the same date with the same course, teacher, schedule and roster. Only how
- * many cohorts exist, and what state each row is in, depends on "now" — so a
- * later run appends new cohorts and moves time forward, and never rewrites
- * the past.
+ * the same date in the same branch with the same course, teacher, schedule and
+ * roster. Only how many cohorts exist, and what state each row is in, depends
+ * on "now" — so a later run appends new cohorts and moves time forward, and
+ * never rewrites the past.
  */
 export const SHOWCASE_ANCHOR = new Date("2024-10-05T00:00:00Z");
-export const COHORT_SPACING_DAYS = 5;
+/**
+ * A new cohort opens every day, taking turns between the branches — so each
+ * branch opens one every three days.
+ */
+export const COHORT_SPACING_DAYS = 1;
 /** Cohorts this far ahead already exist, enrolling and in placement. */
-export const UPCOMING_WINDOW_DAYS = 30;
+export const UPCOMING_WINDOW_DAYS = 35;
 /** A group is set up five weeks out — before its earliest enrollment (28 days). */
 const GROUP_LEAD_DAYS = 35;
-/** Share of follow-on course seats taken by a returning General English graduate. */
-const RETURNING_SEAT_SHARE = 0.35;
-const FOLLOW_ON_COURSES = new Set([
-  "ielts",
-  "business",
-  "conversation",
-  "grammar",
-]);
+/** Share of groups that are one-to-one. */
+const PRIVATE_GROUP_SHARE = 0.45;
+/** One-to-one classes cost more than a seat in a group. */
+const PRIVATE_PRICE_FACTOR = 1.5;
+/** Share of seats taken by a returning student of the same branch, when one is free. */
+const RETURNING_SEAT_SHARE = 0.45;
+
+export type PlannedBranch = ShowcaseBranch & { id: string };
 
 export type PlannedSession = {
   id: string;
@@ -40,6 +45,7 @@ export type PlannedSession = {
   durationMinutes: number;
   levelIndex: number;
   lectureId: string;
+  /** Called off on its own, regardless of what happens to the group. */
   cancelled: boolean;
 };
 
@@ -57,17 +63,32 @@ export type Seat = {
   installments: number;
 };
 
+/**
+ * A group that stopped part-way: paused (its students postponed) or cancelled
+ * outright. From `atSession` on its classes are called off, decided at `at` —
+ * an hour after the last class it held.
+ */
+export type CohortHalt = {
+  kind: "paused" | "cancelled";
+  atSession: number;
+  at: Date;
+};
+
 export type Cohort = {
   index: number;
   id: string;
   name: string;
   course: PlannedCourse;
-  teacher: ShowcaseTeacher & { id: string };
+  branch: PlannedBranch;
+  teacher: ShowcaseTeacher;
+  isPrivate: boolean;
+  /** What a seat in this group costs. */
+  price: number;
   schedule: GroupScheduleSlot[];
   startDate: string;
   createdAt: Date;
   sessions: PlannedSession[];
-  /** End of the last class that wasn't cancelled. */
+  /** End of the last class held, had the group run to the end. */
   endsAt: Date;
   levels: {
     firstStart: Date;
@@ -76,11 +97,14 @@ export type Cohort = {
     firstIndex: number;
   }[];
   seats: Seat[];
+  halt: CohortHalt | null;
 };
 
 export type PlannedTrainee = {
   number: number;
   id: string;
+  /** Every cohort a trainee joins is in this branch. */
+  branchId: string;
   firstEnrolledAt: Date;
   firstCohortIndex: number;
 };
@@ -98,32 +122,52 @@ function addTime(time: string, minutes: number): string {
 }
 
 /**
- * Teacher `k % 8`, and one of that teacher's six fixed slots (3 disjoint day
- * pairs × 2 non-overlapping start times). A teacher gets a new cohort every 40
- * days and only repeats a slot after 240, longer than any course runs — so no
- * teacher is ever double-booked.
+ * Branch `k % 3`, and that branch's teachers in turn. A teacher gets a new
+ * group only every `3 × teachers-per-branch` days — far longer than any course
+ * runs — so no teacher is ever double-booked, whatever slot the group gets.
  */
-function scheduleFor(index: number, durationMinutes: number) {
-  const teacher = SHOWCASE_TEACHERS[index % SHOWCASE_TEACHERS.length];
-  const slot = Math.floor(index / SHOWCASE_TEACHERS.length) % 6;
-  const [dayA, dayB] = DAY_PAIRS[slot % DAY_PAIRS.length];
-  const startTime = teacher.times[Math.floor(slot / DAY_PAIRS.length)];
-  const endTime = addTime(startTime, durationMinutes);
-  const schedule: GroupScheduleSlot[] = [
-    { day: dayA, startTime, endTime },
-    { day: dayB, startTime, endTime },
-  ];
-  return { teacher, schedule };
+function placeCohort(
+  index: number,
+  branches: PlannedBranch[],
+  teachers: ShowcaseTeacher[],
+) {
+  const branch = branches[index % branches.length];
+  const branchTeachers = teachers.filter((t) => t.branchKey === branch.key);
+  const branchCohortIndex = Math.floor(index / branches.length);
+  const teacher = branchTeachers[branchCohortIndex % branchTeachers.length];
+  return { branch, teacher };
+}
+
+function planHalt(
+  rng: ReturnType<typeof rngFor>,
+  sessions: PlannedSession[],
+): CohortHalt | null {
+  if (sessions.length < 4) return null;
+  const roll = rng.next();
+  if (roll >= 0.06) return null;
+  const atSession = rng.int(1, sessions.length - 2);
+  return {
+    kind: roll < 0.03 ? "cancelled" : "paused",
+    atSession,
+    at: addMinutes(sessions[atSession - 1].endsAt, 60),
+  };
 }
 
 export function planCohorts(input: {
   now: Date;
   timeZone: string;
   courses: PlannedCourse[];
+  branches: PlannedBranch[];
+  teachers: ShowcaseTeacher[];
 }): { cohorts: Cohort[]; trainees: PlannedTrainee[] } {
   const cohorts: Cohort[] = [];
   const trainees: PlannedTrainee[] = [];
-  const returningPool: { traineeNumber: number; availableFrom: Date }[] = [];
+  // Students who finished a course and may come back — per branch, since a
+  // student stays with their branch.
+  const returningPools = new Map<
+    string,
+    { traineeNumber: number; availableFrom: Date }[]
+  >(input.branches.map((branch) => [branch.id, []]));
   const total = cohortCount(input.now);
 
   for (let k = 0; k < total; k += 1) {
@@ -131,7 +175,15 @@ export function planCohorts(input: {
     const course = rng.weighted(
       input.courses.map((c) => ({ value: c, weight: c.course.weight })),
     );
-    const { teacher, schedule } = scheduleFor(k, course.course.durationMinutes);
+    const { branch, teacher } = placeCohort(k, input.branches, input.teachers);
+    const isPrivate = rng.chance(PRIVATE_GROUP_SHARE);
+    const [dayA, dayB] = rng.pick(DAY_PAIRS);
+    const startTime = rng.pick(teacher.times);
+    const endTime = addTime(startTime, course.course.durationMinutes);
+    const schedule: GroupScheduleSlot[] = [
+      { day: dayA, startTime, endTime },
+      { day: dayB, startTime, endTime },
+    ];
     const opensOn = addDays(SHOWCASE_ANCHOR, k * COHORT_SPACING_DAYS);
     const startDate = toCalendarDate(opensOn);
     const lectureIds = course.levels.flatMap((level) => level.lectureIds);
@@ -157,6 +209,7 @@ export function planCohorts(input: {
           index > 0 && index < occurrences.length - 1 && rng.chance(0.02),
       }),
     );
+    const halt = planHalt(rng, sessions);
     const held = sessions.filter((s) => !s.cancelled);
     const levels = course.levels.map((_, levelIndex) => {
       const inLevel = sessions.filter((s) => s.levelIndex === levelIndex);
@@ -168,7 +221,8 @@ export function planCohorts(input: {
       };
     });
 
-    const seatCount = rng.int(12, 18);
+    const seatCount = isPrivate ? 1 : rng.int(5, 10);
+    const pool = returningPools.get(branch.id) ?? [];
     const seats: Seat[] = [];
     for (let s = 0; s < seatCount; s += 1) {
       const seatRng = rngFor(`seat:${k}:${s}`);
@@ -178,16 +232,13 @@ export function planCohorts(input: {
       );
 
       let traineeNumber: number | undefined;
-      if (
-        FOLLOW_ON_COURSES.has(course.course.key) &&
-        seatRng.chance(RETURNING_SEAT_SHARE)
-      ) {
-        const poolIndex = returningPool.findIndex(
+      if (seatRng.chance(RETURNING_SEAT_SHARE)) {
+        const poolIndex = pool.findIndex(
           (p) => p.availableFrom.getTime() < enrolledAt.getTime(),
         );
         if (poolIndex >= 0) {
-          traineeNumber = returningPool[poolIndex].traineeNumber;
-          returningPool.splice(poolIndex, 1);
+          traineeNumber = pool[poolIndex].traineeNumber;
+          pool.splice(poolIndex, 1);
         }
       }
       const returning = traineeNumber !== undefined;
@@ -196,13 +247,14 @@ export function planCohorts(input: {
         trainees.push({
           number: traineeNumber,
           id: stableId(`trainee:${traineeNumber}`),
+          branchId: branch.id,
           firstEnrolledAt: enrolledAt,
           firstCohortIndex: k,
         });
       }
 
       const dropRoll = seatRng.next();
-      const drop =
+      const plannedDrop =
         dropRoll < 0.08
           ? {
               atSession: seatRng.int(
@@ -217,6 +269,13 @@ export function planCohorts(input: {
                 kind: "postponed" as const,
               }
             : null;
+      // A student can't leave a group after it has already stopped.
+      const drop =
+        plannedDrop &&
+        plannedDrop.atSession < sessions.length &&
+        (!halt || plannedDrop.atSession < halt.atSession)
+          ? plannedDrop
+          : null;
 
       seats.push({
         traineeNumber,
@@ -238,10 +297,11 @@ export function planCohorts(input: {
     }
 
     const endsAt = held[held.length - 1].endsAt;
-    if (course.course.key === "general") {
+    // Whoever finishes the course may come back for another one.
+    if (!halt) {
       for (const seat of seats) {
         if (!seat.drop) {
-          returningPool.push({
+          pool.push({
             traineeNumber: seat.traineeNumber,
             availableFrom: endsAt,
           });
@@ -249,12 +309,20 @@ export function planCohorts(input: {
       }
     }
 
+    const number = String(k + 1).padStart(4, "0");
     cohorts.push({
       index: k,
       id,
-      name: `${course.course.name} · Batch ${String(k + 1).padStart(3, "0")}`,
+      name: isPrivate
+        ? `${course.course.name} · Private ${number}`
+        : `${course.course.name} · Batch ${number}`,
       course,
-      teacher: { ...teacher, id: stableId(`teacher:${teacher.key}`) },
+      branch,
+      teacher,
+      isPrivate,
+      price: isPrivate
+        ? Math.round((course.course.price * PRIVATE_PRICE_FACTOR) / 50) * 50
+        : course.course.price,
       schedule,
       startDate,
       createdAt: addDays(opensOn, -GROUP_LEAD_DAYS),
@@ -262,6 +330,7 @@ export function planCohorts(input: {
       endsAt,
       levels,
       seats,
+      halt,
     });
   }
 

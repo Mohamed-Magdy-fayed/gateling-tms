@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
   CoursesTable,
+  DEFAULT_BRANCH_NAME,
   OrganizationsTable,
   TraineesTable,
 } from "@/drizzle/schema";
@@ -15,6 +16,7 @@ import {
   SEED_PERFORMANCE_ORG_SHORT_CODE,
   SEED_SYSTEM_ACTOR,
 } from "../constants";
+import { seedBranch } from "../lib/seed-branch";
 import { seedMember } from "../lib/seed-member";
 
 const PERFORMANCE_COURSE_NAMES = [
@@ -74,6 +76,8 @@ export async function seedPerformanceProfile() {
       return row;
     },
   });
+
+  const branch = await seedBranch(organization.id, DEFAULT_BRANCH_NAME);
 
   await seedMember({
     id: SEED_PERFORMANCE_ADMIN_ID,
@@ -136,6 +140,7 @@ export async function seedPerformanceProfile() {
           .insert(TraineesTable)
           .values({
             organizationId: organization.id,
+            branchId: branch.id,
             name: `Performance Student ${paddedIndex}`,
             email,
             createdBy: SEED_SYSTEM_ACTOR,

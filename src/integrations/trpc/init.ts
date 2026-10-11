@@ -9,8 +9,8 @@ import { OrganizationMembershipsTable, UsersTable } from "@/drizzle/schema";
 import { getUserSession } from "@/features/core/auth/core";
 import { LOCALE_COOKIE_NAME } from "@/features/core/i18n/lib";
 import { getT } from "@/features/core/i18n/server";
-import { handleDatabaseError } from "./db-error";
 import { loadBranchScope } from "./branch-scope";
+import { handleDatabaseError } from "./db-error";
 import { resolveOrgAccess } from "./org-access";
 
 export const createTRPCContext = async () => {

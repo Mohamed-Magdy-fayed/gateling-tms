@@ -16,14 +16,17 @@ the default).
 
 The smallest viable local bootstrap: one organization (`Gateling-TMS Dev Academy`, short code
 `DEV1`) with an admin, a teacher, and two students — all signed in with the same documented dev
-password (`SEED_DEFAULT_PASSWORD`, see the root `README.md`'s "Seeded accounts" table). No domain
-content (no courses, groups, or trainees). This is what every other profile builds on top of.
+password (`SEED_DEFAULT_PASSWORD`, see the root `README.md`'s "Seeded accounts" table), and the
+"Main" branch every academy has. No domain content (no courses, groups, or trainees). This is what
+every other profile builds on top of.
 
 ### 2. `demo`
 
 The realistic-academy, screenshot/demo dataset. Runs `baseline` first, then adds to the *same*
 organization — sign in with the documented admin/teacher accounts and the org is already full of
-content, rather than needing a second login to see it:
+content, rather than needing a second login to see it. It spans **two branches** — "Main" (the
+two English batches) and "Online" (the business batch) — so the branch switcher, the Branch
+columns and the dashboard's per-branch split all have something to show:
 
 - **2 courses** ("English Foundations", "Business English Essentials"), each with 2 levels, 2
   lectures per level, and one published quiz form (1 section, 3 questions, 3 answers each).
@@ -76,14 +79,26 @@ Africa/Cairo, EGP), with two years of history ending today. Run with `npm run se
 - **Who signs in:** `mohamed.ahmed.sc2@gmail.com` is its admin, through Google sign-in. If that
   user isn't in the database yet the seed adds a password-less row, and Google sign-in links to it
   by email. No seeded password reaches this org — teachers and student accounts have none.
-- **What's in it:** 6 courses (13 levels, 86 lectures, a published quiz per level, a final exam and
-  placement test per course), 8 teachers with weekly availability, and a new cohort every 5 days
-  since 2024-10-05: ~2,000 trainees, ~150 groups, ~2,900 classes, ~37,000 attendance records
-  (manual before June 2025, Meetings-joined after, with lateness), ~3,500 payments in installments
-  across every method, ~1,800 certificates, quiz/final-exam responses from the 1-in-6 trainees with
-  a portal account, placement tests and trainee notes. Every enrollment status is present at once:
-  upcoming cohorts in placement and waiting, running ones ongoing, past ones completed, plus
-  dropped (`cancelled`) and `postponed` seats.
+- **What's in it (data version 2):** three branches — **Nasr City**, **Maadi** and **Online** —
+  each with 23 teachers assigned to it and available Saturday to Thursday. 6 courses of 4–8
+  classes (13 levels, 37 lectures, a published quiz per level, a final exam and placement test per
+  course). A new cohort opens every day, taking turns between the branches, since 2024-10-05;
+  45% are one-to-one, the rest groups of 5–10. That comes to ~2,000 trainees, ~770 groups, ~5,400
+  classes, ~21,000 attendance records (Online's joined through Meetings since June 2025, the
+  buildings' marked by the teacher, with lateness), ~5,200 payments in installments across every
+  method, ~2,700 certificates, placement tests (portal students' with their submitted answers),
+  quiz and final-exam responses — each final exam has an open question, so ~80 wait in the grading
+  queue while the rest are graded — and trainee notes. A student stays in one branch for every
+  course they take. Every status is present at once: upcoming cohorts in placement and waiting,
+  running ones ongoing, past ones completed, dropped (`cancelled`) and `postponed` seats, classes
+  called off, and groups **paused** or **cancelled** part-way (their remaining classes called off).
+- **Data version.** The academy records which version of this dataset it holds (an
+  `organization_settings` row, `seed.showcase.dataVersion`, which the preferences registry ignores).
+  When `SHOWCASE_DATA_VERSION` in `showcase/index.ts` is bumped, the next run deletes the Horizon
+  academy and the showcase's own accounts (`*@horizon-academy.example`,
+  `*@students.horizon-academy.example`) once and rebuilds it — the only time this profile deletes
+  anything, and never outside that academy. Bump it when the shape changes in a way adding rows
+  can't reach.
 - **Only preview gets it — fail-closed.** On Vercel it runs only when `VERCEL_ENV=preview`;
   production, development, or a missing `VERCEL_ENV` all skip with exit 0, decided in `cli.ts`
   before anything touches the database (`showcase/guard.ts`, tested in
@@ -122,6 +137,7 @@ src/drizzle/seed/
   index.ts                   # profileRunners registry
   lib/
     seed-member.ts            # shared user+credentials+membership helper
+    seed-branch.ts            # a branch by (academy, name)
   profiles/
     baseline.ts
     demo/
@@ -131,8 +147,8 @@ src/drizzle/seed/
       trainees.ts                  # trainees/enrollments/attendance/certificates
       data.ts                       # hand-authored literal content
     performance.ts
-    showcase/                  # preview sales demo: determinism, catalog, content,
-                               # cohorts, lifecycle, records, activity, plan, write
+    showcase/                  # preview sales demo: determinism, catalog, teachers,
+                               # content, cohorts, lifecycle, records, activity, plan, write
 ```
 
 ## Idempotency (the safety rule that matters here)

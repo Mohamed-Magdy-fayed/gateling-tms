@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle";
-import { OrganizationsTable } from "@/drizzle/schema";
+import { DEFAULT_BRANCH_NAME, OrganizationsTable } from "@/drizzle/schema";
 import { seedIfMissing } from "../base";
 import {
   SEED_ADMIN_EMAIL,
@@ -16,6 +16,7 @@ import {
   SEED_TEACHER_EMAIL,
   SEED_TEACHER_ID,
 } from "../constants";
+import { seedBranch } from "../lib/seed-branch";
 import { seedMember } from "../lib/seed-member";
 
 /**
@@ -54,6 +55,10 @@ export async function seedBaselineProfile() {
       return row;
     },
   });
+
+  // Every academy has at least one branch (an organization created in the
+  // app gets one the same way).
+  await seedBranch(organization.id, DEFAULT_BRANCH_NAME);
 
   await seedMember({
     id: SEED_ADMIN_ID,

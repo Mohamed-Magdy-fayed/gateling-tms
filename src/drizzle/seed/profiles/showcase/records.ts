@@ -1,8 +1,10 @@
 import type {
+  BranchesTable,
   EnrollmentLevelsTable,
   EnrollmentsTable,
   GroupStudentsTable,
   GroupsTable,
+  OrganizationMembershipBranchesTable,
   OrganizationMembershipsTable,
   PlacementTestsTable,
   SessionsTable,
@@ -16,9 +18,8 @@ import {
   FIRST_NAMES,
   LAST_NAMES,
   PLACEMENT_FEEDBACK,
-  SHOWCASE_TEACHERS,
 } from "./catalog";
-import type { Cohort, PlannedTrainee } from "./cohorts";
+import type { Cohort, PlannedBranch, PlannedTrainee } from "./cohorts";
 import { CONTENT_CREATED_AT } from "./content";
 import { addMinutes, rngFor, stableId } from "./determinism";
 import {
@@ -28,14 +29,18 @@ import {
   isOnRoster,
   sessionStatusAt,
 } from "./lifecycle";
+import type { ShowcaseTeacher } from "./teachers";
 
 /** One in this many trainees has a student portal account (and so can submit forms). */
 export const PORTAL_ACCOUNT_EVERY = 6;
 const STUDENT_EMAIL_DOMAIN = "students.horizon-academy.example";
+const AVAILABILITY_ENDS_AT = "22:00";
 
 export type StructureRows = {
   users: (typeof UsersTable.$inferInsert)[];
   memberships: (typeof OrganizationMembershipsTable.$inferInsert)[];
+  branches: (typeof BranchesTable.$inferInsert)[];
+  membershipBranches: (typeof OrganizationMembershipBranchesTable.$inferInsert)[];
   availability: (typeof TeacherAvailabilityTable.$inferInsert)[];
   groups: (typeof GroupsTable.$inferInsert)[];
   sessions: (typeof SessionsTable.$inferInsert)[];
@@ -51,10 +56,16 @@ export type TraineeProfile = {
   name: string;
   email: string;
   userId: string | null;
+  branchId: string;
 };
 
 const exists = (createdAt: Date, now: Date) =>
   createdAt.getTime() <= now.getTime();
+
+/** The id of the placement-test submission a portal student made. */
+export function placementResponseId(enrollmentId: string): string {
+  return stableId(`response:placement:${enrollmentId}`);
+}
 
 export function traineeProfile(
   trainee: PlannedTrainee,
@@ -73,15 +84,45 @@ export function traineeProfile(
       trainee.number % PORTAL_ACCOUNT_EVERY === 0
         ? stableId(`student-user:${trainee.number}`)
         : null,
+    branchId: trainee.branchId,
   };
 }
 
-/** Teachers: users (no password — they never sign in to the showcase), memberships, availability. */
-function planStaff(organizationId: string, rows: StructureRows) {
-  for (const teacher of SHOWCASE_TEACHERS) {
-    const userId = stableId(`teacher:${teacher.key}`);
+function planBranches(
+  organizationId: string,
+  branches: PlannedBranch[],
+  rows: StructureRows,
+) {
+  for (const branch of branches) {
+    rows.branches.push({
+      id: branch.id,
+      organizationId,
+      name: branch.name,
+      address: branch.address,
+      phone: branch.phone,
+      createdAt: CONTENT_CREATED_AT,
+      updatedAt: CONTENT_CREATED_AT,
+    });
+  }
+}
+
+/**
+ * Teachers: users (no password — they never sign in to the showcase), a
+ * membership, their one branch, and the working week (Saturday to Thursday)
+ * from their earliest start time on.
+ */
+function planStaff(
+  organizationId: string,
+  branches: PlannedBranch[],
+  teachers: ShowcaseTeacher[],
+  rows: StructureRows,
+) {
+  const branchIdOf = new Map(branches.map((b) => [b.key, b.id]));
+  for (const teacher of teachers) {
+    const branchId = branchIdOf.get(teacher.branchKey);
+    if (!branchId) throw new Error(`Unknown branch ${teacher.branchKey}`);
     rows.users.push({
-      id: userId,
+      id: teacher.id,
       email: teacher.email,
       name: teacher.name,
       emailVerifiedAt: CONTENT_CREATED_AT,
@@ -90,23 +131,28 @@ function planStaff(organizationId: string, rows: StructureRows) {
     });
     rows.memberships.push({
       organizationId,
-      userId,
+      userId: teacher.id,
       role: "teacher",
       createdAt: CONTENT_CREATED_AT,
     });
-    for (const [pairIndex, pair] of DAY_PAIRS.entries()) {
-      for (const day of pair) {
-        rows.availability.push({
-          id: stableId(`availability:${teacher.key}:${pairIndex}:${day}`),
-          organizationId,
-          teacherId: userId,
-          day,
-          startTime: teacher.times[0],
-          endTime: "22:00",
-          createdAt: CONTENT_CREATED_AT,
-          updatedAt: CONTENT_CREATED_AT,
-        });
-      }
+    rows.membershipBranches.push({
+      organizationId,
+      userId: teacher.id,
+      branchId,
+      createdAt: CONTENT_CREATED_AT,
+    });
+    for (const day of DAY_PAIRS.flat()) {
+      rows.availability.push({
+        id: stableId(`availability:${teacher.key}:${day}`),
+        organizationId,
+        branchId,
+        teacherId: teacher.id,
+        day,
+        startTime: teacher.times[0],
+        endTime: AVAILABILITY_ENDS_AT,
+        createdAt: CONTENT_CREATED_AT,
+        updatedAt: CONTENT_CREATED_AT,
+      });
     }
   }
 }
@@ -142,6 +188,7 @@ function planTrainees(
     rows.trainees.push({
       id: trainee.id,
       organizationId,
+      branchId: trainee.branchId,
       name: profile.name,
       email: profile.email,
       phone: profile.phone,
@@ -157,15 +204,18 @@ function planTrainees(
 function planCohort(
   organizationId: string,
   cohort: Cohort,
+  profiles: Map<number, TraineeProfile>,
   now: Date,
   rows: StructureRows,
 ) {
   if (!exists(cohort.createdAt, now)) return;
+  const branchId = cohort.branch.id;
   const stamp = { createdAt: cohort.createdAt, updatedAt: cohort.createdAt };
 
   rows.groups.push({
     id: cohort.id,
     organizationId,
+    branchId,
     name: cohort.name,
     courseId: cohort.course.id,
     teacherId: cohort.teacher.id,
@@ -179,11 +229,12 @@ function planCohort(
     rows.sessions.push({
       id: session.id,
       organizationId,
+      branchId,
       groupId: cohort.id,
       scheduledAt: session.scheduledAt,
       plannedAt: session.scheduledAt,
       durationMinutes: session.durationMinutes,
-      status: sessionStatusAt(session, now),
+      status: sessionStatusAt(cohort, session, now),
       teacherId: cohort.teacher.id,
       lectureId: session.lectureId,
       ...stamp,
@@ -201,6 +252,7 @@ function planCohort(
     rows.enrollments.push({
       id: seat.enrollmentId,
       organizationId,
+      branchId,
       traineeId,
       courseId: cohort.course.id,
       status: enrollmentStatusAt(cohort, seat, now),
@@ -210,11 +262,16 @@ function planCohort(
     if (seat.placementDoneAt) {
       const scheduledAt = addMinutes(seat.placementDoneAt, -45);
       const done = isOnRoster(seat, now);
+      // Portal students sit the placement test themselves; the rest are
+      // tested at the desk and only the outcome is recorded.
+      const submitted = done && !!profiles.get(seat.traineeNumber)?.userId;
       rows.placementTests.push({
         id: stableId(`placement:${seat.enrollmentId}`),
         organizationId,
+        branchId,
         traineeId,
         formId: cohort.course.placementForm.id,
+        responseId: submitted ? placementResponseId(seat.enrollmentId) : null,
         assignedLevelId: done ? cohort.course.levels[0].id : null,
         status: done ? "completed" : "pending",
         feedback: done
@@ -233,6 +290,7 @@ function planCohort(
     rows.groupStudents.push({
       id: stableId(`group-student:${cohort.index}:${seat.traineeNumber}`),
       organizationId,
+      branchId,
       groupId: cohort.id,
       traineeId,
       createdAt: rosterAt,
@@ -242,6 +300,7 @@ function planCohort(
       rows.enrollmentLevels.push({
         id: stableId(`enrollment-level:${seat.enrollmentId}:${levelIndex}`),
         organizationId,
+        branchId,
         enrollmentId: seat.enrollmentId,
         levelId: level.id,
         status: progress.status,
@@ -256,12 +315,16 @@ function planCohort(
 export function planStructure(input: {
   organizationId: string;
   now: Date;
+  branches: PlannedBranch[];
+  teachers: ShowcaseTeacher[];
   cohorts: Cohort[];
   trainees: PlannedTrainee[];
 }): { rows: StructureRows; profiles: Map<number, TraineeProfile> } {
   const rows: StructureRows = {
     users: [],
     memberships: [],
+    branches: [],
+    membershipBranches: [],
     availability: [],
     groups: [],
     sessions: [],
@@ -271,7 +334,8 @@ export function planStructure(input: {
     enrollmentLevels: [],
     placementTests: [],
   };
-  planStaff(input.organizationId, rows);
+  planBranches(input.organizationId, input.branches, rows);
+  planStaff(input.organizationId, input.branches, input.teachers, rows);
   const profiles = planTrainees(
     input.organizationId,
     input.trainees,
@@ -279,7 +343,7 @@ export function planStructure(input: {
     rows,
   );
   for (const cohort of input.cohorts) {
-    planCohort(input.organizationId, cohort, input.now, rows);
+    planCohort(input.organizationId, cohort, profiles, input.now, rows);
   }
   return { rows, profiles };
 }

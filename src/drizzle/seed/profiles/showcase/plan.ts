@@ -1,7 +1,10 @@
 import { type ActivityRows, planActivity } from "./activity";
-import { planCohorts } from "./cohorts";
+import { SHOWCASE_BRANCHES } from "./catalog";
+import { type PlannedBranch, planCohorts } from "./cohorts";
 import { type ContentRows, planContent } from "./content";
+import { stableId } from "./determinism";
 import { planStructure, type StructureRows } from "./records";
+import { planTeachers } from "./teachers";
 
 export type ShowcasePlan = {
   content: ContentRows;
@@ -19,15 +22,24 @@ export function planShowcase(input: {
   timeZone: string;
   now: Date;
 }): ShowcasePlan {
+  const branches: PlannedBranch[] = SHOWCASE_BRANCHES.map((branch) => ({
+    ...branch,
+    id: stableId(`branch:${branch.key}`),
+  }));
+  const teachers = planTeachers();
   const { rows: content, courses } = planContent(input.organizationId);
   const { cohorts, trainees } = planCohorts({
     now: input.now,
     timeZone: input.timeZone,
     courses,
+    branches,
+    teachers,
   });
   const { rows: structure, profiles } = planStructure({
     organizationId: input.organizationId,
     now: input.now,
+    branches,
+    teachers,
     cohorts,
     trainees,
   });

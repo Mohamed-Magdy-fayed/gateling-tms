@@ -20,6 +20,7 @@ const FIXTURE_MEETINGS_ORIGIN = "https://meetings.example.test";
 
 export async function seedDemoGroup(input: {
   organizationId: string;
+  branchId: string;
   name: string;
   courseId: string | null;
   teacherId: string | null;
@@ -47,6 +48,7 @@ export async function seedDemoGroup(input: {
         .insert(GroupsTable)
         .values({
           organizationId: input.organizationId,
+          branchId: input.branchId,
           name: input.name,
           courseId: input.courseId,
           teacherId: input.teacherId,
@@ -105,6 +107,7 @@ export async function seedDemoSessionsForGroup(input: {
           .insert(SessionsTable)
           .values({
             organizationId: input.organizationId,
+            branchId: input.group.branchId,
             groupId: input.group.id,
             scheduledAt: occurrence.scheduledAt,
             // The same pairing the generator writes, so a later regeneration

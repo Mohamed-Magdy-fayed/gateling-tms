@@ -16,6 +16,7 @@ import type { DemoTraineeSeed } from "./data";
 
 export async function seedDemoTrainee(
   organizationId: string,
+  branchId: string,
   seed: DemoTraineeSeed,
 ): Promise<Trainee> {
   return seedIfMissing({
@@ -38,6 +39,7 @@ export async function seedDemoTrainee(
         .insert(TraineesTable)
         .values({
           organizationId,
+          branchId,
           name: seed.name,
           email: seed.email,
           phone: seed.phone,
@@ -51,6 +53,7 @@ export async function seedDemoTrainee(
 
 export async function seedDemoGroupStudent(
   organizationId: string,
+  branchId: string,
   groupId: string,
   traineeId: string,
 ) {
@@ -72,7 +75,7 @@ export async function seedDemoGroupStudent(
     insert: async () => {
       const [row] = await db
         .insert(GroupStudentsTable)
-        .values({ organizationId, groupId, traineeId })
+        .values({ organizationId, branchId, groupId, traineeId })
         .returning();
       return row;
     },
@@ -81,6 +84,7 @@ export async function seedDemoGroupStudent(
 
 export async function seedDemoEnrollment(input: {
   organizationId: string;
+  branchId: string;
   traineeId: string;
   courseId: string;
   status: EnrollmentStatus;
@@ -106,6 +110,7 @@ export async function seedDemoEnrollment(input: {
         .insert(EnrollmentsTable)
         .values({
           organizationId: input.organizationId,
+          branchId: input.branchId,
           traineeId: input.traineeId,
           courseId: input.courseId,
           status: input.status,
@@ -118,6 +123,7 @@ export async function seedDemoEnrollment(input: {
 
 export async function seedDemoEnrollmentLevel(input: {
   organizationId: string;
+  branchId: string;
   enrollmentId: string;
   levelId: string;
   status: "notStarted" | "inProgress" | "completed";
@@ -143,6 +149,7 @@ export async function seedDemoEnrollmentLevel(input: {
         .insert(EnrollmentLevelsTable)
         .values({
           organizationId: input.organizationId,
+          branchId: input.branchId,
           enrollmentId: input.enrollmentId,
           levelId: input.levelId,
           status: input.status,
@@ -156,6 +163,7 @@ export async function seedDemoEnrollmentLevel(input: {
 
 export async function seedDemoCertificate(input: {
   organizationId: string;
+  branchId: string;
   traineeId: string;
   courseId: string;
   groupId: string;
@@ -182,6 +190,7 @@ export async function seedDemoCertificate(input: {
         .insert(CertificatesTable)
         .values({
           organizationId: input.organizationId,
+          branchId: input.branchId,
           traineeId: input.traineeId,
           courseId: input.courseId,
           groupId: input.groupId,
@@ -226,6 +235,7 @@ export async function seedDemoAttendance(input: {
         .insert(SessionStudentsTable)
         .values({
           organizationId: input.organizationId,
+          branchId: input.session.branchId,
           sessionId: input.session.id,
           traineeId: input.traineeId,
           status: input.present ? "present" : "absent",

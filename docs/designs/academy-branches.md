@@ -1,6 +1,19 @@
 # Academy branches + "All branches" view
 
-Status: **proposed — awaiting Mohamed's approval** (2026-10-11)
+Status: **implemented** on `feat/academy-branches` (2026-10-12), to be merged in one go.
+
+### Where the build differs from this plan
+
+- `branches` has no `shortName` column — nothing needed one.
+- A non-admin member with **no** branch assignments sees every branch (how members behaved before
+  branches existed); assigning branches narrows them. Admins always see all.
+- Teacher availability is painted per branch, so on "All branches" the calendar asks you to pick a
+  branch in the switcher before editing it.
+- The headline student/course counts on the dashboard stay academy-wide (they are what the plan
+  limits measure); the per-branch split sits under them.
+- The Branch column/filter is on the four transactional lists (students, groups, enrollments,
+  certificates). A list's Branch filter is intersected with the request's branches on the server,
+  so it can only narrow.
 
 ## Decisions (from Mohamed)
 

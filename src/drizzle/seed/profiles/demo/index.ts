@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle";
-import { OrganizationsTable } from "@/drizzle/schema";
+import { DEFAULT_BRANCH_NAME, OrganizationsTable } from "@/drizzle/schema";
 import { countOrganizationUsage } from "@/features/core/organizations/server/usage";
 import { SEED_ORG_ID, SEED_TEACHER_ID } from "../../constants";
+import { seedBranch } from "../../lib/seed-branch";
 import { seedBaselineProfile } from "../baseline";
 import { seedDemoCourse } from "./content";
 import { DEMO_COURSES, DEMO_TRAINEES } from "./data";
@@ -41,12 +42,18 @@ export async function seedDemoProfile() {
     .where(eq(OrganizationsTable.id, SEED_ORG_ID))
     .limit(1);
 
+  // Two branches, so dev data exercises the switcher and the Branch
+  // columns: the English batches meet at Main, the business batch online.
+  const mainBranch = await seedBranch(organization.id, DEFAULT_BRANCH_NAME);
+  const onlineBranch = await seedBranch(organization.id, "Online");
+
   const [englishCourseSeed, businessCourseSeed] = DEMO_COURSES;
   const english = await seedDemoCourse(organization.id, englishCourseSeed);
   const business = await seedDemoCourse(organization.id, businessCourseSeed);
 
   const groupA = await seedDemoGroup({
     organizationId: organization.id,
+    branchId: mainBranch.id,
     name: "Beginner Batch A",
     courseId: english.course.id,
     teacherId: SEED_TEACHER_ID,
@@ -59,6 +66,7 @@ export async function seedDemoProfile() {
   });
   const groupB = await seedDemoGroup({
     organizationId: organization.id,
+    branchId: mainBranch.id,
     name: "Elementary Batch B",
     courseId: english.course.id,
     teacherId: SEED_TEACHER_ID,
@@ -71,6 +79,7 @@ export async function seedDemoProfile() {
   });
   const groupC = await seedDemoGroup({
     organizationId: organization.id,
+    branchId: onlineBranch.id,
     name: "Business Batch C",
     courseId: business.course.id,
     teacherId: SEED_TEACHER_ID,
@@ -114,10 +123,15 @@ export async function seedDemoProfile() {
 
   const trainees = [];
   for (const [index, traineeSeed] of DEMO_TRAINEES.entries()) {
-    const trainee = await seedDemoTrainee(organization.id, traineeSeed);
     const assignment = groupAssignments[index];
+    const trainee = await seedDemoTrainee(
+      organization.id,
+      assignment.group.branchId,
+      traineeSeed,
+    );
     await seedDemoGroupStudent(
       organization.id,
+      assignment.group.branchId,
       assignment.group.id,
       trainee.id,
     );
@@ -140,6 +154,7 @@ export async function seedDemoProfile() {
 
     const enrollment = await seedDemoEnrollment({
       organizationId: organization.id,
+      branchId: trainee.branchId,
       traineeId: trainee.id,
       courseId: assignment.course.course.id,
       status,
@@ -149,6 +164,7 @@ export async function seedDemoProfile() {
       const [firstLevelId, secondLevelId] = assignment.course.levelIds;
       await seedDemoEnrollmentLevel({
         organizationId: organization.id,
+        branchId: enrollment.branchId,
         enrollmentId: enrollment.id,
         levelId: firstLevelId,
         status: "completed",
@@ -156,6 +172,7 @@ export async function seedDemoProfile() {
       });
       await seedDemoEnrollmentLevel({
         organizationId: organization.id,
+        branchId: enrollment.branchId,
         enrollmentId: enrollment.id,
         levelId: secondLevelId,
         status: status === "completed" ? "completed" : "inProgress",
@@ -167,6 +184,7 @@ export async function seedDemoProfile() {
     if (status === "completed") {
       await seedDemoCertificate({
         organizationId: organization.id,
+        branchId: trainee.branchId,
         traineeId: trainee.id,
         courseId: assignment.course.course.id,
         groupId: assignment.group.id,
@@ -202,7 +220,7 @@ export async function seedDemoProfile() {
     .where(eq(OrganizationsTable.id, organization.id));
 
   console.info(
-    "Demo profile ready: 2 courses, 3 groups (%d sessions total), %d trainees.",
+    "Demo profile ready: 2 branches, 2 courses, 3 groups (%d sessions total), %d trainees.",
     totalSessionCount,
     trainees.length,
   );

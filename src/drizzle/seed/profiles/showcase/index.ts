@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
   AnswersTable,
+  BranchesTable,
   CertificatesTable,
   CoursesTable,
   EnrollmentLevelsTable,
@@ -13,7 +14,9 @@ import {
   GroupsTable,
   LecturesTable,
   LevelsTable,
+  OrganizationMembershipBranchesTable,
   OrganizationMembershipsTable,
+  OrganizationSettingsTable,
   OrganizationsTable,
   PaymentsTable,
   PlacementTestsTable,
@@ -41,6 +44,82 @@ import { planShowcase } from "./plan";
 import { advanceUntouched, insertMissing } from "./write";
 
 const TIME_ZONE = "Africa/Cairo";
+
+/**
+ * Bump when the showcase's shape changes in a way adding rows can't reach
+ * (v2: branches, a bigger staff, shorter courses). The next run deletes the
+ * Horizon academy and rebuilds it once — nothing outside it is touched.
+ */
+const SHOWCASE_DATA_VERSION = 2;
+/** Not an academy preference: the settings registry ignores unknown codes. */
+const SHOWCASE_DATA_VERSION_CODE = "seed.showcase.dataVersion";
+/** Only showcase-generated accounts live on these (reserved) domains. */
+const SHOWCASE_EMAIL_PATTERNS = [
+  "%@horizon-academy.example",
+  "%@students.horizon-academy.example",
+];
+
+/**
+ * Deletes an older version of the showcase so it can be rebuilt. The academy
+ * cascades to everything it owns; its teachers' and students' accounts are
+ * global, so they go by their reserved domains. The admin (a real account)
+ * is left alone.
+ */
+async function resetOutdatedShowcase() {
+  const [organization] = await db
+    .select({ id: OrganizationsTable.id })
+    .from(OrganizationsTable)
+    .where(eq(OrganizationsTable.id, SEED_SHOWCASE_ORG_ID))
+    .limit(1);
+  if (!organization) return;
+
+  const [version] = await db
+    .select({ value: OrganizationSettingsTable.value })
+    .from(OrganizationSettingsTable)
+    .where(
+      and(
+        eq(OrganizationSettingsTable.organizationId, SEED_SHOWCASE_ORG_ID),
+        eq(OrganizationSettingsTable.code, SHOWCASE_DATA_VERSION_CODE),
+      ),
+    )
+    .limit(1);
+  if (version?.value === SHOWCASE_DATA_VERSION) return;
+
+  console.info(
+    `showcase: data version ${String(version?.value ?? 1)} → ${SHOWCASE_DATA_VERSION}, rebuilding the academy.`,
+  );
+  await db
+    .delete(OrganizationsTable)
+    .where(eq(OrganizationsTable.id, SEED_SHOWCASE_ORG_ID));
+  await db
+    .delete(UsersTable)
+    .where(
+      or(
+        ...SHOWCASE_EMAIL_PATTERNS.map((pattern) =>
+          like(UsersTable.email, pattern),
+        ),
+      ),
+    );
+}
+
+async function recordDataVersion() {
+  await db
+    .insert(OrganizationSettingsTable)
+    .values({
+      organizationId: SEED_SHOWCASE_ORG_ID,
+      code: SHOWCASE_DATA_VERSION_CODE,
+      value: SHOWCASE_DATA_VERSION,
+      createdBy: SEED_SYSTEM_ACTOR,
+      updatedBy: SEED_SYSTEM_ACTOR,
+    })
+    .onConflictDoUpdate({
+      target: [
+        OrganizationSettingsTable.organizationId,
+        OrganizationSettingsTable.code,
+      ],
+      set: { value: SHOWCASE_DATA_VERSION, updatedBy: SEED_SYSTEM_ACTOR },
+    });
+}
 
 /**
  * The showcase admin is a real person who signs in with Google. Google sign-in
@@ -129,6 +208,7 @@ export async function seedShowcaseProfile() {
     : new Date();
   if (Number.isNaN(now.getTime()))
     throw new Error("SEED_NOW is not a valid date.");
+  await resetOutdatedShowcase();
   const adminId = await ensureAdmin();
   await ensureOrganization(adminId);
 
@@ -145,6 +225,12 @@ export async function seedShowcaseProfile() {
     OrganizationMembershipsTable,
     structure.memberships,
     "memberships",
+  );
+  await insertMissing(BranchesTable, structure.branches, "branches");
+  await insertMissing(
+    OrganizationMembershipBranchesTable,
+    structure.membershipBranches,
+    "teacher branches",
   );
   await insertMissing(
     TeacherAvailabilityTable,
@@ -172,6 +258,7 @@ export async function seedShowcaseProfile() {
     structure.enrollmentLevels,
     "level progress",
   );
+  await insertMissing(FormResponsesTable, activity.responses, "form responses");
   await insertMissing(
     PlacementTestsTable,
     structure.placementTests,
@@ -180,7 +267,6 @@ export async function seedShowcaseProfile() {
   await insertMissing(PaymentsTable, activity.payments, "payments");
   await insertMissing(SessionStudentsTable, activity.attendance, "attendance");
   await insertMissing(CertificatesTable, activity.certificates, "certificates");
-  await insertMissing(FormResponsesTable, activity.responses, "form responses");
   await insertMissing(TraineeNotesTable, activity.notes, "notes");
 
   await advanceUntouched(GroupsTable, structure.groups, ["status"], "groups");
@@ -205,9 +291,11 @@ export async function seedShowcaseProfile() {
   await advanceUntouched(
     PlacementTestsTable,
     structure.placementTests,
-    ["status", "completedAt", "assignedLevelId", "feedback"],
+    ["status", "completedAt", "assignedLevelId", "feedback", "responseId"],
     "placement tests",
   );
+
+  await recordDataVersion();
 
   const usage = await countOrganizationUsage(db, SEED_SHOWCASE_ORG_ID);
   await db
@@ -216,7 +304,8 @@ export async function seedShowcaseProfile() {
     .where(eq(OrganizationsTable.id, SEED_SHOWCASE_ORG_ID));
 
   console.info(
-    "Showcase ready: %d cohorts, %d trainees, %d classes, %d attendance records.",
+    "Showcase ready: %d branches, %d cohorts, %d trainees, %d classes, %d attendance records.",
+    structure.branches.length,
     plan.cohortCount,
     structure.trainees.length,
     structure.sessions.length,

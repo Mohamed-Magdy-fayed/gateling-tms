@@ -10,20 +10,34 @@ import type {
 import { SEED_SYSTEM_ACTOR } from "../../constants";
 import {
   QUESTION_BANK,
+  SHORT_ANSWER_PROMPT,
   SHOWCASE_COURSES,
   type ShowcaseCourse,
 } from "./catalog";
 import { stableId } from "./determinism";
 
 const QUESTIONS_PER_FORM = 5;
+/** The open question's weight: worth more than a multiple-choice one. */
+export const SHORT_ANSWER_POINTS = 2;
 
 /** The catalogue "existed" well before the first cohort opened. */
 export const CONTENT_CREATED_AT = new Date("2024-09-01T09:00:00Z");
 
-/** A form's questions with the id of the correct answer, for scoring responses. */
+/**
+ * A form's questions, for writing responses: choice questions with the id of
+ * the correct answer, and open ones that only a teacher can grade.
+ */
 export type ScoredForm = {
   id: string;
-  questions: { id: string; correctAnswerId: string; answerIds: string[] }[];
+  questions: (
+    | {
+        kind: "choice";
+        id: string;
+        correctAnswerId: string;
+        answerIds: string[];
+      }
+    | { kind: "open"; id: string; points: number }
+  )[];
 };
 
 export type PlannedCourse = {
@@ -78,6 +92,8 @@ export function planContent(organizationId: string): {
     type: "quiz" | "final" | "placement";
     courseId: string;
     levelId?: string;
+    /** Adds the open question no automatic pass can score. */
+    withOpenQuestion?: boolean;
   }): ScoredForm => {
     const formId = stableId(`form:${input.key}`);
     const sectionId = stableId(`form-section:${input.key}`);
@@ -130,9 +146,30 @@ export function planContent(organizationId: string): {
         return answerId;
       });
       questions.push({
+        kind: "choice",
         id: questionId,
         correctAnswerId: answerIds[bankItem.correct],
         answerIds,
+      });
+    }
+    if (input.withOpenQuestion) {
+      const questionId = stableId(`question:${input.key}:open`);
+      rows.questions.push({
+        id: questionId,
+        organizationId,
+        sectionId,
+        text: SHORT_ANSWER_PROMPT,
+        // No accepted wordings on purpose: it waits for a teacher.
+        type: "short_answer",
+        points: SHORT_ANSWER_POINTS,
+        isRequired: true,
+        order: QUESTIONS_PER_FORM,
+        ...stamp,
+      });
+      questions.push({
+        kind: "open",
+        id: questionId,
+        points: SHORT_ANSWER_POINTS,
       });
     }
     return { id: formId, questions };
@@ -160,7 +197,8 @@ export function planContent(organizationId: string): {
         order: levelIndex,
         ...stamp,
       });
-      const lectureIds = level.lectures.map((name, lectureIndex) => {
+      const lectures = level.lectures.slice(0, course.sessionsPerLevel);
+      const lectureIds = lectures.map((name, lectureIndex) => {
         const lectureId = stableId(`lecture:${levelKey}:${lectureIndex}`);
         rows.lectures.push({
           id: lectureId,
@@ -188,6 +226,7 @@ export function planContent(organizationId: string): {
       title: `${course.name} Final Exam`,
       type: "final",
       courseId,
+      withOpenQuestion: true,
     });
     const placementForm = addForm({
       key: `placement:${course.key}`,

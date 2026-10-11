@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SEED_SHOWCASE_ORG_ID } from "@/drizzle/seed/constants";
+import { SHOWCASE_COURSES } from "@/drizzle/seed/profiles/showcase/catalog";
 import { planShowcase } from "@/drizzle/seed/profiles/showcase/plan";
+import { TEACHERS_PER_BRANCH } from "@/drizzle/seed/profiles/showcase/teachers";
 
 const NOW = new Date("2026-10-11T12:00:00Z");
 const plan = (now: Date) =>
@@ -265,11 +267,167 @@ describe("showcase seed plan", () => {
   });
 
   it("never collects more than the course fee", () => {
+    // A one-to-one class costs at most 1.5× the dearest course.
+    const ceiling = Math.max(...SHOWCASE_COURSES.map((c) => c.price)) * 1.5;
     const paid = new Map<string, number>();
     for (const pay of p.activity.payments) {
       const key = pay.enrollmentId ?? "";
       paid.set(key, (paid.get(key) ?? 0) + pay.amount);
     }
-    for (const total of paid.values()) expect(total).toBeLessThanOrEqual(5500);
+    for (const total of paid.values())
+      expect(total).toBeLessThanOrEqual(ceiling);
+  });
+
+  describe("branches (v2)", () => {
+    const s = p.structure;
+    const a = p.activity;
+    const branchOf = <T extends { id?: string; branchId: string }>(rows: T[]) =>
+      new Map(rows.map((r) => [r.id, r.branchId]));
+
+    it("has three branches, each with its own teaching staff", () => {
+      expect(s.branches.map((b) => b.name)).toEqual([
+        "Nasr City",
+        "Maadi",
+        "Online",
+      ]);
+      expect(s.membershipBranches).toHaveLength(3 * TEACHERS_PER_BRANCH);
+      for (const branch of s.branches) {
+        const staff = s.membershipBranches.filter(
+          (m) => m.branchId === branch.id,
+        );
+        expect(staff).toHaveLength(TEACHERS_PER_BRANCH);
+      }
+      // Every teacher is free on all six working days, in their branch.
+      const days = new Map<string, Set<number>>();
+      for (const slot of s.availability) {
+        const set = days.get(slot.teacherId) ?? new Set();
+        set.add(slot.day);
+        days.set(slot.teacherId, set);
+      }
+      for (const set of days.values()) expect(set.size).toBe(6);
+    });
+
+    it("keeps every row in its parent's branch", () => {
+      const groups = branchOf(s.groups);
+      const trainees = branchOf(s.trainees);
+      const enrollments = branchOf(s.enrollments);
+      const sessions = branchOf(s.sessions);
+      const same = (label: string, pairs: [string, string | undefined][]) => {
+        for (const [own, parent] of pairs) expect(own, label).toBe(parent);
+      };
+      same(
+        "session/group",
+        s.sessions.map((x) => [x.branchId, groups.get(x.groupId)]),
+      );
+      same(
+        "roster/group",
+        s.groupStudents.map((x) => [x.branchId, groups.get(x.groupId)]),
+      );
+      same(
+        "roster/trainee",
+        s.groupStudents.map((x) => [x.branchId, trainees.get(x.traineeId)]),
+      );
+      same(
+        "enrollment/trainee",
+        s.enrollments.map((x) => [x.branchId, trainees.get(x.traineeId)]),
+      );
+      same(
+        "level/enrollment",
+        s.enrollmentLevels.map((x) => [
+          x.branchId,
+          enrollments.get(x.enrollmentId),
+        ]),
+      );
+      same(
+        "placement/trainee",
+        s.placementTests.map((x) => [x.branchId, trainees.get(x.traineeId)]),
+      );
+      same(
+        "payment/enrollment",
+        a.payments.map((x) => [
+          x.branchId,
+          enrollments.get(x.enrollmentId ?? ""),
+        ]),
+      );
+      same(
+        "attendance/session",
+        a.attendance.map((x) => [x.branchId, sessions.get(x.sessionId)]),
+      );
+      same(
+        "certificate/group",
+        a.certificates.map((x) => [x.branchId, groups.get(x.groupId ?? "")]),
+      );
+      same(
+        "note/trainee",
+        a.notes.map((x) => [x.branchId, trainees.get(x.traineeId)]),
+      );
+    });
+
+    it("runs 4–8 class courses in one-to-one groups or groups of 5–10", () => {
+      for (const group of s.groups) {
+        expect(group.sessionCount).toBeGreaterThanOrEqual(4);
+        expect(group.sessionCount).toBeLessThanOrEqual(8);
+      }
+      // Group size = its roster.
+      const seats = new Map<string, number>();
+      for (const r of s.groupStudents)
+        seats.set(r.groupId, (seats.get(r.groupId) ?? 0) + 1);
+      const sizes = [...seats.values()];
+      expect(sizes.some((n) => n === 1)).toBe(true);
+      expect(sizes.some((n) => n >= 5)).toBe(true);
+      for (const n of sizes) expect(n === 1 || n <= 10).toBe(true);
+    });
+
+    it("has paused and cancelled groups whose later classes are called off", () => {
+      for (const status of ["paused", "cancelled"] as const) {
+        const stopped = s.groups.filter((g) => g.status === status);
+        expect(stopped.length, status).toBeGreaterThan(0);
+        for (const group of stopped) {
+          const classes = s.sessions.filter((x) => x.groupId === group.id);
+          expect(classes.some((x) => x.status === "scheduled")).toBe(false);
+          expect(classes.some((x) => x.status === "cancelled")).toBe(true);
+        }
+      }
+    });
+
+    it("has final exams awaiting a grade and ones already graded", () => {
+      const scored = a.responses.filter((r) => r.score !== null);
+      const pending = a.responses.filter((r) => r.score === null);
+      expect(scored.length).toBeGreaterThan(0);
+      expect(pending.length).toBeGreaterThan(0);
+      for (const r of pending) {
+        expect(r.answers?.some((x) => typeof x.text === "string")).toBe(true);
+      }
+    });
+
+    it("links submitted placement tests to their responses", () => {
+      const responses = new Set(a.responses.map((r) => r.id));
+      const submitted = s.placementTests.filter((t) => t.responseId);
+      expect(submitted.length).toBeGreaterThan(50);
+      for (const t of submitted) {
+        expect(responses.has(t.responseId ?? "")).toBe(true);
+        expect(t.status).toBe("completed");
+      }
+    });
+
+    it("keeps every working day busy in every branch", () => {
+      const from = NOW.getTime() - 28 * 86_400_000;
+      const groups = branchOf(s.groups);
+      const busy = new Set<string>();
+      for (const x of s.sessions) {
+        const at = x.scheduledAt.getTime();
+        if (at < from || at > NOW.getTime() || x.status === "cancelled")
+          continue;
+        // Cairo is UTC+2/+3; noon UTC on the same date is safely that day.
+        const day = new Date(at + 3 * 3_600_000).getUTCDay();
+        busy.add(`${groups.get(x.groupId)}|${day}`);
+      }
+      for (const branch of s.branches)
+        for (const day of [6, 0, 1, 2, 3, 4])
+          expect(
+            busy.has(`${branch.id}|${day}`),
+            `${branch.name} day ${day}`,
+          ).toBe(true);
+    });
   });
 });
