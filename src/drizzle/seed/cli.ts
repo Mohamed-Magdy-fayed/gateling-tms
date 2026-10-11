@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { config as loadEnv } from "dotenv";
+import { showcaseSeedDecision } from "./profiles/showcase/guard";
 
 loadEnv({
   path: process.env.DOTENV_CONFIG_PATH ?? path.resolve(process.cwd(), ".env"),
@@ -29,6 +30,14 @@ const commands = {
     action: async () => {
       const { runSeedProfile } = await import("@/drizzle/seed");
       await runSeedProfile("performance");
+    },
+  },
+  showcase: {
+    description:
+      "Seed the two-year Horizon Language Academy sales demo (preview only; skipped in production). Additive: re-adds missing rows, never deletes, never overwrites edited rows.",
+    action: async () => {
+      const { runSeedProfile } = await import("@/drizzle/seed");
+      await runSeedProfile("showcase");
     },
   },
   clear: {
@@ -68,6 +77,18 @@ async function run() {
   if (commandName === "help") {
     printHelp();
     return;
+  }
+
+  // Checked before anything imports the database (and validates the env):
+  // a production build that runs `npm run seed` must be a clean no-op.
+  if (commandName === "showcase") {
+    const decision = showcaseSeedDecision(process.env);
+    if (!decision.allowed) {
+      console.log(
+        `Seed skipped: showcase runs only on preview (${decision.reason}).`,
+      );
+      return;
+    }
   }
 
   const command = commands[commandName];

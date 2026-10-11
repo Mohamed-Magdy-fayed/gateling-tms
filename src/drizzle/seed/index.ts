@@ -9,6 +9,7 @@ import {
 import { seedBaselineProfile } from "./profiles/baseline";
 import { seedDemoProfile } from "./profiles/demo";
 import { seedPerformanceProfile } from "./profiles/performance";
+import { seedShowcaseProfile } from "./profiles/showcase";
 
 const profileRunners: Record<
   SeedProfileName,
@@ -17,6 +18,7 @@ const profileRunners: Record<
   baseline: seedBaselineProfile,
   demo: seedDemoProfile,
   performance: seedPerformanceProfile,
+  showcase: seedShowcaseProfile,
 };
 
 export {

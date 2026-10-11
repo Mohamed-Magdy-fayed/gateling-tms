@@ -67,13 +67,57 @@ reasoning) — combining the two would blow past the caps in a way that no longe
 "just under the limit." Deliberately shallow beyond that (no levels/lectures/groups/enrollments):
 the point is counter/query volume and the limit UI, not a second realistic-academy dataset.
 
+### 4. `showcase` (preview only)
+
+The sales-demo academy: **Horizon Language Academy** (short code `HORIZON`, Enterprise plan,
+Africa/Cairo, EGP), with two years of history ending today. Run with `npm run seed` (or
+`npm run db:seed:showcase`); the preview build runs it on every deploy.
+
+- **Who signs in:** `mohamed.ahmed.sc2@gmail.com` is its admin, through Google sign-in. If that
+  user isn't in the database yet the seed adds a password-less row, and Google sign-in links to it
+  by email. No seeded password reaches this org — teachers and student accounts have none.
+- **What's in it:** 6 courses (13 levels, 86 lectures, a published quiz per level, a final exam and
+  placement test per course), 8 teachers with weekly availability, and a new cohort every 5 days
+  since 2024-10-05: ~2,000 trainees, ~150 groups, ~2,900 classes, ~37,000 attendance records
+  (manual before June 2025, Meetings-joined after, with lateness), ~3,500 payments in installments
+  across every method, ~1,800 certificates, quiz/final-exam responses from the 1-in-6 trainees with
+  a portal account, placement tests and trainee notes. Every enrollment status is present at once:
+  upcoming cohorts in placement and waiting, running ones ongoing, past ones completed, plus
+  dropped (`cancelled`) and `postponed` seats.
+- **Only preview gets it — fail-closed.** On Vercel it runs only when `VERCEL_ENV=preview`;
+  production, development, or a missing `VERCEL_ENV` all skip with exit 0, decided in `cli.ts`
+  before anything touches the database (`showcase/guard.ts`, tested in
+  `tests/seed-showcase-guard.test.ts`). Off Vercel (local Docker) it runs unless the env claims
+  production. So one build command can serve both environments.
+
+How it stays safe to run on every build — different from `seedIfMissing`'s natural keys, because
+2,000 trainees and 37,000 attendance rows can't afford a lookup per row:
+
+1. **Deterministic history.** Every id is a UUID derived from a stable key (`stableId` in
+   `showcase/determinism.ts`), and every "random" choice comes from a PRNG seeded by that key. The
+   history from the fixed anchor date never changes; only how much of it exists, and each row's
+   state, depend on the clock. `planShowcase()` is a pure function of `now` (unit-tested in
+   `tests/seed-showcase-plan.test.ts`).
+2. **Add what's missing.** For each table the writer reads which planned ids already exist and
+   batch-inserts the rest (`on conflict do nothing`). Rows the app deleted come back on the next
+   build, children included; rows anyone added in the app are never looked at; nothing is deleted.
+3. **Move untouched rows forward in time.** A class that has now happened becomes `completed`, a
+   finished cohort's group and enrollments become `completed`, level progress advances. Seeded rows
+   are written with `updatedAt = createdAt`; an edit in the app bumps `updatedAt`, and the update
+   only matches rows where the two are still equal — **an edited row is never overwritten**.
+
+So each deploy appends the classes, attendance, payments, certificates and new cohorts that have
+"happened" since the last one, and the demo always looks current. `SEED_NOW=<ISO date>` pretends
+the run happens at another moment (for local checks only). A run with nothing to do takes ~5s; the
+first run on an empty database ~25s.
+
 ## Directory Structure
 
 ```text
 src/drizzle/seed/
   base.ts              # seedIfMissing — the idempotency primitive every profile uses
   clear-db.ts           # destructive, host-guarded, never called from the default flow
-  cli.ts                  # npm run db:seed[:demo|:performance|:clear]
+  cli.ts                  # npm run db:seed[:demo|:performance|:showcase|:clear], npm run seed
   constants.ts              # natural keys / well-known ids shared across profiles
   index.ts                   # profileRunners registry
   lib/
@@ -87,6 +131,8 @@ src/drizzle/seed/
       trainees.ts                  # trainees/enrollments/attendance/certificates
       data.ts                       # hand-authored literal content
     performance.ts
+    showcase/                  # preview sales demo: determinism, catalog, content,
+                               # cohorts, lifecycle, records, activity, plan, write
 ```
 
 ## Idempotency (the safety rule that matters here)

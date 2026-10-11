@@ -13,6 +13,10 @@ export const listGroupsInput = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
+  // Each list is "any of these"; an empty or absent list means no filter.
+  statuses: z.array(z.enum(groupStatusValues)).max(20).optional(),
+  courseIds: z.array(idSchema).max(100).optional(),
+  teacherIds: z.array(idSchema).max(100).optional(),
 });
 
 /** Zero-padded 24h "HH:mm" — the same shape schedule.ts expands. */

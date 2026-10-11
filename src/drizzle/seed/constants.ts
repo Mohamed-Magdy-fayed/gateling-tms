@@ -31,7 +31,21 @@ export const SEED_PERFORMANCE_ORG_NAME = "Gateling-TMS Performance Org";
 export const SEED_PERFORMANCE_ADMIN_EMAIL = "perf-admin@gateling-tms.dev";
 export const SEED_PERFORMANCE_ADMIN_ID = "00000000-0000-0000-0000-0000000000b2";
 
-export const SEED_PROFILE_NAMES = ["baseline", "demo", "performance"] as const;
+export const SEED_PROFILE_NAMES = [
+  "baseline",
+  "demo",
+  "performance",
+  "showcase",
+] as const;
 export type SeedProfileName = (typeof SEED_PROFILE_NAMES)[number];
 
 export const DEFAULT_SEED_PROFILE: SeedProfileName = "baseline";
+
+// `showcase` is the two-year sales-demo academy, run on every preview build.
+// Its own organization, administered by Mohamed's real (Google sign-in)
+// account — no seeded password exists for it, unlike the dev accounts above.
+export const SEED_SHOWCASE_ORG_ID = "00000000-0000-0000-0000-0000000000c1";
+export const SEED_SHOWCASE_ORG_SHORT_CODE = "HORIZON";
+export const SEED_SHOWCASE_ORG_NAME = "Horizon Language Academy";
+export const SEED_SHOWCASE_ADMIN_EMAIL = "mohamed.ahmed.sc2@gmail.com";
+export const SEED_SHOWCASE_ADMIN_NAME = "Mohamed Magdy Fayed";

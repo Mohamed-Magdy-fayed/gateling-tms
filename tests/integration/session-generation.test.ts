@@ -140,6 +140,43 @@ describe("session generation", () => {
     expect(await listSessions(tenant.organizationId, groupId)).toHaveLength(0);
   });
 
+  test("cancelling a group clears its future sessions; reactivating restores them", async () => {
+    const groupId = await createGroupWithSchedule(tenant);
+    const args = { db, organizationId: tenant.organizationId, groupId };
+
+    await regenerateGroupSessions(args);
+    const past = new Date(Date.now() - A_WEEK_MS);
+    await db.insert(SessionsTable).values({
+      organizationId: tenant.organizationId,
+      groupId,
+      scheduledAt: past,
+      durationMinutes: 90,
+      status: "completed",
+    });
+
+    await db
+      .update(GroupsTable)
+      .set({ status: "cancelled" })
+      .where(eq(GroupsTable.id, groupId));
+    const cancelled = await regenerateGroupSessions(args);
+
+    // The six planned classes leave the calendar; the one that already
+    // happened stays.
+    expect(cancelled).toEqual({ removed: 6, written: 0 });
+    const remaining = await listSessions(tenant.organizationId, groupId);
+    expect(remaining.map((s) => s.scheduledAt.getTime())).toEqual([
+      past.getTime(),
+    ]);
+
+    await db
+      .update(GroupsTable)
+      .set({ status: "active" })
+      .where(eq(GroupsTable.id, groupId));
+    await regenerateGroupSessions(args);
+
+    expect(await listSessions(tenant.organizationId, groupId)).toHaveLength(7);
+  });
+
   test("leaves history and started classes alone", async () => {
     const groupId = await createGroupWithSchedule(tenant);
 
