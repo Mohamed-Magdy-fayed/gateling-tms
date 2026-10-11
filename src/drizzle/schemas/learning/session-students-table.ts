@@ -9,7 +9,11 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { OrganizationsTable, UsersTable } from "@/drizzle/schemas/auth";
+import {
+  BranchesTable,
+  OrganizationsTable,
+  UsersTable,
+} from "@/drizzle/schemas/auth";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { SessionsTable } from "./sessions-table";
 import { TraineesTable } from "./trainees-table";
@@ -48,6 +52,8 @@ export const SessionStudentsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     sessionId: uuid().notNull(),
     traineeId: uuid().notNull(),
     status: attendanceStatusEnum().notNull(),
@@ -69,6 +75,12 @@ export const SessionStudentsTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("session_students_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "session_students_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("session_students_organization_id_idx").on(table.organizationId),
     index("session_students_session_id_idx").on(table.sessionId),
     index("session_students_trainee_id_idx").on(table.traineeId),

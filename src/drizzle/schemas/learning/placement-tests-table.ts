@@ -10,7 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { FormResponsesTable, FormsTable } from "@/drizzle/schemas/assessment";
-import { OrganizationsTable } from "@/drizzle/schemas/auth";
+import { BranchesTable, OrganizationsTable } from "@/drizzle/schemas/auth";
 import { LevelsTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { TraineesTable } from "./trainees-table";
@@ -45,6 +45,8 @@ export const PlacementTestsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     traineeId: uuid().notNull(),
     formId: uuid().references(() => FormsTable.id, { onDelete: "set null" }),
     assignedLevelId: uuid().references(() => LevelsTable.id, {
@@ -65,6 +67,12 @@ export const PlacementTestsTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("placement_tests_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "placement_tests_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("placement_tests_organization_id_idx").on(table.organizationId),
     index("placement_tests_trainee_id_idx").on(table.traineeId),
     index("placement_tests_status_idx").on(table.status),

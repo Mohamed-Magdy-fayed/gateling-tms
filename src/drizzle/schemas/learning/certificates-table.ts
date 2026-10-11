@@ -8,7 +8,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { OrganizationsTable } from "@/drizzle/schemas/auth";
+import { BranchesTable, OrganizationsTable } from "@/drizzle/schemas/auth";
 import { CoursesTable } from "@/drizzle/schemas/content";
 import { createdAt, id } from "@/drizzle/schemas/helpers";
 import { GroupsTable } from "./groups-table";
@@ -34,6 +34,8 @@ export const CertificatesTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     traineeId: uuid().notNull(),
     courseId: uuid().references(() => CoursesTable.id, {
       onDelete: "set null",
@@ -47,6 +49,12 @@ export const CertificatesTable = pgTable(
     createdAt,
   },
   (table) => [
+    index("certificates_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "certificates_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("certificates_organization_id_idx").on(table.organizationId),
     index("certificates_trainee_id_idx").on(table.traineeId),
     unique("certificates_organization_id_id_unique").on(

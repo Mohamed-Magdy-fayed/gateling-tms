@@ -8,7 +8,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { OrganizationsTable } from "@/drizzle/schemas/auth";
+import { BranchesTable, OrganizationsTable } from "@/drizzle/schemas/auth";
 import { LevelsTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { EnrollmentsTable } from "./enrollments-table";
@@ -33,6 +33,8 @@ export const EnrollmentLevelsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     enrollmentId: uuid().notNull(),
     levelId: uuid().notNull(),
     status: enrollmentLevelStatusEnum().notNull().default("notStarted"),
@@ -41,6 +43,12 @@ export const EnrollmentLevelsTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("enrollment_levels_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "enrollment_levels_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("enrollment_levels_organization_id_idx").on(table.organizationId),
     index("enrollment_levels_enrollment_id_idx").on(table.enrollmentId),
     unique("enrollment_levels_enrollment_id_level_id_unique").on(

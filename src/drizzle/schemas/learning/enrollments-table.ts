@@ -7,7 +7,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { OrganizationsTable } from "@/drizzle/schemas/auth";
+import { BranchesTable, OrganizationsTable } from "@/drizzle/schemas/auth";
 import { CoursesTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { TraineesTable } from "./trainees-table";
@@ -36,6 +36,8 @@ export const EnrollmentsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     traineeId: uuid().notNull(),
     courseId: uuid().notNull(),
     status: enrollmentStatusEnum().notNull().default("waiting"),
@@ -43,6 +45,12 @@ export const EnrollmentsTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("enrollments_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "enrollments_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("enrollments_organization_id_idx").on(table.organizationId),
     index("enrollments_trainee_id_idx").on(table.traineeId),
     index("enrollments_course_id_idx").on(table.courseId),

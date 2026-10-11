@@ -1,6 +1,17 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, unique, uuid, varchar } from "drizzle-orm/pg-core";
-import { OrganizationsTable, UsersTable } from "@/drizzle/schemas/auth";
+import {
+  foreignKey,
+  index,
+  pgTable,
+  unique,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+import {
+  BranchesTable,
+  OrganizationsTable,
+  UsersTable,
+} from "@/drizzle/schemas/auth";
 import {
   createdAt,
   createdBy,
@@ -24,6 +35,8 @@ export const TraineesTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     name: varchar({ length: 256 }).notNull(),
     phone: varchar({ length: 32 }),
     email: varchar({ length: 256 }),
@@ -36,6 +49,12 @@ export const TraineesTable = pgTable(
     deletedBy,
   },
   (table) => [
+    index("trainees_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "trainees_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("trainees_organization_id_idx").on(table.organizationId),
     // Lets child tables (enrollments, group_students, placement_tests,
     // certificates) declare a composite (organizationId, traineeId) foreign

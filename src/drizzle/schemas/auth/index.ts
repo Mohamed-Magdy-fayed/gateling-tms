@@ -1,4 +1,5 @@
 export * from "./biometric-credentials-table";
+export * from "./branches-table";
 export * from "./organization-memberships-table";
 export * from "./organizations-table";
 export * from "./user-credentials-table";

@@ -9,6 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import {
+  BranchesTable,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UsersTable,
@@ -33,6 +34,8 @@ export const TeacherAvailabilityTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     teacherId: uuid()
       .notNull()
       .references(() => UsersTable.id, { onDelete: "cascade" }),
@@ -45,6 +48,12 @@ export const TeacherAvailabilityTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("teacher_availability_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "teacher_availability_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("teacher_availability_organization_id_idx").on(table.organizationId),
     index("teacher_availability_teacher_id_idx").on(table.teacherId),
     // Availability is a property of the membership, not the user: removing

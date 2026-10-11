@@ -10,7 +10,11 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { OrganizationsTable, UsersTable } from "@/drizzle/schemas/auth";
+import {
+  BranchesTable,
+  OrganizationsTable,
+  UsersTable,
+} from "@/drizzle/schemas/auth";
 import { LecturesTable } from "@/drizzle/schemas/content";
 import { createdAt, id, updatedAt } from "@/drizzle/schemas/helpers";
 import { GroupsTable } from "./groups-table";
@@ -36,6 +40,8 @@ export const SessionsTable = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => OrganizationsTable.id, { onDelete: "cascade" }),
+    // The branch this row belongs to (docs/designs/academy-branches.md).
+    branchId: uuid().notNull(),
     groupId: uuid().notNull(),
     scheduledAt: timestamp({ withTimezone: true }).notNull(),
     durationMinutes: integer().notNull(),
@@ -85,6 +91,12 @@ export const SessionsTable = pgTable(
     updatedAt,
   },
   (table) => [
+    index("sessions_branch_id_idx").on(table.branchId),
+    foreignKey({
+      name: "sessions_organization_branch_fk",
+      columns: [table.organizationId, table.branchId],
+      foreignColumns: [BranchesTable.organizationId, BranchesTable.id],
+    }),
     index("sessions_organization_id_idx").on(table.organizationId),
     index("sessions_group_id_idx").on(table.groupId),
     index("sessions_scheduled_at_idx").on(table.scheduledAt),
