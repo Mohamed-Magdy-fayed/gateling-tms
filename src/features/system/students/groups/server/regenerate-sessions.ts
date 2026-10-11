@@ -1,11 +1,23 @@
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db as database } from "@/drizzle";
 import {
+  type GroupStatus,
   GroupsTable,
   OrganizationsTable,
   SessionsTable,
 } from "@/drizzle/schema";
 import { generateSessionOccurrences } from "./schedule";
+
+/**
+ * A group in one of these states has no classes left to hold, so it plans no
+ * occurrences at all — which sends it down the same path as a cleared
+ * schedule: every future, unstarted session is removed, and anything that
+ * already happened stays. Reactivating the group regenerates them.
+ */
+const endedGroupStatuses: ReadonlySet<GroupStatus> = new Set([
+  "cancelled",
+  "completed",
+]);
 
 /**
  * A database handle that can open a transaction — the app's `db` singleton, or
@@ -66,6 +78,7 @@ export async function regenerateGroupSessions({
     const [group] = await trx
       .select({
         id: GroupsTable.id,
+        status: GroupsTable.status,
         schedule: GroupsTable.schedule,
         startDate: GroupsTable.startDate,
         sessionCount: GroupsTable.sessionCount,
@@ -88,12 +101,14 @@ export async function regenerateGroupSessions({
     // regenerate, and retrying will never change that.
     if (!group) return emptyRegeneration;
 
-    const occurrences = generateSessionOccurrences({
-      schedule: group.schedule,
-      startDate: group.startDate,
-      sessionCount: group.sessionCount,
-      timeZone: group.timeZone,
-    });
+    const occurrences = endedGroupStatuses.has(group.status)
+      ? []
+      : generateSessionOccurrences({
+          schedule: group.schedule,
+          startDate: group.startDate,
+          sessionCount: group.sessionCount,
+          timeZone: group.timeZone,
+        });
 
     const keptTimes = occurrences.map((o) => o.scheduledAt);
     // One "now" for the whole transaction, so the delete below and the

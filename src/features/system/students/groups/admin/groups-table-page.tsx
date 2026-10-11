@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type {
+  ColumnFiltersState,
   ColumnPinningState,
   RowSelectionState,
   VisibilityState,
@@ -18,6 +19,7 @@ import {
   DataTable,
   type DataTableControlledState,
   DataTableExportButton,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
@@ -26,6 +28,7 @@ import {
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
+import { type GroupStatus, groupStatusValues } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
   EntityExportButton,
@@ -42,6 +45,21 @@ import {
 } from "./components";
 
 type RowAction = { row: GroupListRow; variant: GroupRowActionVariant } | null;
+
+/** The values picked in one faceted filter; empty when none are. */
+function selectedFilterValues(
+  filters: ColumnFiltersState,
+  columnId: string,
+): string[] {
+  const value = filters.find((filter) => filter.id === columnId)?.value;
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function isGroupStatus(value: string): value is GroupStatus {
+  return (groupStatusValues as readonly string[]).includes(value);
+}
 
 export function GroupsTablePage() {
   const trpc = useTRPC();
@@ -81,8 +99,56 @@ export function GroupsTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      statuses: selectedFilterValues(columnFilters, "status").filter(
+        isGroupStatus,
+      ),
+      courseIds: selectedFilterValues(columnFilters, "courseName"),
+      teacherIds: selectedFilterValues(columnFilters, "teacherName"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
+  );
+
+  // Filter options. The course and teacher filters hold ids even though their
+  // columns display names — the server filters on the id columns.
+  const { data: courses } = useQuery(
+    trpc.courses.list.queryOptions({ page: 1, perPage: 100, sorting: [] }),
+  );
+  const { data: members } = useQuery(
+    trpc.organizations.members.list.queryOptions({
+      page: 1,
+      perPage: 100,
+      sorting: [],
+    }),
+  );
+  const statusOptions = useMemo(
+    () =>
+      groupStatusValues.map((status) => ({
+        value: status,
+        label: t(`groups.statusOptions.${status}`),
+      })),
+    [t],
+  );
+  const courseOptions = useMemo(
+    () =>
+      (courses?.rows ?? []).map((course) => ({
+        value: course.id,
+        label: course.name,
+      })),
+    [courses],
+  );
+  const teacherOptions = useMemo(
+    () =>
+      (members?.rows ?? []).map((member) => ({
+        value: member.userId,
+        label: member.name || member.email || member.userId,
+      })),
+    [members],
   );
 
   const { data, isFetching } = useQuery({
@@ -167,6 +233,25 @@ export function GroupsTablePage() {
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("groups.searchHint")}
+            filterSlot={
+              <>
+                <DataTableFacetedFilter
+                  column={table.getColumn("status")}
+                  title={t("groups.status")}
+                  options={statusOptions}
+                />
+                <DataTableFacetedFilter
+                  column={table.getColumn("courseName")}
+                  title={t("groups.course")}
+                  options={courseOptions}
+                />
+                <DataTableFacetedFilter
+                  column={table.getColumn("teacherName")}
+                  title={t("groups.teacher")}
+                  options={teacherOptions}
+                />
+              </>
+            }
           >
             <DataTableExportButton
               table={table}
