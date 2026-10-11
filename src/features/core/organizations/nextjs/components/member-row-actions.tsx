@@ -1,7 +1,12 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MoreHorizontalIcon, ShieldIcon, Trash2Icon } from "lucide-react";
+import {
+  MapPinIcon,
+  MoreHorizontalIcon,
+  ShieldIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +34,14 @@ export type SetMemberRowAction = (row: OrganizationMemberRow | null) => void;
 type MemberRowActionsProps = {
   row: OrganizationMemberRow;
   setRemoveTarget: SetMemberRowAction;
+  /** Absent when the academy has a single branch. */
+  setBranchesTarget?: SetMemberRowAction;
 };
 
 export function MemberRowActions({
   row,
   setRemoveTarget,
+  setBranchesTarget,
 }: MemberRowActionsProps) {
   const { t } = useTranslation();
   const trpc = useTRPC();
@@ -103,6 +111,13 @@ export function MemberRowActions({
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        {/* Admins always see every branch, so there is nothing to assign. */}
+        {setBranchesTarget && row.role !== "admin" ? (
+          <DropdownMenuItem onClick={() => setBranchesTarget(row)}>
+            <MapPinIcon className="size-3.5" aria-hidden />
+            {t("organizations.members.editBranches")}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={updateRoleMut.isPending}

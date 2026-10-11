@@ -3,6 +3,8 @@ import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { likeContains } from "@/drizzle/lib/search";
 import {
+  BranchesTable,
+  OrganizationMembershipBranchesTable,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UsersTable,
@@ -10,7 +12,9 @@ import {
 } from "@/drizzle/schema";
 import { hashTokenValue } from "@/features/core/auth/core/token";
 import type { TRPCContext } from "@/integrations/trpc/init";
+import { resolveBranchAccess } from "@/integrations/trpc/org-access";
 import { CLIENT_TABLE_ROW_LIMIT } from "@/lib/list-limits";
+import { loadMemberBranchIds } from "./branches";
 import { PLAN_LIMITS } from "./limits";
 import type { InviteMemberInput, ListMembersInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -104,12 +108,65 @@ export async function listMyOrganizations(ctx: TRPCContext) {
     },
   });
 
-  return memberships.map((membership) => ({
-    id: membership.organization.id,
-    name: membership.organization.name,
-    plan: membership.organization.plan,
-    role: membership.role,
-  }));
+  const organizationIds = memberships.map((m) => m.organization.id);
+  const [branches, assignments] = organizationIds.length
+    ? await Promise.all([
+        ctx.db
+          .select({
+            id: BranchesTable.id,
+            organizationId: BranchesTable.organizationId,
+            name: BranchesTable.name,
+            isActive: BranchesTable.isActive,
+          })
+          .from(BranchesTable)
+          .where(inArray(BranchesTable.organizationId, organizationIds))
+          .orderBy(asc(BranchesTable.createdAt), asc(BranchesTable.name)),
+        ctx.db
+          .select({ branchId: OrganizationMembershipBranchesTable.branchId })
+          .from(OrganizationMembershipBranchesTable)
+          .where(
+            and(
+              eq(OrganizationMembershipBranchesTable.userId, session.user.id),
+              inArray(
+                OrganizationMembershipBranchesTable.organizationId,
+                organizationIds,
+              ),
+            ),
+          ),
+      ])
+    : [[], []];
+  const assignedBranchIds = assignments.map((a) => a.branchId);
+
+  // Same rule as orgProcedure, so the switcher offers exactly what a request
+  // would be allowed to read. The active academy also resolves the session's
+  // branch, which is what the switcher shows as selected.
+  return memberships.map((membership) => {
+    const organizationId = membership.organization.id;
+    const academyBranches = branches.filter(
+      (b) => b.organizationId === organizationId,
+    );
+    const isActiveOrganization =
+      session.activeOrganizationId === organizationId;
+    const scope = resolveBranchAccess({
+      role: membership.role,
+      academyBranchIds: academyBranches.map((b) => b.id),
+      assignedBranchIds,
+      requestedBranchId: isActiveOrganization ? session.activeBranchId : null,
+    });
+
+    return {
+      id: organizationId,
+      name: membership.organization.name,
+      plan: membership.organization.plan,
+      role: membership.role,
+      branches: academyBranches
+        .filter((b) => scope.visibleBranchIds.includes(b.id))
+        .map(({ id, name, isActive }) => ({ id, name, isActive })),
+      // "All branches" is a choice only when there is more than one to add up.
+      canSelectAll: scope.visibleBranchIds.length > 1,
+      activeBranchId: isActiveOrganization ? scope.activeBranchId : null,
+    };
+  });
 }
 
 /**
@@ -191,6 +248,8 @@ export type OrganizationMemberRow = {
   joinedAt: Date;
   name: string | null;
   email: string | null;
+  /** Assigned branches; empty = every branch (always so for admins). */
+  branchIds: string[];
 };
 
 const memberRowSelection = {
@@ -210,7 +269,7 @@ const memberRowSelection = {
 export async function listAllMembers(
   ctx: OrgTRPCContext,
 ): Promise<OrganizationMemberRow[]> {
-  return ctx.db
+  const rows = await ctx.db
     .select(memberRowSelection)
     .from(OrganizationMembershipsTable)
     .innerJoin(
@@ -220,6 +279,21 @@ export async function listAllMembers(
     .where(eq(OrganizationMembershipsTable.organizationId, ctx.organizationId))
     .orderBy(asc(UsersTable.name), asc(OrganizationMembershipsTable.userId))
     .limit(CLIENT_TABLE_ROW_LIMIT);
+  return withBranchIds(ctx, rows);
+}
+
+async function withBranchIds(
+  ctx: OrgTRPCContext,
+  rows: Omit<OrganizationMemberRow, "branchIds">[],
+): Promise<OrganizationMemberRow[]> {
+  const byUser = await loadMemberBranchIds(
+    ctx,
+    rows.map((row) => row.userId),
+  );
+  return rows.map((row) => ({
+    ...row,
+    branchIds: byUser.get(row.userId) ?? [],
+  }));
 }
 
 export async function listMembers(
@@ -241,7 +315,7 @@ export async function listMembers(
   const page = Math.min(input.page, pageCount);
   const offset = (page - 1) * input.perPage;
 
-  const rows: OrganizationMemberRow[] = await ctx.db
+  const memberRows = await ctx.db
     .select(memberRowSelection)
     .from(OrganizationMembershipsTable)
     .innerJoin(
@@ -253,6 +327,7 @@ export async function listMembers(
     .limit(input.perPage)
     .offset(offset);
 
+  const rows = await withBranchIds(ctx, memberRows);
   return { rows, page, pageCount, total: Number(total) };
 }
 

@@ -38,7 +38,9 @@ import { AcademyPreferencesSection } from "@/features/system/settings/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import type { OrganizationMemberRow } from "../server/queries";
 import {
+  BranchesSection,
   InviteMemberDialog,
+  MemberBranchesDialog,
   MemberRemoveDialog,
   OrganizationProfileFormDialog,
   PlanUsageCard,
@@ -71,6 +73,8 @@ export function OrganizationsSettingsPage() {
   );
   const [removeTarget, setRemoveTarget] =
     useState<OrganizationMemberRow | null>(null);
+  const [branchesTarget, setBranchesTarget] =
+    useState<OrganizationMemberRow | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -90,9 +94,34 @@ export function OrganizationsSettingsPage() {
 
   const canManage = activeOrganization?.role === "admin";
 
+  const branchesQuery = useQuery(
+    trpc.organizations.branches.list.queryOptions(),
+  );
+  const branches = useMemo(
+    () => branchesQuery.data ?? [],
+    [branchesQuery.data],
+  );
+  // A single-branch academy looks exactly as it did before branches existed.
+  const hasBranches = branches.length > 1;
+  const branchNames = useMemo(
+    () =>
+      hasBranches
+        ? new Map(branches.map((branch) => [branch.id, branch.name]))
+        : undefined,
+    [branches, hasBranches],
+  );
+
   const columns = useMemo(
-    () => buildMemberColumns({ locale, canManage, setRemoveTarget, t }),
-    [locale, canManage, t],
+    () =>
+      buildMemberColumns({
+        locale,
+        canManage,
+        setRemoveTarget,
+        setBranchesTarget: hasBranches ? setBranchesTarget : undefined,
+        branchNames,
+        t,
+      }),
+    [locale, canManage, hasBranches, branchNames, t],
   );
 
   const controlled = useMemo<DataTableControlledState>(
@@ -182,6 +211,9 @@ export function OrganizationsSettingsPage() {
 
       <PlanUsageCard />
 
+      {/* Admin-only: branches.create/update are orgAdminProcedure. */}
+      {canManage ? <BranchesSection /> : null}
+
       {/* Admin-only: settings.academy.* is orgAdminProcedure (design 1A). */}
       {canManage ? <AcademyPreferencesSection /> : null}
 
@@ -242,6 +274,14 @@ export function OrganizationsSettingsPage() {
         />
       ) : null}
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <MemberBranchesDialog
+        key={branchesTarget?.userId ?? "none"}
+        member={branchesTarget}
+        branches={branches}
+        onOpenChange={(open) => {
+          if (!open) setBranchesTarget(null);
+        }}
+      />
       <MemberRemoveDialog
         open={removeTarget != null}
         onOpenChange={(open) => {

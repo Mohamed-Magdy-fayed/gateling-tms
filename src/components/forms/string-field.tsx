@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { FormBase, type FormFieldProps } from "./form-base";
 import { useFieldContext } from "./hooks";
 
+// Phone numbers, emails and URLs read left-to-right even in Arabic.
+const LTR_INPUT_TYPES = new Set(["tel", "email", "url"]);
+
 export function FormStringField({
   placeholder,
   autoFocus,
@@ -26,6 +29,7 @@ export function FormStringField({
         aria-invalid={isInvalid}
         autoComplete="off"
         autoFocus={autoFocus}
+        dir={inputType && LTR_INPUT_TYPES.has(inputType) ? "ltr" : undefined}
         disabled={disabled}
         id={field.name}
         name={field.name}

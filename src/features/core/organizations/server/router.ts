@@ -6,6 +6,13 @@ import {
   publicProcedure,
 } from "@/integrations/trpc/init";
 import {
+  createBranch,
+  listBranches,
+  listWritableBranches,
+  setMemberBranches,
+  updateBranch,
+} from "./branches";
+import {
   acceptInvite,
   createOrganization,
   inviteMember,
@@ -24,11 +31,14 @@ import {
 } from "./queries";
 import {
   acceptInviteSchema,
+  createBranchSchema,
   inviteMemberSchema,
   listMembersInput,
   organizationProfileSchema,
   removeMemberSchema,
+  setMemberBranchesSchema,
   switchActiveOrganizationSchema,
+  updateBranchSchema,
   updateMemberRoleSchema,
 } from "./schemas";
 
@@ -49,6 +59,17 @@ export const organizationsRouter = createTRPCRouter({
   switchActive: protectedProcedure
     .input(switchActiveOrganizationSchema)
     .mutation(async ({ ctx, input }) => switchActiveOrganization(ctx, input)),
+  branches: createTRPCRouter({
+    list: orgProcedure.query(async ({ ctx }) => listBranches(ctx)),
+    // What a create form offers when "All branches" is selected.
+    writable: orgProcedure.query(async ({ ctx }) => listWritableBranches(ctx)),
+    create: orgAdminProcedure
+      .input(createBranchSchema)
+      .mutation(async ({ ctx, input }) => createBranch(ctx, input)),
+    update: orgAdminProcedure
+      .input(updateBranchSchema)
+      .mutation(async ({ ctx, input }) => updateBranch(ctx, input)),
+  }),
   members: createTRPCRouter({
     list: orgProcedure
       .input(listMembersInput)
@@ -61,6 +82,9 @@ export const organizationsRouter = createTRPCRouter({
     updateRole: orgAdminProcedure
       .input(updateMemberRoleSchema)
       .mutation(async ({ ctx, input }) => updateMemberRole(ctx, input)),
+    setBranches: orgAdminProcedure
+      .input(setMemberBranchesSchema)
+      .mutation(async ({ ctx, input }) => setMemberBranches(ctx, input)),
     remove: orgAdminProcedure
       .input(removeMemberSchema)
       .mutation(async ({ ctx, input }) => removeMember(ctx, input)),

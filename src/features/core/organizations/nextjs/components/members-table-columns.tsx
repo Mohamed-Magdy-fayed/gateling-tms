@@ -21,9 +21,20 @@ export function buildMemberColumns(opts: {
   locale: string;
   canManage: boolean;
   setRemoveTarget: SetMemberRowAction;
+  /** Set only when the academy has more than one branch. */
+  setBranchesTarget?: SetMemberRowAction;
+  /** branchId → name; the Branches column shows only when given. */
+  branchNames?: Map<string, string>;
   t: Translate;
 }): ColumnDef<OrganizationMemberRow>[] {
-  const { locale, canManage, setRemoveTarget, t } = opts;
+  const {
+    locale,
+    canManage,
+    setRemoveTarget,
+    setBranchesTarget,
+    branchNames,
+    t,
+  } = opts;
   const dateFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
     dateStyle: "medium",
   });
@@ -83,6 +94,20 @@ export function buildMemberColumns(opts: {
     },
   ];
 
+  if (branchNames) {
+    columns.push({
+      id: "branches",
+      accessorFn: (row) => memberBranchLabel(row, branchNames, t, locale),
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("organizations.members.columnBranches")}
+        />
+      ),
+      meta: { label: t("organizations.members.columnBranches") },
+    });
+  }
+
   if (canManage) {
     columns.push(
       createEntityActionsColumn({
@@ -91,6 +116,7 @@ export function buildMemberColumns(opts: {
           <MemberRowActions
             row={row.original}
             setRemoveTarget={setRemoveTarget}
+            setBranchesTarget={setBranchesTarget}
           />
         ),
       }),
@@ -98,4 +124,22 @@ export function buildMemberColumns(opts: {
   }
 
   return columns;
+}
+
+const LIST_SEPARATOR = { en: ", ", ar: "، " } as const;
+
+/** Admins and unassigned members work in every branch (resolveBranchAccess). */
+function memberBranchLabel(
+  row: OrganizationMemberRow,
+  branchNames: Map<string, string>,
+  t: Translate,
+  locale: string,
+): string {
+  if (row.role === "admin" || row.branchIds.length === 0) {
+    return t("organizations.members.allBranches");
+  }
+  return row.branchIds
+    .map((id) => branchNames.get(id))
+    .filter((name): name is string => Boolean(name))
+    .join(LIST_SEPARATOR[locale === "ar" ? "ar" : "en"]);
 }

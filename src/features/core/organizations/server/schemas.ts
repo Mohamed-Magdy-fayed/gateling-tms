@@ -108,6 +108,40 @@ export const switchActiveOrganizationSchema = z.object({
   branchId: idSchema.nullable().optional(),
 });
 
+const branchProfileShape = {
+  name: z
+    .string()
+    .trim()
+    .min(1, translationKey("forms.validation.required"))
+    .max(128, translationKey("forms.validation.max128")),
+  address: z
+    .string()
+    .trim()
+    .max(500, translationKey("forms.validation.max500"))
+    .optional()
+    .or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .max(32, translationKey("forms.validation.max32"))
+    .optional()
+    .or(z.literal("")),
+};
+
+export const createBranchSchema = z.object(branchProfileShape);
+
+export const updateBranchSchema = z.object({
+  branchId: idSchema,
+  ...branchProfileShape,
+  isActive: z.boolean(),
+});
+
+// An empty list = every branch (see resolveBranchAccess).
+export const setMemberBranchesSchema = z.object({
+  userId: idSchema,
+  branchIds: z.array(idSchema).max(200),
+});
+
 // Platform owner only (`platform.*`). Same paging shape as the members list,
 // minus sorting: the Academies list is always newest first.
 export const listPlatformOrganizationsInput = z.object({
@@ -134,6 +168,9 @@ export type RemoveMemberInput = z.infer<typeof removeMemberSchema>;
 export type SwitchActiveOrganizationInput = z.infer<
   typeof switchActiveOrganizationSchema
 >;
+export type CreateBranchInput = z.infer<typeof createBranchSchema>;
+export type UpdateBranchInput = z.infer<typeof updateBranchSchema>;
+export type SetMemberBranchesInput = z.infer<typeof setMemberBranchesSchema>;
 export type ListPlatformOrganizationsInput = z.infer<
   typeof listPlatformOrganizationsInput
 >;

@@ -5,6 +5,7 @@ import type { db as Database } from "@/drizzle";
 import {
   BranchesTable,
   DEFAULT_BRANCH_NAME,
+  OrganizationMembershipBranchesTable,
   OrganizationMembershipsTable,
   OrganizationsTable,
   UsersTable,
@@ -381,6 +382,19 @@ export async function removeMember(
         and(
           eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
           eq(OrganizationMembershipsTable.userId, input.userId),
+        ),
+      );
+    // Branch assignments hang off the user, not the membership, so a member
+    // re-invited later doesn't silently inherit their old branches.
+    await trx
+      .delete(OrganizationMembershipBranchesTable)
+      .where(
+        and(
+          eq(
+            OrganizationMembershipBranchesTable.organizationId,
+            ctx.organizationId,
+          ),
+          eq(OrganizationMembershipBranchesTable.userId, input.userId),
         ),
       );
   });
