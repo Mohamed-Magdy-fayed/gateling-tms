@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateRangeInput } from "@/drizzle/lib/date-range";
 import { translationKey } from "@/features/core/i18n/global";
 import { idSchema } from "@/lib/id-schema";
 
@@ -10,6 +11,11 @@ export const listCertificatesInput = z.object({
   // Set by the trainee detail page's certificates section; omitted by the
   // cross-trainee table.
   traineeId: idSchema.optional(),
+  // The table's filters. Each list is "any of these"; an empty or absent
+  // list means no filter.
+  courseIds: z.array(idSchema).max(100).optional(),
+  groupIds: z.array(idSchema).max(100).optional(),
+  issuedAt: dateRangeInput,
 });
 
 /**

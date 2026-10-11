@@ -1,5 +1,16 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+} from "drizzle-orm";
+import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   CoursesTable,
@@ -20,6 +31,13 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListEnrollmentsInput) {
       ? eq(EnrollmentsTable.traineeId, input.traineeId)
       : undefined,
     input.status ? eq(EnrollmentsTable.status, input.status) : undefined,
+    input.statuses?.length
+      ? inArray(EnrollmentsTable.status, input.statuses)
+      : undefined,
+    input.courseIds?.length
+      ? inArray(EnrollmentsTable.courseId, input.courseIds)
+      : undefined,
+    inDateRange(EnrollmentsTable.createdAt, input.createdAt),
     // The list shows who is enrolled in what, so searching those two names is
     // what a user expects — the enrollment itself has no text of its own.
     search

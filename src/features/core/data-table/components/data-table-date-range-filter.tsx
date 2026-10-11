@@ -31,8 +31,14 @@ import {
   toYmdLocal,
 } from "../lib/filter-values";
 
-type DataTableDateRangeFilterProps<TData, TValue> = {
+type DateRangeFilterControlProps<TData, TValue> = {
   column: Column<TData, TValue>;
+  title: string;
+};
+
+type DataTableDateRangeFilterProps<TData, TValue> = {
+  /** Optional like the faceted filter so callers can pass `table.getColumn()`. */
+  column?: Column<TData, TValue>;
   title: string;
 };
 
@@ -58,6 +64,14 @@ export function DataTableDateRangeFilter<TData, TValue>({
   column,
   title,
 }: DataTableDateRangeFilterProps<TData, TValue>) {
+  if (!column) return null;
+  return <DateRangeFilterControl column={column} title={title} />;
+}
+
+function DateRangeFilterControl<TData, TValue>({
+  column,
+  title,
+}: DateRangeFilterControlProps<TData, TValue>) {
   const { t, locale } = useTranslation();
   const isMobile = useIsMobile();
   const filterVal = column.getFilterValue();

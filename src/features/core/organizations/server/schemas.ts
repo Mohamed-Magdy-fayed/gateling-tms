@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateRangeInput } from "@/drizzle/lib/date-range";
 import {
   organizationMembershipRoleValues,
   organizationPlanValues,
@@ -82,6 +83,7 @@ export const listMembersInput = z.object({
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
   roles: z.array(z.enum(organizationMembershipRoleValues)).optional(),
+  joinedAt: dateRangeInput,
 });
 
 export const inviteMemberSchema = z.object({
@@ -112,6 +114,8 @@ export const listPlatformOrganizationsInput = z.object({
   page: z.number().int().min(1).default(1),
   perPage: z.number().int().min(1).max(100).default(20),
   globalFilter: z.string().trim().max(128).optional(),
+  // "Any of these"; an empty or absent list means no filter.
+  plans: z.array(z.enum(organizationPlanValues)).max(20).optional(),
 });
 
 // The one input anywhere that names an organization other than the caller's

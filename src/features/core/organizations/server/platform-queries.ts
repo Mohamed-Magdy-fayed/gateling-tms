@@ -32,12 +32,18 @@ export type PlatformOrganizationRow = {
 
 function buildWhereClause(input: ListPlatformOrganizationsInput) {
   const query = input.globalFilter?.trim();
-  if (!query) return undefined;
 
-  return or(
-    ilike(OrganizationsTable.name, likeContains(query)),
-    ilike(OrganizationsTable.shortCode, likeContains(query)),
-    ilike(UsersTable.email, likeContains(query)),
+  return and(
+    input.plans?.length
+      ? inArray(OrganizationsTable.plan, input.plans)
+      : undefined,
+    query
+      ? or(
+          ilike(OrganizationsTable.name, likeContains(query)),
+          ilike(OrganizationsTable.shortCode, likeContains(query)),
+          ilike(UsersTable.email, likeContains(query)),
+        )
+      : undefined,
   );
 }
 

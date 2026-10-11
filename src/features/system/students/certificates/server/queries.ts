@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   CertificatesTable,
@@ -19,6 +20,13 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListCertificatesInput) {
     input.traineeId
       ? eq(CertificatesTable.traineeId, input.traineeId)
       : undefined,
+    input.courseIds?.length
+      ? inArray(CertificatesTable.courseId, input.courseIds)
+      : undefined,
+    input.groupIds?.length
+      ? inArray(CertificatesTable.groupId, input.groupIds)
+      : undefined,
+    inDateRange(CertificatesTable.issuedAt, input.issuedAt),
     search
       ? or(
           ilike(CertificatesTable.title, likeContains(search)),

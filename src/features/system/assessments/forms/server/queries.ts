@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   AnswersTable,
@@ -39,6 +40,11 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListFormsInput) {
     // "published placement tests only".
     input.type ? eq(FormsTable.type, input.type) : undefined,
     input.status ? eq(FormsTable.status, input.status) : undefined,
+    input.types?.length ? inArray(FormsTable.type, input.types) : undefined,
+    input.statuses?.length
+      ? inArray(FormsTable.status, input.statuses)
+      : undefined,
+    inDateRange(FormsTable.createdAt, input.createdAt),
     input.globalFilter?.trim()
       ? ilike(FormsTable.title, likeContains(input.globalFilter.trim()))
       : undefined,

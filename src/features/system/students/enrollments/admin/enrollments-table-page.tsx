@@ -14,15 +14,21 @@ import type {
 import { PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { enrollmentStatusValues } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableDateRangeFilter,
   DataTableExportButton,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
+  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
+  selectedEnumFilterValues,
+  selectedFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -84,8 +90,43 @@ export function EnrollmentsTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      statuses: selectedEnumFilterValues(
+        columnFilters,
+        "status",
+        enrollmentStatusValues,
+      ),
+      // The course filter holds ids even though its column shows names — the
+      // server filters on the id column.
+      courseIds: selectedFilterValues(columnFilters, "courseName"),
+      createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
+  );
+
+  const { data: courses } = useQuery(
+    trpc.courses.list.queryOptions({ page: 1, perPage: 100, sorting: [] }),
+  );
+  const statusOptions = useMemo(
+    () =>
+      enrollmentStatusValues.map((status) => ({
+        value: status,
+        label: t(`enrollments.statusOptions.${status}`),
+      })),
+    [t],
+  );
+  const courseOptions = useMemo(
+    () =>
+      (courses?.rows ?? []).map((course) => ({
+        value: course.id,
+        label: course.name,
+      })),
+    [courses],
   );
 
   const { data, isFetching } = useQuery({
@@ -173,6 +214,24 @@ export function EnrollmentsTablePage() {
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("enrollments.searchHint")}
+            filterSlot={
+              <>
+                <DataTableFacetedFilter
+                  column={table.getColumn("status")}
+                  title={t("enrollments.status")}
+                  options={statusOptions}
+                />
+                <DataTableFacetedFilter
+                  column={table.getColumn("courseName")}
+                  title={t("enrollments.course")}
+                  options={courseOptions}
+                />
+                <DataTableDateRangeFilter
+                  column={table.getColumn("createdAt")}
+                  title={t("enrollments.enrolledAt")}
+                />
+              </>
+            }
           >
             <DataTableExportButton
               table={table}

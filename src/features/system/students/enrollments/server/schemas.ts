@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateRangeInput } from "@/drizzle/lib/date-range";
 import {
   enrollmentLevelStatusValues,
   enrollmentStatusValues,
@@ -19,6 +20,11 @@ export const listEnrollmentsInput = z.object({
   // enrollments; omitted by the cross-trainee table.
   traineeId: idSchema.optional(),
   status: z.enum(enrollmentStatusValues).optional(),
+  // The table's filters. Each list is "any of these"; an empty or absent
+  // list means no filter.
+  statuses: z.array(z.enum(enrollmentStatusValues)).max(20).optional(),
+  courseIds: z.array(idSchema).max(100).optional(),
+  createdAt: dateRangeInput,
 });
 
 export const enrollmentTraineeModeValues = ["existing", "new"] as const;

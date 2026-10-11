@@ -7,7 +7,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type {
-  ColumnFiltersState,
   ColumnPinningState,
   RowSelectionState,
   VisibilityState,
@@ -15,6 +14,7 @@ import type {
 import { PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { groupStatusValues } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
@@ -25,10 +25,11 @@ import {
   DataTableViewOptions,
   EntityPageHeader,
   getEntityColumnPinning,
+  selectedEnumFilterValues,
+  selectedFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
-import { type GroupStatus, groupStatusValues } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
   EntityExportButton,
@@ -45,21 +46,6 @@ import {
 } from "./components";
 
 type RowAction = { row: GroupListRow; variant: GroupRowActionVariant } | null;
-
-/** The values picked in one faceted filter; empty when none are. */
-function selectedFilterValues(
-  filters: ColumnFiltersState,
-  columnId: string,
-): string[] {
-  const value = filters.find((filter) => filter.id === columnId)?.value;
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function isGroupStatus(value: string): value is GroupStatus {
-  return (groupStatusValues as readonly string[]).includes(value);
-}
 
 export function GroupsTablePage() {
   const trpc = useTRPC();
@@ -99,8 +85,10 @@ export function GroupsTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
-      statuses: selectedFilterValues(columnFilters, "status").filter(
-        isGroupStatus,
+      statuses: selectedEnumFilterValues(
+        columnFilters,
+        "status",
+        groupStatusValues,
       ),
       courseIds: selectedFilterValues(columnFilters, "courseName"),
       teacherIds: selectedFilterValues(columnFilters, "teacherName"),

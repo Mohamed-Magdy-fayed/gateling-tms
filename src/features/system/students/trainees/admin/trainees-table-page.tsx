@@ -18,10 +18,12 @@ import type { Trainee } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableDateRangeFilter,
   DataTableExportButton,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
+  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
   useDataTable,
@@ -82,8 +84,15 @@ export function TraineesTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
   );
 
   const { data, isFetching } = useQuery({
@@ -170,6 +179,12 @@ export function TraineesTablePage() {
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("trainees.searchHint")}
+            filterSlot={
+              <DataTableDateRangeFilter
+                column={table.getColumn("createdAt")}
+                title={t("common.createdAt")}
+              />
+            }
           >
             <DataTableExportButton
               table={table}

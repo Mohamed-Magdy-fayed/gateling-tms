@@ -10,12 +10,16 @@ import { useEffect, useMemo, useState } from "react";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableDateRangeFilter,
   DataTableExportButton,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
+  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
+  selectedFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -64,8 +68,42 @@ export function CertificatesTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      // The course and group filters hold ids even though their columns show
+      // names — the server filters on the id columns.
+      courseIds: selectedFilterValues(columnFilters, "courseName"),
+      groupIds: selectedFilterValues(columnFilters, "groupName"),
+      issuedAt: dateRangeFilterBounds(columnFilters, "issuedAt"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
+  );
+
+  const { data: courses } = useQuery(
+    trpc.courses.list.queryOptions({ page: 1, perPage: 100, sorting: [] }),
+  );
+  const { data: groups } = useQuery(
+    trpc.groups.list.queryOptions({ page: 1, perPage: 100, sorting: [] }),
+  );
+  const courseOptions = useMemo(
+    () =>
+      (courses?.rows ?? []).map((course) => ({
+        value: course.id,
+        label: course.name,
+      })),
+    [courses],
+  );
+  const groupOptions = useMemo(
+    () =>
+      (groups?.rows ?? []).map((group) => ({
+        value: group.id,
+        label: group.name,
+      })),
+    [groups],
   );
 
   const { data, isFetching } = useQuery({
@@ -164,6 +202,24 @@ export function CertificatesTablePage() {
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("certificates.searchHint")}
+            filterSlot={
+              <>
+                <DataTableFacetedFilter
+                  column={table.getColumn("courseName")}
+                  title={t("certificates.course")}
+                  options={courseOptions}
+                />
+                <DataTableFacetedFilter
+                  column={table.getColumn("groupName")}
+                  title={t("certificates.group")}
+                  options={groupOptions}
+                />
+                <DataTableDateRangeFilter
+                  column={table.getColumn("issuedAt")}
+                  title={t("certificates.issuedAt")}
+                />
+              </>
+            }
           >
             <DataTableExportButton
               table={table}

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/drizzle";
+import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   OrganizationMembershipsTable,
@@ -139,6 +140,7 @@ function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
     input.roles?.length
       ? inArray(OrganizationMembershipsTable.role, input.roles)
       : undefined,
+    inDateRange(OrganizationMembershipsTable.createdAt, input.joinedAt),
   );
   const query = input.globalFilter?.trim();
   if (!query) return base;

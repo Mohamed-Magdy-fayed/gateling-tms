@@ -18,14 +18,19 @@ import {
 } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { H3 } from "@/components/ui/typography";
+import { organizationMembershipRoleValues } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableDateRangeFilter,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
+  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
+  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -77,8 +82,28 @@ export function OrganizationsSettingsPage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      roles: selectedEnumFilterValues(
+        columnFilters,
+        "role",
+        organizationMembershipRoleValues,
+      ),
+      joinedAt: dateRangeFilterBounds(columnFilters, "joinedAt"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
+  );
+  const roleOptions = useMemo(
+    () =>
+      organizationMembershipRoleValues.map((role) => ({
+        value: role,
+        label: t(`organizations.members.role.${role}`),
+      })),
+    [t],
   );
 
   const membersQuery = useQuery(
@@ -201,6 +226,19 @@ export function OrganizationsSettingsPage() {
               globalFilter={resolvedGlobalFilter}
               onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
               searchPlaceholder={t("organizations.members.searchHint")}
+              filterSlot={
+                <>
+                  <DataTableFacetedFilter
+                    column={table.getColumn("role")}
+                    title={t("organizations.members.columnRole")}
+                    options={roleOptions}
+                  />
+                  <DataTableDateRangeFilter
+                    column={table.getColumn("joinedAt")}
+                    title={t("organizations.members.columnJoinedAt")}
+                  />
+                </>
+              }
             >
               {canManage ? (
                 <Button

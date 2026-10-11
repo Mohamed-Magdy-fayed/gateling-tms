@@ -19,11 +19,14 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { H3, Muted } from "@/components/ui/typography";
+import { organizationPlanValues } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
+  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -68,8 +71,21 @@ export function AcademiesSection() {
       page: pagination.pageIndex + 1,
       perPage: pagination.pageSize,
       globalFilter: globalFilter || undefined,
+      plans: selectedEnumFilterValues(
+        columnFilters,
+        "plan",
+        organizationPlanValues,
+      ),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize],
+    [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize],
+  );
+  const planOptions = useMemo(
+    () =>
+      organizationPlanValues.map((plan) => ({
+        value: plan,
+        label: t(`organizations.plan.${plan}`),
+      })),
+    [t],
   );
   const listQuery = useQuery({
     ...trpc.platform.listOrganizations.queryOptions(listInput),
@@ -167,7 +183,8 @@ export function AcademiesSection() {
     controlled,
   });
 
-  const isEmpty = listQuery.data?.total === 0 && !globalFilter;
+  const isEmpty =
+    listQuery.data?.total === 0 && !globalFilter && columnFilters.length === 0;
 
   return (
     <section aria-labelledby="platform-academies" className="space-y-3">
@@ -215,6 +232,13 @@ export function AcademiesSection() {
               globalFilter={resolvedGlobalFilter}
               onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
               searchPlaceholder={t("settings.academies.searchHint")}
+              filterSlot={
+                <DataTableFacetedFilter
+                  column={table.getColumn("plan")}
+                  title={t("settings.academies.columnPlan")}
+                  options={planOptions}
+                />
+              }
             />
           }
           footer={<DataTablePagination table={table} />}

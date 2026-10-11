@@ -10,16 +10,20 @@ import { FileSpreadsheetIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import type { Form } from "@/drizzle/schema";
+import { type Form, formStatusValues, formTypeValues } from "@/drizzle/schema";
 import {
   DataTable,
   type DataTableControlledState,
+  DataTableDateRangeFilter,
   DataTableExportButton,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
+  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
+  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -65,8 +69,38 @@ export function FormsTablePage() {
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      types: selectedEnumFilterValues(columnFilters, "type", formTypeValues),
+      statuses: selectedEnumFilterValues(
+        columnFilters,
+        "status",
+        formStatusValues,
+      ),
+      createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
     }),
-    [globalFilter, pagination.pageIndex, pagination.pageSize, sorting],
+    [
+      columnFilters,
+      globalFilter,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting,
+    ],
+  );
+
+  const typeOptions = useMemo(
+    () =>
+      formTypeValues.map((type) => ({
+        value: type,
+        label: t(`assessments.typeOptions.${type}`),
+      })),
+    [t],
+  );
+  const statusOptions = useMemo(
+    () =>
+      formStatusValues.map((status) => ({
+        value: status,
+        label: t(`assessments.statusOptions.${status}`),
+      })),
+    [t],
   );
 
   const { data, isFetching } = useQuery(
@@ -164,6 +198,24 @@ export function FormsTablePage() {
             globalFilter={resolvedGlobalFilter}
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("assessments.searchHint")}
+            filterSlot={
+              <>
+                <DataTableFacetedFilter
+                  column={table.getColumn("type")}
+                  title={t("assessments.type")}
+                  options={typeOptions}
+                />
+                <DataTableFacetedFilter
+                  column={table.getColumn("status")}
+                  title={t("assessments.status")}
+                  options={statusOptions}
+                />
+                <DataTableDateRangeFilter
+                  column={table.getColumn("createdAt")}
+                  title={t("common.createdAt")}
+                />
+              </>
+            }
           >
             <DataTableExportButton
               table={table}

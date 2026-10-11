@@ -96,3 +96,44 @@ export function rowTimestampInYmdRange(
   }
   return true;
 }
+
+type ColumnFilterEntry = { id: string; value: unknown };
+
+/** The values picked in one faceted filter; empty when none are. */
+export function selectedFilterValues(
+  filters: readonly ColumnFilterEntry[],
+  columnId: string,
+): string[] {
+  const value = filters.find((filter) => filter.id === columnId)?.value;
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+/**
+ * The picked values of one faceted filter that belong to `allowed` — for enum
+ * columns, so a hand-edited URL can't send the server a value it rejects.
+ */
+export function selectedEnumFilterValues<T extends string>(
+  filters: readonly ColumnFilterEntry[],
+  columnId: string,
+  allowed: readonly T[],
+): T[] {
+  return selectedFilterValues(filters, columnId).filter((value): value is T =>
+    (allowed as readonly string[]).includes(value),
+  );
+}
+
+/**
+ * One date-range filter as UTC instants for the server (the day bounds are
+ * the user's local midnight), or `undefined` when nothing is picked.
+ */
+export function dateRangeFilterBounds(
+  filters: readonly ColumnFilterEntry[],
+  columnId: string,
+): DataTableDateRangeValue | undefined {
+  const value = filters.find((filter) => filter.id === columnId)?.value;
+  if (!isDateRangeValue(value)) return undefined;
+  const bounds = dateRangeToWireBounds(value);
+  return bounds.from || bounds.to ? bounds : undefined;
+}

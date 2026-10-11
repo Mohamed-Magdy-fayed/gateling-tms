@@ -34,10 +34,13 @@ export type {
   DataTableNumberRangeValue,
 } from "./lib/filter-values";
 export {
+  dateRangeFilterBounds,
   dateRangeToWireBounds,
   isDateRangeValue,
   isNumberRangeValue,
   rowTimestampInYmdRange,
+  selectedEnumFilterValues,
+  selectedFilterValues,
   serializeColumnFiltersForServer,
   toYmdLocal,
 } from "./lib/filter-values";
