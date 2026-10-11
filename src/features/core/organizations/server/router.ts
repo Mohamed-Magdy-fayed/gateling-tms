@@ -17,6 +17,7 @@ import {
 import {
   getActiveOrganization,
   getOrganizationUsage,
+  listAllMembers,
   listMembers,
   listMyOrganizations,
   previewInvite,
@@ -42,7 +43,9 @@ export const organizationsRouter = createTRPCRouter({
   update: orgAdminProcedure
     .input(organizationProfileSchema)
     .mutation(async ({ ctx, input }) => updateOrganization(ctx, input)),
-  listMine: protectedProcedure.query(async ({ ctx }) => listMyOrganizations(ctx)),
+  listMine: protectedProcedure.query(async ({ ctx }) =>
+    listMyOrganizations(ctx),
+  ),
   switchActive: protectedProcedure
     .input(switchActiveOrganizationSchema)
     .mutation(async ({ ctx, input }) => switchActiveOrganization(ctx, input)),
@@ -50,6 +53,8 @@ export const organizationsRouter = createTRPCRouter({
     list: orgProcedure
       .input(listMembersInput)
       .query(async ({ ctx, input }) => listMembers(ctx, input)),
+    // The whole list for the client-mode members table; pickers use `list`.
+    listAll: orgProcedure.query(async ({ ctx }) => listAllMembers(ctx)),
     invite: orgAdminProcedure
       .input(inviteMemberSchema)
       .mutation(async ({ ctx, input }) => inviteMember(ctx, input)),

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { dateRangeInput } from "@/drizzle/lib/date-range";
 import { formStatusValues, formTypeValues } from "@/drizzle/schema";
 import { translationKey } from "@/features/core/i18n/global";
 
@@ -10,11 +9,6 @@ export const listFormsInput = z.object({
   globalFilter: z.string().optional(),
   type: z.enum(formTypeValues).optional(),
   status: z.enum(formStatusValues).optional(),
-  // The table's filters. Each list is "any of these"; an empty or absent
-  // list means no filter.
-  types: z.array(z.enum(formTypeValues)).max(20).optional(),
-  statuses: z.array(z.enum(formStatusValues)).max(20).optional(),
-  createdAt: dateRangeInput,
 });
 
 // A nullable-uuid-or-empty-string triplet — the create dialog's selects use

@@ -35,7 +35,9 @@ export type {
 } from "./lib/filter-values";
 export {
   dateRangeFilterBounds,
+  dateRangeFilterFn,
   dateRangeToWireBounds,
+  facetedFilterFn,
   isDateRangeValue,
   isNumberRangeValue,
   rowTimestampInYmdRange,

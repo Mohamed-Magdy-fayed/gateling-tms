@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, isNull } from "drizzle-orm";
-import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import { CoursesTable } from "@/drizzle/schema";
+import { CLIENT_TABLE_ROW_LIMIT } from "@/lib/list-limits";
 import type { ListCoursesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -10,7 +10,6 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListCoursesInput) {
   return and(
     eq(CoursesTable.organizationId, ctx.organizationId),
     isNull(CoursesTable.deletedAt),
-    inDateRange(CoursesTable.createdAt, input.createdAt),
     input.globalFilter?.trim()
       ? ilike(CoursesTable.name, likeContains(input.globalFilter.trim()))
       : undefined,
@@ -64,6 +63,24 @@ export async function listCourses(
     .offset(offset);
 
   return { rows, page, pageCount, total: Number(total) };
+}
+
+/**
+ * Every course of the org, for the client-mode courses table — a definition
+ * list, so the page sorts and filters it in the browser.
+ */
+export async function listAllCourses(ctx: OrgTRPCContext) {
+  return ctx.db
+    .select()
+    .from(CoursesTable)
+    .where(
+      and(
+        eq(CoursesTable.organizationId, ctx.organizationId),
+        isNull(CoursesTable.deletedAt),
+      ),
+    )
+    .orderBy(asc(CoursesTable.name), asc(CoursesTable.id))
+    .limit(CLIENT_TABLE_ROW_LIMIT);
 }
 
 export async function getCourse(ctx: OrgTRPCContext, id: string) {

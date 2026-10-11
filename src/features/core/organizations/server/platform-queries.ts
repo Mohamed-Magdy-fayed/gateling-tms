@@ -1,4 +1,13 @@
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   OrganizationMembershipsTable,
@@ -7,6 +16,7 @@ import {
   UsersTable,
 } from "@/drizzle/schema";
 import type { TRPCContext } from "@/integrations/trpc/init";
+import { CLIENT_TABLE_ROW_LIMIT } from "@/lib/list-limits";
 import type { ListPlatformOrganizationsInput } from "./schemas";
 
 type PlatformOwnerContext = TRPCContext & {
@@ -32,18 +42,12 @@ export type PlatformOrganizationRow = {
 
 function buildWhereClause(input: ListPlatformOrganizationsInput) {
   const query = input.globalFilter?.trim();
+  if (!query) return undefined;
 
-  return and(
-    input.plans?.length
-      ? inArray(OrganizationsTable.plan, input.plans)
-      : undefined,
-    query
-      ? or(
-          ilike(OrganizationsTable.name, likeContains(query)),
-          ilike(OrganizationsTable.shortCode, likeContains(query)),
-          ilike(UsersTable.email, likeContains(query)),
-        )
-      : undefined,
+  return or(
+    ilike(OrganizationsTable.name, likeContains(query)),
+    ilike(OrganizationsTable.shortCode, likeContains(query)),
+    ilike(UsersTable.email, likeContains(query)),
   );
 }
 
@@ -71,6 +75,29 @@ export async function listPlatformOrganizations(
   const page = Math.min(input.page, pageCount);
   const offset = (page - 1) * input.perPage;
 
+  const rows = await selectOrganizationRows(ctx, {
+    where: whereClause,
+    limit: input.perPage,
+    offset,
+  });
+
+  return { rows, page, pageCount, total: Number(total) };
+}
+
+/**
+ * Every academy, for the client-mode Academies list — the platform has a
+ * handful, so the page sorts and filters them in the browser.
+ */
+export async function listAllPlatformOrganizations(
+  ctx: PlatformOwnerContext,
+): Promise<PlatformOrganizationRow[]> {
+  return selectOrganizationRows(ctx, { limit: CLIENT_TABLE_ROW_LIMIT });
+}
+
+async function selectOrganizationRows(
+  ctx: PlatformOwnerContext,
+  { where, limit, offset = 0 }: { where?: SQL; limit: number; offset?: number },
+): Promise<PlatformOrganizationRow[]> {
   const organizations = await ctx.db
     .select({
       id: OrganizationsTable.id,
@@ -86,10 +113,10 @@ export async function listPlatformOrganizations(
     })
     .from(OrganizationsTable)
     .leftJoin(UsersTable, eq(UsersTable.id, OrganizationsTable.ownerId))
-    .where(whereClause)
+    .where(where)
     // Newest first; the id breaks ties so offset paging stays deterministic.
     .orderBy(desc(OrganizationsTable.createdAt), desc(OrganizationsTable.id))
-    .limit(input.perPage)
+    .limit(limit)
     .offset(offset);
 
   const pageIds = organizations.map((organization) => organization.id);
@@ -106,10 +133,8 @@ export async function listPlatformOrganizations(
     : [];
   const mine = new Set(myMemberships.map((row) => row.organizationId));
 
-  const rows: PlatformOrganizationRow[] = organizations.map((organization) => ({
+  return organizations.map((organization) => ({
     ...organization,
     isMine: mine.has(organization.id),
   }));
-
-  return { rows, page, pageCount, total: Number(total) };
 }

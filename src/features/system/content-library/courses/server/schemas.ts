@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { dateRangeInput } from "@/drizzle/lib/date-range";
 import { translationKey } from "@/features/core/i18n/global";
 import {
   MAX_IMPORT_BASE64_LENGTH,
@@ -11,7 +10,6 @@ export const listCoursesInput = z.object({
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),
   globalFilter: z.string().optional(),
-  createdAt: dateRangeInput,
 });
 
 export const courseMutationSchema = z.object({

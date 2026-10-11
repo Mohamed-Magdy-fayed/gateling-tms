@@ -5,7 +5,7 @@ import {
 } from "@/integrations/trpc/init";
 import { commitCourseImport, previewCourseImport } from "./import";
 import { createCourse, deleteCourse, updateCourse } from "./mutations";
-import { getCourse, listCourses } from "./queries";
+import { getCourse, listAllCourses, listCourses } from "./queries";
 import {
   courseDeleteSchema,
   courseImportCommitInput,
@@ -20,6 +20,8 @@ export const coursesRouter = createTRPCRouter({
   list: orgProcedure
     .input(listCoursesInput)
     .query(async ({ ctx, input }) => listCourses(ctx, input)),
+  // The whole list for the client-mode courses table; pickers use `list`.
+  listAll: orgProcedure.query(async ({ ctx }) => listAllCourses(ctx)),
   // Reuses courseDeleteSchema — same {id} shape, no need for a near-duplicate.
   get: orgProcedure
     .input(courseDeleteSchema)

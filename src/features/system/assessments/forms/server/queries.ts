@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, inArray } from "drizzle-orm";
-import { inDateRange } from "@/drizzle/lib/date-range";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   AnswersTable,
@@ -9,6 +8,7 @@ import {
   FormsTable,
   QuestionsTable,
 } from "@/drizzle/schema";
+import { CLIENT_TABLE_ROW_LIMIT } from "@/lib/list-limits";
 import type { ListFormsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -40,11 +40,6 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListFormsInput) {
     // "published placement tests only".
     input.type ? eq(FormsTable.type, input.type) : undefined,
     input.status ? eq(FormsTable.status, input.status) : undefined,
-    input.types?.length ? inArray(FormsTable.type, input.types) : undefined,
-    input.statuses?.length
-      ? inArray(FormsTable.status, input.statuses)
-      : undefined,
-    inDateRange(FormsTable.createdAt, input.createdAt),
     input.globalFilter?.trim()
       ? ilike(FormsTable.title, likeContains(input.globalFilter.trim()))
       : undefined,
@@ -93,6 +88,19 @@ export async function listForms(ctx: OrgTRPCContext, input: ListFormsInput) {
     .offset(offset);
 
   return { rows, page, pageCount, total: Number(total) };
+}
+
+/**
+ * Every form of the org, for the client-mode assessments table — a definition
+ * list, so the page sorts and filters it in the browser.
+ */
+export async function listAllForms(ctx: OrgTRPCContext) {
+  return ctx.db
+    .select()
+    .from(FormsTable)
+    .where(eq(FormsTable.organizationId, ctx.organizationId))
+    .orderBy(desc(FormsTable.createdAt), asc(FormsTable.id))
+    .limit(CLIENT_TABLE_ROW_LIMIT);
 }
 
 export async function getForm(ctx: OrgTRPCContext, id: string) {

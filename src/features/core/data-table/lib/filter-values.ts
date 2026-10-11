@@ -137,3 +137,35 @@ export function dateRangeFilterBounds(
   const bounds = dateRangeToWireBounds(value);
   return bounds.from || bounds.to ? bounds : undefined;
 }
+
+type FilterableRow = { getValue: (columnId: string) => unknown };
+
+/**
+ * Client-mode `filterFn` for a column driven by `DataTableFacetedFilter`: the
+ * row passes when its value is one of the picked ones (or nothing is picked).
+ */
+export function facetedFilterFn(
+  row: FilterableRow,
+  columnId: string,
+  filterValue: unknown,
+): boolean {
+  if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+  return filterValue.includes(row.getValue(columnId));
+}
+
+/**
+ * Client-mode `filterFn` for a date column driven by
+ * `DataTableDateRangeFilter`: the row's day must fall within the picked range.
+ */
+export function dateRangeFilterFn(
+  row: FilterableRow,
+  columnId: string,
+  filterValue: unknown,
+): boolean {
+  if (!isDateRangeValue(filterValue)) return true;
+  const value = row.getValue(columnId);
+  return rowTimestampInYmdRange(
+    value instanceof Date || typeof value === "string" ? value : null,
+    filterValue,
+  );
+}

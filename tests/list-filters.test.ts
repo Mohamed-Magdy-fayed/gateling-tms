@@ -4,11 +4,12 @@ import { dateRangeInput, inDateRange } from "@/drizzle/lib/date-range";
 import { CoursesTable } from "@/drizzle/schema";
 import {
   dateRangeFilterBounds,
+  dateRangeFilterFn,
+  facetedFilterFn,
   selectedEnumFilterValues,
   selectedFilterValues,
 } from "@/features/core/data-table/lib/filter-values";
-import { listPlatformOrganizationsInput } from "@/features/core/organizations/server/schemas";
-import { listFormsInput } from "@/features/system/assessments/forms/server/schemas";
+import { academyGlobalFilter } from "@/features/system/settings/admin/components/academies-table-columns";
 import { listCertificatesInput } from "@/features/system/students/certificates/server/schemas";
 import { listEnrollmentsInput } from "@/features/system/students/enrollments/server/schemas";
 
@@ -137,22 +138,76 @@ describe("list filter inputs", () => {
       }).success,
     ).toBe(true);
   });
+});
 
-  test("forms take types and statuses from their enums", () => {
-    expect(
-      listFormsInput.safeParse({ types: ["quiz"], statuses: ["draft"] })
-        .success,
-    ).toBe(true);
-    expect(listFormsInput.safeParse({ types: ["survey"] }).success).toBe(false);
+// Client-mode tables (definition lists) filter in the browser through these.
+describe("client-mode filter functions", () => {
+  const rowWith = (value: unknown) => ({ getValue: () => value });
+
+  test("facetedFilterFn keeps rows whose value is one of the picked ones", () => {
+    expect(facetedFilterFn(rowWith("quiz"), "type", ["quiz", "final"])).toBe(
+      true,
+    );
+    expect(facetedFilterFn(rowWith("draft"), "type", ["quiz"])).toBe(false);
   });
 
-  test("the academies list takes plans from the plan enum", () => {
+  test("facetedFilterFn passes every row when nothing is picked", () => {
+    expect(facetedFilterFn(rowWith("draft"), "type", [])).toBe(true);
+    expect(facetedFilterFn(rowWith("draft"), "type", undefined)).toBe(true);
+  });
+
+  test("dateRangeFilterFn keeps rows inside the picked days, inclusive", () => {
+    const range = { from: "2026-10-01", to: "2026-10-03" };
+    const lateOnLastDay = new Date(2026, 9, 3, 23, 30);
+    const dayAfter = new Date(2026, 9, 4, 0, 0, 1);
+    expect(dateRangeFilterFn(rowWith(lateOnLastDay), "createdAt", range)).toBe(
+      true,
+    );
+    expect(dateRangeFilterFn(rowWith(dayAfter), "createdAt", range)).toBe(
+      false,
+    );
+    // tRPC can hand dates over as ISO strings; those compare the same way.
     expect(
-      listPlatformOrganizationsInput.safeParse({ plans: ["free", "basic"] })
-        .success,
+      dateRangeFilterFn(
+        rowWith(lateOnLastDay.toISOString()),
+        "createdAt",
+        range,
+      ),
     ).toBe(true);
-    expect(
-      listPlatformOrganizationsInput.safeParse({ plans: ["gold"] }).success,
-    ).toBe(false);
+  });
+
+  test("dateRangeFilterFn passes every row when no range is set", () => {
+    expect(dateRangeFilterFn(rowWith(new Date()), "createdAt", undefined)).toBe(
+      true,
+    );
+  });
+});
+
+describe("academyGlobalFilter", () => {
+  const academy = {
+    original: {
+      id: "a",
+      name: "Nour Academy",
+      shortCode: "NR01",
+      plan: "free" as const,
+      studentCount: 0,
+      courseCount: 0,
+      storageBytes: 0,
+      adminEmail: "owner@nour.example",
+      planGrantedBy: null,
+      planGrantedAt: null,
+      isMine: false,
+    },
+  };
+
+  test("matches name, short code or owner email, ignoring case", () => {
+    expect(academyGlobalFilter(academy, "academy", "nour")).toBe(true);
+    expect(academyGlobalFilter(academy, "academy", "nr01")).toBe(true);
+    expect(academyGlobalFilter(academy, "academy", "OWNER@")).toBe(true);
+    expect(academyGlobalFilter(academy, "academy", "other")).toBe(false);
+  });
+
+  test("an empty search matches everything", () => {
+    expect(academyGlobalFilter(academy, "academy", "  ")).toBe(true);
   });
 });

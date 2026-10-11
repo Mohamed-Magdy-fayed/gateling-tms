@@ -27,10 +27,8 @@ import {
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
-  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
-  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -76,27 +74,6 @@ export function OrganizationsSettingsPage() {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
-  const listInput = useMemo(
-    () => ({
-      page: pagination.pageIndex + 1,
-      perPage: pagination.pageSize,
-      sorting,
-      globalFilter: globalFilter || undefined,
-      roles: selectedEnumFilterValues(
-        columnFilters,
-        "role",
-        organizationMembershipRoleValues,
-      ),
-      joinedAt: dateRangeFilterBounds(columnFilters, "joinedAt"),
-    }),
-    [
-      columnFilters,
-      globalFilter,
-      pagination.pageIndex,
-      pagination.pageSize,
-      sorting,
-    ],
-  );
   const roleOptions = useMemo(
     () =>
       organizationMembershipRoleValues.map((role) => ({
@@ -106,8 +83,9 @@ export function OrganizationsSettingsPage() {
     [t],
   );
 
+  // A definition list: loaded whole and sorted/filtered in the browser.
   const membersQuery = useQuery(
-    trpc.organizations.members.list.queryOptions(listInput),
+    trpc.organizations.members.listAll.queryOptions(),
   );
 
   const canManage = activeOrganization?.role === "admin";
@@ -154,10 +132,8 @@ export function OrganizationsSettingsPage() {
     globalFilter: resolvedGlobalFilter,
     setGlobalFilter: setResolvedGlobalFilter,
   } = useDataTable({
-    mode: "server",
-    data: membersQuery.data?.rows ?? [],
-    pageCount: membersQuery.data?.pageCount ?? 1,
-    rowCount: membersQuery.data?.total ?? 0,
+    mode: "client",
+    data: membersQuery.data ?? [],
     columns,
     getRowId: (row) => row.userId,
     controlled,

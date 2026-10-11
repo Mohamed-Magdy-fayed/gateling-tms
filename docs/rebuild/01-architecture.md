@@ -14,7 +14,7 @@ Target stack, folder layout, and the key decisions with their rationale. All dec
 | Auth | Custom: Redis sessions + Google OAuth + WebAuthn passkeys | from DONOR-B; **no next-auth** |
 | Sessions | Upstash Redis, 7-day expiry, httpOnly cookie | replaces SOURCE's 10-min JWT |
 | Forms | TanStack Form via `useAppForm` + Zod 4 | from DONOR-B |
-| Tables | DONOR-B data-table (server-side pagination, URL state) | |
+| Tables | DONOR-B data-table (URL state; client mode for definition lists, server mode for transactional ones — AD-4) | |
 | Jobs | Inngest 4 | app id `gateling-tms` |
 | Storage | Firebase Storage (admin SDK server-side) | 1 GB/org quota tracking |
 | Email | nodemailer ≥9.0.3 over SMTP | Resend dropped (D6) |
@@ -79,6 +79,13 @@ From DONOR-B `src\features\core\auth\`: `core\session.ts` (Redis-backed, `sessio
 
 ### AD-4 Data table: DONOR-B verbatim
 `G:\apps\gateling.com\src\features\core\data-table\` copied as a unit (components, hooks, lib — 24 files). Server-side pagination/filtering through `use-table-url-state.ts` + `lib\filter-values.ts`; CSV export/import in `lib\csv.ts`. Every admin list in the app uses it — no ad-hoc tables.
+
+**Table mode rule** (the same rule as DONOR-B's `docs/entity-blueprint.md` → "Data Table Mode Pattern", adopted here 2026-10-11):
+
+- **Definition/reference lists use client mode.** They stay small, so the page loads the whole list once (a `listAll` query, capped by `CLIENT_TABLE_ROW_LIMIT` in `src/lib/list-limits.ts`) and sorts, filters and pages it in the browser. Columns that filter set `filterFn: facetedFilterFn` or `dateRangeFilterFn`. Today: **courses, assessment forms, organization members, academies (platform owner)**.
+- **Transactional lists use server mode.** They grow with the academy, so the paged `list` query takes the filters (optional `inArray` lists and `dateRangeInput` ranges) and filtering, sorting and paging run in Postgres. Today: **trainees, groups, enrollments, certificates**, and every future list of payments, sessions, attendance, responses or logs.
+- Breaking the rule needs a written reason next to the page: a definition list known to be very large may go server-side; a transactional list stays server-side.
+- The paged `list` queries of definition entities stay for pickers and selects (e.g. the course dropdown in a filter or a form).
 
 ### AD-5 Inngest: offload policy
 App id `gateling-tms`. Adopt DONOR-B's `G:\apps\gateling.com\docs\inngest-offload-policy.md` as a rule: anything not needed for the immediate response is an event → function. V1 functions (domain events re-implemented from SOURCE's set): org lifecycle, verification/welcome emails, group→session generation, media processing, cascade deletes, quota recalculation. **Live-class meetings are deliberately not on this list** — onMeeting meetings are created on demand while the teacher waits for the link, so that one call is inline (D143), the same exception the Zoom OAuth callback used to hold.

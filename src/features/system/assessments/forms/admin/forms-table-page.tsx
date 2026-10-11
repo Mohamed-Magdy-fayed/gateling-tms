@@ -8,7 +8,7 @@ import type {
 } from "@tanstack/react-table";
 import { FileSpreadsheetIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { type Form, formStatusValues, formTypeValues } from "@/drizzle/schema";
 import {
@@ -20,10 +20,8 @@ import {
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
-  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
-  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -63,29 +61,6 @@ export function FormsTablePage() {
   const [rowAction, setRowAction] = useState<RowAction>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const listInput = useMemo(
-    () => ({
-      page: pagination.pageIndex + 1,
-      perPage: pagination.pageSize,
-      sorting,
-      globalFilter: globalFilter || undefined,
-      types: selectedEnumFilterValues(columnFilters, "type", formTypeValues),
-      statuses: selectedEnumFilterValues(
-        columnFilters,
-        "status",
-        formStatusValues,
-      ),
-      createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
-    }),
-    [
-      columnFilters,
-      globalFilter,
-      pagination.pageIndex,
-      pagination.pageSize,
-      sorting,
-    ],
-  );
-
   const typeOptions = useMemo(
     () =>
       formTypeValues.map((type) => ({
@@ -103,17 +78,8 @@ export function FormsTablePage() {
     [t],
   );
 
-  const { data, isFetching } = useQuery(
-    trpc.forms.list.queryOptions(listInput),
-  );
-
-  // The server clamps an out-of-range requested page (e.g. after the last
-  // row on it was deleted) — sync local state to whatever it actually served.
-  useEffect(() => {
-    if (data && data.page !== pagination.pageIndex + 1) {
-      setPagination((prev) => ({ ...prev, pageIndex: data.page - 1 }));
-    }
-  }, [data, pagination.pageIndex, setPagination]);
+  // A definition list: loaded whole and sorted/filtered in the browser.
+  const { data, isFetching } = useQuery(trpc.forms.listAll.queryOptions());
 
   const controlled = useMemo<DataTableControlledState>(
     () => ({
@@ -157,10 +123,8 @@ export function FormsTablePage() {
     globalFilter: resolvedGlobalFilter,
     setGlobalFilter: setResolvedGlobalFilter,
   } = useDataTable({
-    mode: "server",
-    data: data?.rows ?? [],
-    pageCount: data?.pageCount ?? 1,
-    rowCount: data?.total ?? 0,
+    mode: "client",
+    data: data ?? [],
     columns,
     getRowId: (row) => row.id,
     controlled,

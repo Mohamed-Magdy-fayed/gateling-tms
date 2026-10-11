@@ -6,6 +6,8 @@ import type { Form, FormStatus } from "@/drizzle/schema";
 import {
   createEntityActionsColumn,
   DataTableColumnHeader,
+  dateRangeFilterFn,
+  facetedFilterFn,
 } from "@/features/core/data-table";
 import type { useTranslation } from "@/features/core/i18n/client";
 import { FormRowActions, type SetFormRowAction } from "./form-row-actions";
@@ -46,6 +48,7 @@ export function buildFormColumns(opts: {
         <DataTableColumnHeader column={column} title={t("assessments.type")} />
       ),
       meta: { label: t("assessments.type") },
+      filterFn: facetedFilterFn,
       cell: ({ row }) => (
         <Tag color="violet">
           {t(`assessments.typeOptions.${row.original.type}`)}
@@ -61,6 +64,7 @@ export function buildFormColumns(opts: {
         />
       ),
       meta: { label: t("assessments.status") },
+      filterFn: facetedFilterFn,
       cell: ({ row }) => (
         <Tag color={STATUS_COLOR[row.original.status]}>
           {t(`assessments.statusOptions.${row.original.status}`)}
@@ -73,6 +77,7 @@ export function buildFormColumns(opts: {
         <DataTableColumnHeader column={column} title={t("common.createdAt")} />
       ),
       meta: { label: t("common.createdAt") },
+      filterFn: dateRangeFilterFn,
       cell: ({ row }) => dateFmt.format(new Date(row.original.createdAt)),
     },
     createEntityActionsColumn({

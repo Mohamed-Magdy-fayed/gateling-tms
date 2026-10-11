@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   ColumnPinningState,
   RowSelectionState,
@@ -26,7 +21,6 @@ import {
   DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
-  selectedEnumFilterValues,
   useDataTable,
   useTableUrlState,
 } from "@/features/core/data-table";
@@ -34,6 +28,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTRPC } from "@/integrations/trpc/client";
 import {
+  academyGlobalFilter,
   buildAcademyColumns,
   type PlanChangeRequest,
 } from "./academies-table-columns";
@@ -66,19 +61,6 @@ export function AcademiesSection() {
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [request, setRequest] = useState<PlanChangeRequest | null>(null);
 
-  const listInput = useMemo(
-    () => ({
-      page: pagination.pageIndex + 1,
-      perPage: pagination.pageSize,
-      globalFilter: globalFilter || undefined,
-      plans: selectedEnumFilterValues(
-        columnFilters,
-        "plan",
-        organizationPlanValues,
-      ),
-    }),
-    [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize],
-  );
   const planOptions = useMemo(
     () =>
       organizationPlanValues.map((plan) => ({
@@ -87,10 +69,8 @@ export function AcademiesSection() {
       })),
     [t],
   );
-  const listQuery = useQuery({
-    ...trpc.platform.listOrganizations.queryOptions(listInput),
-    placeholderData: keepPreviousData,
-  });
+  // A handful of academies: loaded whole and sorted/filtered in the browser.
+  const listQuery = useQuery(trpc.platform.listAllOrganizations.queryOptions());
 
   const setPlanMut = useMutation(
     trpc.platform.setOrganizationPlan.mutationOptions(),
@@ -109,7 +89,7 @@ export function AcademiesSection() {
       // usage meters read these two queries.
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: trpc.platform.listOrganizations.pathKey(),
+          queryKey: trpc.platform.listAllOrganizations.pathKey(),
         }),
         queryClient.invalidateQueries({
           queryKey: trpc.organizations.getActive.pathKey(),
@@ -174,17 +154,15 @@ export function AcademiesSection() {
     globalFilter: resolvedGlobalFilter,
     setGlobalFilter: setResolvedGlobalFilter,
   } = useDataTable({
-    mode: "server",
-    data: listQuery.data?.rows ?? [],
-    pageCount: listQuery.data?.pageCount ?? 1,
-    rowCount: listQuery.data?.total ?? 0,
+    mode: "client",
+    data: listQuery.data ?? [],
     columns,
+    globalFilterFn: academyGlobalFilter,
     getRowId: (row) => row.id,
     controlled,
   });
 
-  const isEmpty =
-    listQuery.data?.total === 0 && !globalFilter && columnFilters.length === 0;
+  const isEmpty = listQuery.data?.length === 0;
 
   return (
     <section aria-labelledby="platform-academies" className="space-y-3">

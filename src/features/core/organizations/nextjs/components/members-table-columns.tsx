@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   createEntityActionsColumn,
   DataTableColumnHeader,
+  dateRangeFilterFn,
+  facetedFilterFn,
 } from "@/features/core/data-table";
 import type { useTranslation } from "@/features/core/i18n/client";
 import type { OrganizationMemberRow } from "@/features/core/organizations/server/queries";
@@ -58,8 +60,11 @@ export function buildMemberColumns(opts: {
         />
       ),
       meta: { label: t("organizations.members.columnRole") },
+      filterFn: facetedFilterFn,
       cell: ({ row }) => (
-        <Badge variant={row.original.role === "admin" ? "default" : "secondary"}>
+        <Badge
+          variant={row.original.role === "admin" ? "default" : "secondary"}
+        >
           {t(`organizations.members.role.${row.original.role}`)}
         </Badge>
       ),
@@ -73,6 +78,7 @@ export function buildMemberColumns(opts: {
         />
       ),
       meta: { label: t("organizations.members.columnJoinedAt") },
+      filterFn: dateRangeFilterFn,
       cell: ({ row }) => dateFmt.format(new Date(row.original.joinedAt)),
     },
   ];
@@ -82,7 +88,10 @@ export function buildMemberColumns(opts: {
       createEntityActionsColumn({
         t,
         cell: ({ row }) => (
-          <MemberRowActions row={row.original} setRemoveTarget={setRemoveTarget} />
+          <MemberRowActions
+            row={row.original}
+            setRemoveTarget={setRemoveTarget}
+          />
         ),
       }),
     );

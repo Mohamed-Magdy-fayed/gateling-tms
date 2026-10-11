@@ -4,7 +4,7 @@ import {
   orgProcedure,
 } from "@/integrations/trpc/init";
 import { createForm, deleteForm, updateForm } from "./mutations";
-import { getForm, getFormTree, listForms } from "./queries";
+import { getForm, getFormTree, listAllForms, listForms } from "./queries";
 import {
   formDeleteSchema,
   formMutationSchema,
@@ -16,6 +16,8 @@ export const formsRouter = createTRPCRouter({
   list: orgProcedure
     .input(listFormsInput)
     .query(async ({ ctx, input }) => listForms(ctx, input)),
+  // The whole list for the client-mode assessments table; pickers use `list`.
+  listAll: orgProcedure.query(async ({ ctx }) => listAllForms(ctx)),
   // Reuses formDeleteSchema — same {id} shape, no need for a near-duplicate.
   get: orgProcedure
     .input(formDeleteSchema)

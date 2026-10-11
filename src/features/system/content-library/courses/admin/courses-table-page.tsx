@@ -7,7 +7,7 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 import { LayersIcon, PlusIcon, UploadIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Course } from "@/drizzle/schema";
 import {
@@ -18,7 +18,6 @@ import {
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
-  dateRangeFilterBounds,
   EntityPageHeader,
   getEntityColumnPinning,
   useDataTable,
@@ -80,34 +79,8 @@ export function CoursesTablePage() {
     trpc.levels.importCommit.mutationOptions(),
   );
 
-  const listInput = useMemo(
-    () => ({
-      page: pagination.pageIndex + 1,
-      perPage: pagination.pageSize,
-      sorting,
-      globalFilter: globalFilter || undefined,
-      createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
-    }),
-    [
-      columnFilters,
-      globalFilter,
-      pagination.pageIndex,
-      pagination.pageSize,
-      sorting,
-    ],
-  );
-
-  const { data, isFetching } = useQuery(
-    trpc.courses.list.queryOptions(listInput),
-  );
-
-  // The server clamps an out-of-range requested page (e.g. after the last
-  // row on it was deleted) — sync local state to whatever it actually served.
-  useEffect(() => {
-    if (data && data.page !== pagination.pageIndex + 1) {
-      setPagination((prev) => ({ ...prev, pageIndex: data.page - 1 }));
-    }
-  }, [data, pagination.pageIndex, setPagination]);
+  // A definition list: loaded whole and sorted/filtered in the browser.
+  const { data, isFetching } = useQuery(trpc.courses.listAll.queryOptions());
 
   const controlled = useMemo<DataTableControlledState>(
     () => ({
@@ -151,10 +124,8 @@ export function CoursesTablePage() {
     globalFilter: resolvedGlobalFilter,
     setGlobalFilter: setResolvedGlobalFilter,
   } = useDataTable({
-    mode: "server",
-    data: data?.rows ?? [],
-    pageCount: data?.pageCount ?? 1,
-    rowCount: data?.total ?? 0,
+    mode: "client",
+    data: data ?? [],
     columns,
     getRowId: (row) => row.id,
     controlled,

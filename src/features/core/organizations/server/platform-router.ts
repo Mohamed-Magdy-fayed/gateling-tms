@@ -3,7 +3,10 @@ import {
   platformOwnerProcedure,
 } from "@/integrations/trpc/init";
 import { setOrganizationPlan } from "./platform-mutations";
-import { listPlatformOrganizations } from "./platform-queries";
+import {
+  listAllPlatformOrganizations,
+  listPlatformOrganizations,
+} from "./platform-queries";
 import {
   listPlatformOrganizationsInput,
   setOrganizationPlanSchema,
@@ -20,6 +23,10 @@ export const platformRouter = createTRPCRouter({
   listOrganizations: platformOwnerProcedure
     .input(listPlatformOrganizationsInput)
     .query(async ({ ctx, input }) => listPlatformOrganizations(ctx, input)),
+  // The whole list for the client-mode Academies table.
+  listAllOrganizations: platformOwnerProcedure.query(async ({ ctx }) =>
+    listAllPlatformOrganizations(ctx),
+  ),
   setOrganizationPlan: platformOwnerProcedure
     .input(setOrganizationPlanSchema)
     .mutation(async ({ ctx, input }) => setOrganizationPlan(ctx, input)),

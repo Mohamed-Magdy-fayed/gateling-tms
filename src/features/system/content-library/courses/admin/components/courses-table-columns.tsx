@@ -5,6 +5,7 @@ import type { Course } from "@/drizzle/schema";
 import {
   createEntityActionsColumn,
   DataTableColumnHeader,
+  dateRangeFilterFn,
 } from "@/features/core/data-table";
 import type { useTranslation } from "@/features/core/i18n/client";
 import {
@@ -50,6 +51,7 @@ export function buildCourseColumns(opts: {
         <DataTableColumnHeader column={column} title={t("common.createdAt")} />
       ),
       meta: { label: t("common.createdAt") },
+      filterFn: dateRangeFilterFn,
       cell: ({ row }) => dateFmt.format(new Date(row.original.createdAt)),
     },
     createEntityActionsColumn({

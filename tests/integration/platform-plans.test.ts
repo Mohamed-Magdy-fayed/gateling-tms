@@ -90,6 +90,9 @@ describe("platform plan grants", () => {
         "FORBIDDEN",
       );
       expect(
+        await errorCodeOf(callerOf().platform.listAllOrganizations()),
+      ).toBe("FORBIDDEN");
+      expect(
         await errorCodeOf(
           callerOf().platform.setOrganizationPlan({
             organizationId: academy.organizationId,
@@ -98,6 +101,22 @@ describe("platform plan grants", () => {
         ),
       ).toBe("FORBIDDEN");
       expect((await planOf(academy.organizationId)).plan).toBe("free");
+    });
+  });
+
+  describe("listAllOrganizations", () => {
+    test("returns every academy, the owner's own one tagged as theirs", async () => {
+      const rows = await owner.caller.platform.listAllOrganizations();
+      const ids = rows.map((r) => r.id);
+
+      expect(ids).toContain(academy.organizationId);
+      expect(rows.find((r) => r.id === owner.organizationId)?.isMine).toBe(
+        true,
+      );
+      expect(rows.find((r) => r.id === academy.organizationId)).toMatchObject({
+        adminEmail: academy.email,
+        isMine: false,
+      });
     });
   });
 

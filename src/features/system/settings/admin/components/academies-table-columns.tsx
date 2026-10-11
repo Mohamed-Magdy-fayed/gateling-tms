@@ -16,7 +16,10 @@ import {
   type OrganizationPlan,
   organizationPlanValues,
 } from "@/drizzle/schema";
-import { DataTableColumnHeader } from "@/features/core/data-table";
+import {
+  DataTableColumnHeader,
+  facetedFilterFn,
+} from "@/features/core/data-table";
 import type { useTranslation } from "@/features/core/i18n/client";
 import type { PlatformOrganizationRow } from "@/features/core/organizations/server";
 import { PLAN_LIMITS } from "@/features/core/organizations/server/limits";
@@ -38,6 +41,24 @@ type ColumnOptions = {
   pendingOrganizationId: string | null;
   onRequestPlanChange: (request: PlanChangeRequest) => void;
 };
+
+/**
+ * The Academies search box: name, short code or the owner's email — the same
+ * fields the server-side search used to match.
+ */
+export function academyGlobalFilter(
+  row: { original: PlatformOrganizationRow },
+  _columnId: string,
+  filterValue: unknown,
+): boolean {
+  const query = typeof filterValue === "string" ? filterValue.trim() : "";
+  if (!query) return true;
+  const needle = query.toLocaleLowerCase();
+  const { name, shortCode, adminEmail } = row.original;
+  return [name, shortCode, adminEmail ?? ""].some((value) =>
+    value.toLocaleLowerCase().includes(needle),
+  );
+}
 
 export function buildAcademyColumns(
   opts: ColumnOptions,
@@ -72,6 +93,9 @@ export function buildAcademyColumns(
   const columns: ColumnDef<PlatformOrganizationRow>[] = [
     {
       id: "academy",
+      // Accessors on the text columns make them sortable and searchable in
+      // the client-mode table.
+      accessorFn: (row) => row.name,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -95,6 +119,7 @@ export function buildAcademyColumns(
     columns.push(
       {
         id: "adminEmail",
+        accessorFn: (row) => row.adminEmail ?? "",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
@@ -139,6 +164,9 @@ export function buildAcademyColumns(
 
   columns.push({
     id: "plan",
+    // An accessor so the client-mode table can sort and filter by plan.
+    accessorFn: (row) => row.plan,
+    filterFn: facetedFilterFn,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}

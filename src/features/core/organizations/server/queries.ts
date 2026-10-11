@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/drizzle";
-import { inDateRange } from "@/drizzle/lib/date-range";
 import { likeContains } from "@/drizzle/lib/search";
 import {
   OrganizationMembershipsTable,
@@ -11,6 +10,7 @@ import {
 } from "@/drizzle/schema";
 import { hashTokenValue } from "@/features/core/auth/core/token";
 import type { TRPCContext } from "@/integrations/trpc/init";
+import { CLIENT_TABLE_ROW_LIMIT } from "@/lib/list-limits";
 import { PLAN_LIMITS } from "./limits";
 import type { InviteMemberInput, ListMembersInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
@@ -140,7 +140,6 @@ function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
     input.roles?.length
       ? inArray(OrganizationMembershipsTable.role, input.roles)
       : undefined,
-    inDateRange(OrganizationMembershipsTable.createdAt, input.joinedAt),
   );
   const query = input.globalFilter?.trim();
   if (!query) return base;
@@ -194,6 +193,35 @@ export type OrganizationMemberRow = {
   email: string | null;
 };
 
+const memberRowSelection = {
+  userId: OrganizationMembershipsTable.userId,
+  role: OrganizationMembershipsTable.role,
+  joinedAt: OrganizationMembershipsTable.createdAt,
+  name: UsersTable.name,
+  email: UsersTable.email,
+};
+
+/**
+ * Every member of the org, for the client-mode members table on the
+ * organization settings page — staff and student accounts of one academy, so
+ * the page sorts and filters it in the browser. Pickers keep using the paged
+ * `listMembers`.
+ */
+export async function listAllMembers(
+  ctx: OrgTRPCContext,
+): Promise<OrganizationMemberRow[]> {
+  return ctx.db
+    .select(memberRowSelection)
+    .from(OrganizationMembershipsTable)
+    .innerJoin(
+      UsersTable,
+      eq(UsersTable.id, OrganizationMembershipsTable.userId),
+    )
+    .where(eq(OrganizationMembershipsTable.organizationId, ctx.organizationId))
+    .orderBy(asc(UsersTable.name), asc(OrganizationMembershipsTable.userId))
+    .limit(CLIENT_TABLE_ROW_LIMIT);
+}
+
 export async function listMembers(
   ctx: OrgTRPCContext,
   input: ListMembersInput,
@@ -214,13 +242,7 @@ export async function listMembers(
   const offset = (page - 1) * input.perPage;
 
   const rows: OrganizationMemberRow[] = await ctx.db
-    .select({
-      userId: OrganizationMembershipsTable.userId,
-      role: OrganizationMembershipsTable.role,
-      joinedAt: OrganizationMembershipsTable.createdAt,
-      name: UsersTable.name,
-      email: UsersTable.email,
-    })
+    .select(memberRowSelection)
     .from(OrganizationMembershipsTable)
     .innerJoin(
       UsersTable,
