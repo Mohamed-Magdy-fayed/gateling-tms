@@ -24,6 +24,10 @@ import {
   useTableUrlState,
 } from "@/features/core/data-table";
 import { useTranslation } from "@/features/core/i18n/client";
+import {
+  BRANCH_COLUMN_ID,
+  useBranchListColumn,
+} from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 import {
   buildCertificateColumns,
@@ -62,12 +66,25 @@ export function CertificatesTablePage() {
   );
   const [rowAction, setRowAction] = useState<RowAction>(null);
 
+  const { data: organization } = useQuery(
+    trpc.organizations.getActive.queryOptions(),
+  );
+  const timeZone = organization?.timeZone ?? "UTC";
+
+  const baseColumns = useMemo(
+    () => buildCertificateColumns({ locale, setRowAction, t, timeZone }),
+    [locale, t, timeZone],
+  );
+  // Branch column + filter, on "All branches" only.
+  const branchList = useBranchListColumn(baseColumns);
+
   const listInput = useMemo(
     () => ({
       page: pagination.pageIndex + 1,
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      branchIds: branchList.branchIdsFilter(columnFilters),
       // The course and group filters hold ids even though their columns show
       // names — the server filters on the id columns.
       courseIds: selectedFilterValues(columnFilters, "courseName"),
@@ -75,6 +92,7 @@ export function CertificatesTablePage() {
       issuedAt: dateRangeFilterBounds(columnFilters, "issuedAt"),
     }),
     [
+      branchList,
       columnFilters,
       globalFilter,
       pagination.pageIndex,
@@ -110,10 +128,6 @@ export function CertificatesTablePage() {
     ...trpc.certificates.list.queryOptions(listInput),
     placeholderData: keepPreviousData,
   });
-
-  const { data: organization } = useQuery(
-    trpc.organizations.getActive.queryOptions(),
-  );
 
   // The server clamps an out-of-range requested page (e.g. after the last row
   // on it was revoked) — sync local state to whatever it actually served.
@@ -155,12 +169,7 @@ export function CertificatesTablePage() {
     ],
   );
 
-  const timeZone = organization?.timeZone ?? "UTC";
-
-  const columns = useMemo(
-    () => buildCertificateColumns({ locale, setRowAction, t, timeZone }),
-    [locale, t, timeZone],
-  );
+  const columns = branchList.columns;
 
   const dateFmt = useMemo(
     () => createCertificateDateFormat({ locale, timeZone }),
@@ -204,6 +213,13 @@ export function CertificatesTablePage() {
             searchPlaceholder={t("certificates.searchHint")}
             filterSlot={
               <>
+                {branchList.show ? (
+                  <DataTableFacetedFilter
+                    column={table.getColumn(BRANCH_COLUMN_ID)}
+                    title={t("organizations.branches.column")}
+                    options={branchList.options}
+                  />
+                ) : null}
                 <DataTableFacetedFilter
                   column={table.getColumn("courseName")}
                   title={t("certificates.course")}

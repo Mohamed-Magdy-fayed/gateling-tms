@@ -35,7 +35,11 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
-import { useImportBranch } from "@/features/core/organizations/nextjs";
+import {
+  BRANCH_COLUMN_ID,
+  useBranchListColumn,
+  useImportBranch,
+} from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -82,12 +86,20 @@ export function GroupsTablePage() {
     trpc.groups.importStudentsCommit.mutationOptions(),
   );
 
+  const baseColumns = useMemo(
+    () => buildGroupColumns({ locale, setRowAction, t }),
+    [locale, t],
+  );
+  // Branch column + filter, on "All branches" only.
+  const branchList = useBranchListColumn(baseColumns);
+
   const listInput = useMemo(
     () => ({
       page: pagination.pageIndex + 1,
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      branchIds: branchList.branchIdsFilter(columnFilters),
       statuses: selectedEnumFilterValues(
         columnFilters,
         "status",
@@ -97,6 +109,7 @@ export function GroupsTablePage() {
       teacherIds: selectedFilterValues(columnFilters, "teacherName"),
     }),
     [
+      branchList,
       columnFilters,
       globalFilter,
       pagination.pageIndex,
@@ -187,10 +200,7 @@ export function GroupsTablePage() {
     ],
   );
 
-  const columns = useMemo(
-    () => buildGroupColumns({ locale, setRowAction, t }),
-    [locale, t],
-  );
+  const columns = branchList.columns;
 
   const {
     table,
@@ -226,6 +236,13 @@ export function GroupsTablePage() {
             searchPlaceholder={t("groups.searchHint")}
             filterSlot={
               <>
+                {branchList.show ? (
+                  <DataTableFacetedFilter
+                    column={table.getColumn(BRANCH_COLUMN_ID)}
+                    title={t("organizations.branches.column")}
+                    options={branchList.options}
+                  />
+                ) : null}
                 <DataTableFacetedFilter
                   column={table.getColumn("status")}
                   title={t("groups.status")}

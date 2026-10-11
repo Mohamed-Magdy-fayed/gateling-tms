@@ -37,7 +37,11 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
-import { useImportBranch } from "@/features/core/organizations/nextjs";
+import {
+  BRANCH_COLUMN_ID,
+  useBranchListColumn,
+  useImportBranch,
+} from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 import {
   buildEnrollmentColumns,
@@ -87,12 +91,20 @@ export function EnrollmentsTablePage() {
     trpc.enrollments.importCommit.mutationOptions(),
   );
 
+  const baseColumns = useMemo(
+    () => buildEnrollmentColumns({ locale, setRowAction, t }),
+    [locale, t],
+  );
+  // Branch column + filter, on "All branches" only.
+  const branchList = useBranchListColumn(baseColumns);
+
   const listInput = useMemo(
     () => ({
       page: pagination.pageIndex + 1,
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      branchIds: branchList.branchIdsFilter(columnFilters),
       statuses: selectedEnumFilterValues(
         columnFilters,
         "status",
@@ -104,6 +116,7 @@ export function EnrollmentsTablePage() {
       createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
     }),
     [
+      branchList,
       columnFilters,
       globalFilter,
       pagination.pageIndex,
@@ -177,10 +190,7 @@ export function EnrollmentsTablePage() {
     ],
   );
 
-  const columns = useMemo(
-    () => buildEnrollmentColumns({ locale, setRowAction, t }),
-    [locale, t],
-  );
+  const columns = branchList.columns;
 
   const {
     table,
@@ -219,6 +229,13 @@ export function EnrollmentsTablePage() {
             searchPlaceholder={t("enrollments.searchHint")}
             filterSlot={
               <>
+                {branchList.show ? (
+                  <DataTableFacetedFilter
+                    column={table.getColumn(BRANCH_COLUMN_ID)}
+                    title={t("organizations.branches.column")}
+                    options={branchList.options}
+                  />
+                ) : null}
                 <DataTableFacetedFilter
                   column={table.getColumn("status")}
                   title={t("enrollments.status")}

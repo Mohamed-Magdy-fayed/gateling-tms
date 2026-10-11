@@ -19,6 +19,7 @@ import {
   LevelsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchFilter } from "@/integrations/trpc/branch-filter";
 import type { ListEnrollmentsInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -28,7 +29,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListEnrollmentsInput) {
   return and(
     and(
       eq(EnrollmentsTable.organizationId, ctx.organizationId),
-      inArray(EnrollmentsTable.branchId, ctx.branchIds),
+      branchFilter(EnrollmentsTable.branchId, ctx, input.branchIds),
     ),
     input.traineeId
       ? eq(EnrollmentsTable.traineeId, input.traineeId)
@@ -127,6 +128,7 @@ export async function listEnrollments(
       courseId: EnrollmentsTable.courseId,
       courseName: CoursesTable.name,
       status: EnrollmentsTable.status,
+      branchId: EnrollmentsTable.branchId,
       createdAt: EnrollmentsTable.createdAt,
     })
     .from(EnrollmentsTable)

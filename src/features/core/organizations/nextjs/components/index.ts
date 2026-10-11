@@ -1,4 +1,5 @@
 export * from "./branch-form-dialog";
+export * from "./branch-list-column";
 export * from "./branches-section";
 export * from "./invite-member-dialog";
 export * from "./member-branches-dialog";

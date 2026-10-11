@@ -9,6 +9,8 @@ import { idSchema } from "@/lib/id-schema";
 import { MAX_GENERATED_SESSIONS, MAX_SCHEDULE_SLOTS } from "./schedule";
 
 export const listGroupsInput = z.object({
+  // The list's Branch filter; narrows ctx.branchIds, never widens it.
+  branchIds: z.array(idSchema).max(200).optional(),
   page: z.number().int().min(1).default(1),
   perPage: z.number().int().min(1).max(100).default(20),
   sorting: z.array(z.object({ id: z.string(), desc: z.boolean() })).default([]),

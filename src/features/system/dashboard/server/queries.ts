@@ -1,6 +1,18 @@
 import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, gte, inArray, lt, ne } from "drizzle-orm";
 import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lt,
+  ne,
+} from "drizzle-orm";
+import {
+  BranchesTable,
   CertificatesTable,
   CoursesTable,
   EnrollmentsTable,
@@ -88,6 +100,10 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
   ]);
 
   const limits = PLAN_LIMITS[organization.plan];
+  const branches =
+    ctx.activeBranchId === null && ctx.branchIds.length > 1
+      ? await getBranchBreakdown(ctx, start, end)
+      : null;
 
   return {
     plan: organization.plan,
@@ -102,7 +118,83 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
       courses: limits.maxCourses,
     },
     todaysSessions,
+    branches,
   };
+}
+
+export type BranchBreakdownRow = {
+  id: string;
+  name: string;
+  students: number;
+  groups: number;
+  todaysClasses: number;
+};
+
+/**
+ * Per-branch counts for "All branches" (docs/designs/academy-branches.md):
+ * the headline tiles add the branches up, this shows how they split.
+ */
+async function getBranchBreakdown(
+  ctx: OrgTRPCContext,
+  start: Date,
+  end: Date,
+): Promise<BranchBreakdownRow[]> {
+  const [branches, students, groups, classes] = await Promise.all([
+    ctx.db
+      .select({ id: BranchesTable.id, name: BranchesTable.name })
+      .from(BranchesTable)
+      .where(
+        and(
+          eq(BranchesTable.organizationId, ctx.organizationId),
+          inArray(BranchesTable.id, ctx.branchIds),
+        ),
+      )
+      .orderBy(asc(BranchesTable.createdAt), asc(BranchesTable.name)),
+    ctx.db
+      .select({ branchId: TraineesTable.branchId, value: count() })
+      .from(TraineesTable)
+      .where(
+        and(
+          eq(TraineesTable.organizationId, ctx.organizationId),
+          inArray(TraineesTable.branchId, ctx.branchIds),
+          isNull(TraineesTable.deletedAt),
+        ),
+      )
+      .groupBy(TraineesTable.branchId),
+    ctx.db
+      .select({ branchId: GroupsTable.branchId, value: count() })
+      .from(GroupsTable)
+      .where(
+        and(
+          eq(GroupsTable.organizationId, ctx.organizationId),
+          inArray(GroupsTable.branchId, ctx.branchIds),
+        ),
+      )
+      .groupBy(GroupsTable.branchId),
+    ctx.db
+      .select({ branchId: SessionsTable.branchId, value: count() })
+      .from(SessionsTable)
+      .where(
+        and(
+          eq(SessionsTable.organizationId, ctx.organizationId),
+          inArray(SessionsTable.branchId, ctx.branchIds),
+          gte(SessionsTable.scheduledAt, start),
+          lt(SessionsTable.scheduledAt, end),
+          ne(SessionsTable.status, "cancelled"),
+        ),
+      )
+      .groupBy(SessionsTable.branchId),
+  ]);
+
+  const countOf = (rows: { branchId: string; value: number }[], id: string) =>
+    Number(rows.find((row) => row.branchId === id)?.value ?? 0);
+
+  return branches.map((branch) => ({
+    ...branch,
+    students: countOf(students, branch.id),
+    groups: countOf(groups, branch.id),
+    todaysClasses: countOf(classes, branch.id),
+  }));
 }
 
 /**

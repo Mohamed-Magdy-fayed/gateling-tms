@@ -20,6 +20,7 @@ import {
   type DataTableControlledState,
   DataTableDateRangeFilter,
   DataTableExportButton,
+  DataTableFacetedFilter,
   DataTablePagination,
   DataTableToolbar,
   DataTableViewOptions,
@@ -35,7 +36,9 @@ import {
   EntityImportDialog,
 } from "@/features/core/import/admin";
 import {
+  BRANCH_COLUMN_ID,
   PlanLimitNotice,
+  useBranchListColumn,
   useImportBranch,
 } from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
@@ -83,15 +86,24 @@ export function TraineesTablePage() {
     trpc.trainees.importCommit.mutationOptions(),
   );
 
+  const baseColumns = useMemo(
+    () => buildTraineeColumns({ locale, setRowAction, t }),
+    [locale, t],
+  );
+  // Branch column + filter, on "All branches" only.
+  const branchList = useBranchListColumn(baseColumns);
+
   const listInput = useMemo(
     () => ({
       page: pagination.pageIndex + 1,
       perPage: pagination.pageSize,
       sorting,
       globalFilter: globalFilter || undefined,
+      branchIds: branchList.branchIdsFilter(columnFilters),
       createdAt: dateRangeFilterBounds(columnFilters, "createdAt"),
     }),
     [
+      branchList,
       columnFilters,
       globalFilter,
       pagination.pageIndex,
@@ -145,10 +157,7 @@ export function TraineesTablePage() {
     ],
   );
 
-  const columns = useMemo(
-    () => buildTraineeColumns({ locale, setRowAction, t }),
-    [locale, t],
-  );
+  const columns = branchList.columns;
 
   const {
     table,
@@ -185,10 +194,19 @@ export function TraineesTablePage() {
             onGlobalFilterChange={(value) => setResolvedGlobalFilter(value)}
             searchPlaceholder={t("trainees.searchHint")}
             filterSlot={
-              <DataTableDateRangeFilter
-                column={table.getColumn("createdAt")}
-                title={t("common.createdAt")}
-              />
+              <>
+                {branchList.show ? (
+                  <DataTableFacetedFilter
+                    column={table.getColumn(BRANCH_COLUMN_ID)}
+                    title={t("organizations.branches.column")}
+                    options={branchList.options}
+                  />
+                ) : null}
+                <DataTableDateRangeFilter
+                  column={table.getColumn("createdAt")}
+                  title={t("common.createdAt")}
+                />
+              </>
             }
           >
             <DataTableExportButton

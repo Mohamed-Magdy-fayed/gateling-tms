@@ -1751,6 +1751,11 @@ export default {
     scoreAboveMax: "The score can't be higher than {max:number}.",
   },
   dashboard: {
+    byBranch: {
+      title: "By branch",
+      description: "How today and your totals split across branches.",
+      todaysClasses: "Classes today",
+    },
     nav: {
       generalGroup: "General",
     },

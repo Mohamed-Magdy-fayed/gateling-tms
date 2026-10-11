@@ -27,6 +27,7 @@ import { useTranslation } from "@/features/core/i18n/client";
 import { TestimonialPromptCard } from "@/features/marketing/testimonials/admin";
 import { EnrollmentStatusTag } from "@/features/system/students/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
+import { BranchBreakdownCard } from "./branch-breakdown-card";
 
 export function DashboardOverview() {
   const trpc = useTRPC();
@@ -121,6 +122,10 @@ export function DashboardOverview() {
           tone="violet"
         />
       </div>
+
+      {overview?.branches ? (
+        <BranchBreakdownCard branches={overview.branches} />
+      ) : null}
 
       <Card>
         <CardHeader>

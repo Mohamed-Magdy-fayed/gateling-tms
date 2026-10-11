@@ -1727,6 +1727,11 @@ export default {
     scoreAboveMax: "لا يمكن أن تكون الدرجة أكبر من {max:number}.",
   },
   dashboard: {
+    byBranch: {
+      title: "حسب الفرع",
+      description: "توزيع حصص اليوم والإجماليات على الفروع.",
+      todaysClasses: "حصص اليوم",
+    },
     nav: {
       generalGroup: "عام",
     },

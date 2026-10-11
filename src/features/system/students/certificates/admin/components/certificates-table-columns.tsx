@@ -16,6 +16,7 @@ type Translate = ReturnType<typeof useTranslation>["t"];
 
 /** The projection `certificates.list` returns — not the raw table row. */
 export type CertificateListRow = {
+  branchId: string;
   id: string;
   traineeId: string;
   traineeName: string;

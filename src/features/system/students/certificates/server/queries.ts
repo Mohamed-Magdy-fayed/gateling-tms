@@ -9,6 +9,7 @@ import {
   OrganizationsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchFilter } from "@/integrations/trpc/branch-filter";
 import type { ListCertificatesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -18,7 +19,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListCertificatesInput) {
   return and(
     and(
       eq(CertificatesTable.organizationId, ctx.organizationId),
-      inArray(CertificatesTable.branchId, ctx.branchIds),
+      branchFilter(CertificatesTable.branchId, ctx, input.branchIds),
     ),
     input.traineeId
       ? eq(CertificatesTable.traineeId, input.traineeId)
@@ -106,6 +107,7 @@ export async function listCertificates(
       courseName: CoursesTable.name,
       groupName: GroupsTable.name,
       issuedAt: CertificatesTable.issuedAt,
+      branchId: CertificatesTable.branchId,
     })
     .from(CertificatesTable)
     .innerJoin(TraineesTable, eq(TraineesTable.id, CertificatesTable.traineeId))

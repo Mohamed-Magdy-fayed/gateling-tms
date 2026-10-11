@@ -47,6 +47,27 @@ export async function listBranches(ctx: OrgTRPCContext): Promise<BranchRow[]> {
 }
 
 /**
+ * The branches this member may switch between, and the selected one (null =
+ * All branches). Lists use it to decide whether to show a Branch column.
+ */
+export async function getBranchScope(ctx: OrgTRPCContext) {
+  const branches =
+    ctx.visibleBranchIds.length === 0
+      ? []
+      : await ctx.db
+          .select({ id: BranchesTable.id, name: BranchesTable.name })
+          .from(BranchesTable)
+          .where(
+            and(
+              eq(BranchesTable.organizationId, ctx.organizationId),
+              inArray(BranchesTable.id, ctx.visibleBranchIds),
+            ),
+          )
+          .orderBy(asc(BranchesTable.createdAt), asc(BranchesTable.name));
+  return { activeBranchId: ctx.activeBranchId, branches };
+}
+
+/**
  * The branches this member may pick when creating a row: the request's
  * scope, active ones only. A create form shows these when "All branches" is
  * selected (requireWriteBranch refuses to guess).

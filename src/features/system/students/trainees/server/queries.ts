@@ -18,6 +18,7 @@ import {
   GroupsTable,
   TraineesTable,
 } from "@/drizzle/schema";
+import { branchFilter } from "@/integrations/trpc/branch-filter";
 import type { ListTraineesInput } from "./schemas";
 import type { OrgTRPCContext } from "./types";
 
@@ -27,7 +28,7 @@ function buildWhereClause(ctx: OrgTRPCContext, input: ListTraineesInput) {
   return and(
     and(
       eq(TraineesTable.organizationId, ctx.organizationId),
-      inArray(TraineesTable.branchId, ctx.branchIds),
+      branchFilter(TraineesTable.branchId, ctx, input.branchIds),
     ),
     isNull(TraineesTable.deletedAt),
     inDateRange(TraineesTable.createdAt, input.createdAt),

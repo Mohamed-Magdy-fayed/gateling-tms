@@ -15,6 +15,7 @@ type Translate = ReturnType<typeof useTranslation>["t"];
 
 /** The projection `groups.list` returns — not the raw table row. */
 export type GroupListRow = {
+  branchId: string;
   id: string;
   name: string;
   courseId: string | null;

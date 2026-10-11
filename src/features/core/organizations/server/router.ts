@@ -7,6 +7,7 @@ import {
 } from "@/integrations/trpc/init";
 import {
   createBranch,
+  getBranchScope,
   listBranches,
   listWritableBranches,
   setMemberBranches,
@@ -61,6 +62,7 @@ export const organizationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => switchActiveOrganization(ctx, input)),
   branches: createTRPCRouter({
     list: orgProcedure.query(async ({ ctx }) => listBranches(ctx)),
+    scope: orgProcedure.query(async ({ ctx }) => getBranchScope(ctx)),
     // What a create form offers when "All branches" is selected.
     writable: orgProcedure.query(async ({ ctx }) => listWritableBranches(ctx)),
     create: orgAdminProcedure

@@ -121,4 +121,43 @@ describe("branch isolation", () => {
       teacher.trainees.create({ name: "Smuggled", branchId: maadiId }),
     ).rejects.toThrow(/branch/i);
   });
+  test("the list Branch filter narrows but never widens", async () => {
+    const all = callerFor(tenant.userId, tenant.organizationId, null);
+    const filtered = await all.trainees.list({
+      page: 1,
+      perPage: 100,
+      branchIds: [maadiId],
+    });
+    // Earlier tests add more Maadi students; what matters is that only Maadi
+    // comes back.
+    expect(filtered.rows.map((row) => row.id)).toContain(maadiStudent);
+    expect(filtered.rows.every((row) => row.branchId === maadiId)).toBe(true);
+
+    // A teacher assigned to Nasr City asking for Maadi gets nothing, not Maadi.
+    const teacher = callerFor(teacherId, tenant.organizationId, null);
+    const smuggled = await teacher.trainees.list({
+      page: 1,
+      perPage: 100,
+      branchIds: [maadiId],
+    });
+    expect(smuggled.rows).toEqual([]);
+  });
+
+  test("the dashboard splits by branch only on All branches", async () => {
+    const all = await callerFor(
+      tenant.userId,
+      tenant.organizationId,
+      null,
+    ).dashboard.overview();
+    expect(all.branches?.map((b) => b.id).sort()).toEqual(
+      [nasrId, maadiId].sort(),
+    );
+
+    const one = await callerFor(
+      tenant.userId,
+      tenant.organizationId,
+      maadiId,
+    ).dashboard.overview();
+    expect(one.branches).toBeNull();
+  });
 });
