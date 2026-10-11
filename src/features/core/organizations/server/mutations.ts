@@ -167,9 +167,13 @@ export async function switchActiveOrganization(
     });
   }
 
-  await setActiveOrganization(input.organizationId, ctx.cookies);
+  // Stored as asked and re-checked on every request by orgProcedure
+  // (resolveBranchAccess), so a branch outside the member's access never
+  // widens what they read.
+  const branchId = input.branchId ?? null;
+  await setActiveOrganization(input.organizationId, ctx.cookies, branchId);
 
-  return { organizationId: input.organizationId };
+  return { organizationId: input.organizationId, branchId };
 }
 
 export async function inviteMember(

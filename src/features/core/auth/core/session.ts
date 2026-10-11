@@ -75,13 +75,17 @@ export async function updateUserSessionData(
 export async function setActiveOrganization(
   organizationId: string | null,
   cookies: Pick<Cookies, "get">,
+  branchId: string | null = null,
 ) {
   const sessionId = cookies.get(COOKIE_SESSION_KEY)?.value;
   if (sessionId == null) return null;
   if (!(await redisClient.exists(sessionKey(sessionId)))) return null;
 
+  // Org and branch are written together: switching academy always resets
+  // the branch, so a branch from the previous academy can never linger.
   await redisClient.hset(sessionKey(sessionId), {
     activeOrganizationId: organizationId,
+    activeBranchId: branchId,
   });
 }
 

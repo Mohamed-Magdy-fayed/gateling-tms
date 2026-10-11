@@ -70,6 +70,9 @@ export const sessionSchema = z.object({
   exp: z.number(),
   hasPassword: z.boolean().optional().default(false),
   activeOrganizationId: z.string().optional().nullable(),
+  // The selected branch of the active academy; null = All branches. Only a
+  // preference: orgProcedure re-checks it against the member's access.
+  activeBranchId: z.string().optional().nullable(),
   user: z.object({
     id: z.string(),
     email: z.string().optional().nullable(),

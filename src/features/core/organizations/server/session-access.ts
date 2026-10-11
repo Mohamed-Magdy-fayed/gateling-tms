@@ -4,7 +4,11 @@ import type { OrganizationMembershipRole } from "@/drizzle/schema";
 import { OrganizationMembershipsTable } from "@/drizzle/schema";
 import { getUserSession } from "@/features/core/auth/core";
 import type { Cookies } from "@/features/core/auth/types";
-import { resolveOrgAccess } from "@/integrations/trpc/org-access";
+import { loadBranchScope } from "@/integrations/trpc/branch-scope";
+import {
+  type BranchScope,
+  resolveOrgAccess,
+} from "@/integrations/trpc/org-access";
 
 export type OrgSessionAccess = {
   userId: string;
@@ -13,7 +17,7 @@ export type OrgSessionAccess = {
   userEmail: string | null;
   organizationId: string;
   role: OrganizationMembershipRole;
-};
+} & BranchScope;
 
 /**
  * `orgProcedure`'s membership resolution for callers that aren't tRPC —
@@ -43,8 +47,15 @@ export async function resolveOrgAccessFromSession(
 
   const access = resolveOrgAccess(activeOrganizationId, membership);
   if (!access) return null;
+  const scope = await loadBranchScope(db, {
+    organizationId: access.organizationId,
+    userId: session.user.id,
+    role: access.role,
+    requestedBranchId: session.activeBranchId,
+  });
 
   return {
+    ...scope,
     userId: session.user.id,
     userEmail: session.user.email ?? null,
     organizationId: access.organizationId,

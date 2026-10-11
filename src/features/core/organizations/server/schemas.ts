@@ -104,6 +104,8 @@ export const removeMemberSchema = z.object({
 
 export const switchActiveOrganizationSchema = z.object({
   organizationId: idSchema,
+  // null / omitted = All branches (or the only branch the member can see).
+  branchId: idSchema.nullable().optional(),
 });
 
 // Platform owner only (`platform.*`). Same paging shape as the members list,

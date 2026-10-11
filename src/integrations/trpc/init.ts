@@ -10,6 +10,7 @@ import { getUserSession } from "@/features/core/auth/core";
 import { LOCALE_COOKIE_NAME } from "@/features/core/i18n/lib";
 import { getT } from "@/features/core/i18n/server";
 import { handleDatabaseError } from "./db-error";
+import { loadBranchScope } from "./branch-scope";
 import { resolveOrgAccess } from "./org-access";
 
 export const createTRPCContext = async () => {
@@ -89,7 +90,17 @@ export const orgProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     });
   }
 
-  return next({ ctx: access });
+  // Which branches this request reads (docs/designs/academy-branches.md).
+  // Like the tenant, never taken from input: the session holds only a
+  // preference, and resolveBranchAccess decides what it's worth.
+  const scope = await loadBranchScope(ctx.db, {
+    organizationId: access.organizationId,
+    userId: ctx.session.user.id,
+    role: access.role,
+    requestedBranchId: ctx.session.activeBranchId,
+  });
+
+  return next({ ctx: { ...access, ...scope } });
 });
 
 export const orgAdminProcedure = orgProcedure.use(({ ctx, next }) => {
