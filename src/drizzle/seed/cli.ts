@@ -31,6 +31,14 @@ const commands = {
       await runSeedProfile("performance");
     },
   },
+  showcase: {
+    description:
+      "Seed the two-year Horizon Language Academy sales demo (preview only; skipped in production). Additive: re-adds missing rows, never deletes, never overwrites edited rows.",
+    action: async () => {
+      const { runSeedProfile } = await import("@/drizzle/seed");
+      await runSeedProfile("showcase");
+    },
+  },
   clear: {
     description: "Clear all data from the database tables.",
     action: async () => {
@@ -67,6 +75,17 @@ async function run() {
 
   if (commandName === "help") {
     printHelp();
+    return;
+  }
+
+  // Checked before anything imports the database (and validates the env):
+  // a production build that runs `npm run seed` must be a clean no-op.
+  if (
+    commandName === "showcase" &&
+    (process.env.VERCEL_ENV === "production" ||
+      process.env.VERCEL_TARGET_ENV === "production")
+  ) {
+    console.log("Seed skipped: the showcase profile never runs in production.");
     return;
   }
 
