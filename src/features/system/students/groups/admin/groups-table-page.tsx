@@ -35,6 +35,7 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
+import { useImportBranch } from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -72,6 +73,8 @@ export function GroupsTablePage() {
   const [importOpen, setImportOpen] = useState(false);
 
   const queryClient = useQueryClient();
+  // Imported rows go into one branch, picked here on "All branches".
+  const importBranch = useImportBranch();
   const importPreview = useMutation(
     trpc.groups.importStudentsPreview.mutationOptions(),
   );
@@ -285,8 +288,17 @@ export function GroupsTablePage() {
         open={importOpen}
         onOpenChange={setImportOpen}
         entity="group-students"
-        onPreview={(input) => importPreview.mutateAsync(input)}
-        onCommit={(rows) => importCommit.mutateAsync({ rows })}
+        uploadSlot={importBranch.slot}
+        uploadDisabled={importBranch.branchId == null}
+        onPreview={(input) =>
+          importPreview.mutateAsync({
+            ...input,
+            branchId: importBranch.branchId,
+          })
+        }
+        onCommit={(rows) =>
+          importCommit.mutateAsync({ rows, branchId: importBranch.branchId })
+        }
         onImported={() =>
           queryClient.invalidateQueries({ queryKey: trpc.groups.pathKey() })
         }

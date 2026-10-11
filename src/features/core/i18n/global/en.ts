@@ -1243,6 +1243,7 @@ export default {
     },
     availability: {
       edit: "Edit availability",
+      chooseBranch: "Pick a branch in the switcher to edit availability.",
       done: "Done",
       hint: "Drag on the calendar to mark when {name} is available. Windows repeat every week. Use × on a window to remove it.",
       legend: "Available",

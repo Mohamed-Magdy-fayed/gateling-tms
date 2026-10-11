@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Muted } from "@/components/ui/typography";
 import { useAuth } from "@/features/core/auth/nextjs/components/auth-provider";
 import { useTranslation } from "@/features/core/i18n/client";
+import { useWriteBranches } from "@/features/core/organizations/nextjs";
 import {
   type AvailabilitySlot,
   type AvailabilityWindow,
@@ -123,7 +124,13 @@ export function SessionsWeekView() {
   const canEditAvailability =
     teacherId !== undefined &&
     (role === "admin" || (role === "teacher" && viewerId === teacherId));
-  const paintingAvailability = paintMode && canEditAvailability;
+  // Availability is kept per branch. On "All branches" there is no single
+  // branch to paint into, so editing waits for a branch to be picked.
+  const writeBranches = useWriteBranches();
+  const availabilityNeedsBranch =
+    canEditAvailability && writeBranches.needsChoice;
+  const paintingAvailability =
+    paintMode && canEditAvailability && !availabilityNeedsBranch;
 
   const setAvailabilityMut = useMutation(
     trpc.teacherAvailability.set.mutationOptions(),
@@ -132,7 +139,11 @@ export function SessionsWeekView() {
     async (slots: AvailabilitySlot[]) => {
       if (!teacherId) return;
       try {
-        await setAvailabilityMut.mutateAsync({ teacherId, slots });
+        await setAvailabilityMut.mutateAsync({
+          teacherId,
+          slots,
+          branchId: writeBranches.onlyBranchId,
+        });
         await queryClient.invalidateQueries({
           queryKey: trpc.teacherAvailability.pathKey(),
         });
@@ -144,7 +155,14 @@ export function SessionsWeekView() {
         );
       }
     },
-    [queryClient, setAvailabilityMut, t, teacherId, trpc],
+    [
+      queryClient,
+      setAvailabilityMut,
+      t,
+      teacherId,
+      trpc,
+      writeBranches.onlyBranchId,
+    ],
   );
 
   const updateMut = useMutation(trpc.sessions.update.mutationOptions());
@@ -297,7 +315,8 @@ export function SessionsWeekView() {
                 type="button"
                 variant={paintMode ? "default" : "outline"}
                 size="sm"
-                aria-pressed={paintMode}
+                aria-pressed={paintingAvailability}
+                disabled={availabilityNeedsBranch}
                 onClick={() => setPaintMode((current) => !current)}
               >
                 {paintMode ? (
@@ -318,13 +337,15 @@ export function SessionsWeekView() {
 
       {isStaff ? (
         <Muted className="text-xs">
-          {paintingAvailability && selectedTeacher
-            ? t("sessions.availability.hint", { name: selectedTeacher.label })
-            : selectedTeacher && availability.length === 0
-              ? t("sessions.availability.empty", {
-                  name: selectedTeacher.label,
-                })
-              : t("sessions.calendar.dragHint")}
+          {availabilityNeedsBranch
+            ? t("sessions.availability.chooseBranch")
+            : paintingAvailability && selectedTeacher
+              ? t("sessions.availability.hint", { name: selectedTeacher.label })
+              : selectedTeacher && availability.length === 0
+                ? t("sessions.availability.empty", {
+                    name: selectedTeacher.label,
+                  })
+                : t("sessions.calendar.dragHint")}
         </Muted>
       ) : null}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { DownloadIcon, UploadIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -39,6 +39,10 @@ type EntityImportDialogProps = {
   /** Writes the confirmed rows. */
   onCommit: (rows: Record<string, string>[]) => Promise<ImportCommitResult>;
   onImported?: () => void;
+  /** Shown above the upload, e.g. the branch the rows go into. */
+  uploadSlot?: ReactNode;
+  /** Blocks the upload until the slot has what it needs. */
+  uploadDisabled?: boolean;
 };
 
 /** `FileReader` hands back a data URL; the payload starts after the comma. */
@@ -66,6 +70,8 @@ export function EntityImportDialog({
   onOpenChange,
   onPreview,
   open,
+  uploadSlot,
+  uploadDisabled = false,
 }: EntityImportDialogProps) {
   const { t } = useTranslation();
   const fileInputId = useId();
@@ -143,6 +149,7 @@ export function EntityImportDialog({
             <ImportReview preview={preview} />
           ) : (
             <div className="space-y-4">
+              {uploadSlot}
               <div className="flex flex-wrap gap-2">
                 <a
                   className={buttonVariants({ variant: "outline" })}
@@ -173,7 +180,7 @@ export function EntityImportDialog({
                   type="file"
                   className="peer sr-only"
                   accept={IMPORT_FILE_ACCEPT}
-                  disabled={pending}
+                  disabled={pending || uploadDisabled}
                   onChange={(event) => {
                     void handleFile(event.target.files?.[0]);
                     // Lets the same file be picked again after a failed parse.
@@ -183,7 +190,7 @@ export function EntityImportDialog({
                 <label
                   className={buttonVariants({
                     className:
-                      "cursor-pointer peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50",
+                      "cursor-pointer peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
                   })}
                   htmlFor={fileInputId}
                 >

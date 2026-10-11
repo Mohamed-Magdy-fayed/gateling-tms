@@ -34,6 +34,10 @@ import {
 } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
+  requireBranch,
+  useWriteBranches,
+} from "@/features/core/organizations/nextjs";
+import {
   type EnrollmentMutationInput,
   type EnrollmentTraineeMode,
   enrollmentMutationSchema,
@@ -75,6 +79,7 @@ export function EnrollmentFormDialog({
   const queryClient = useQueryClient();
 
   const createMut = useMutation(trpc.enrollments.create.mutationOptions());
+  const writeBranches = useWriteBranches();
 
   // Only fetched while the dialog is open — neither list is on the critical
   // path of opening the form.
@@ -94,6 +99,7 @@ export function EnrollmentFormDialog({
       newTrainee: { name: "", phone: "", email: "" },
       courseId: "",
       status: "waiting",
+      branchId: null,
     }),
     [traineeId],
   );
@@ -104,12 +110,22 @@ export function EnrollmentFormDialog({
     onSubmit: async ({ value }) => {
       try {
         const result = await toast
-          .promise(createMut.mutateAsync(value), {
-            loading: t("common.loading"),
-            success: t("enrollments.created"),
-            error: (err) =>
-              err instanceof Error ? err.message : t("enrollments.saveFailed"),
-          })
+          .promise(
+            createMut.mutateAsync({
+              ...value,
+              // Only a student created here needs one; an existing student
+              // keeps their own branch.
+              branchId: value.branchId || writeBranches.onlyBranchId,
+            }),
+            {
+              loading: t("common.loading"),
+              success: t("enrollments.created"),
+              error: (err) =>
+                err instanceof Error
+                  ? err.message
+                  : t("enrollments.saveFailed"),
+            },
+          )
           .unwrap();
 
         await queryClient.invalidateQueries({
@@ -283,6 +299,22 @@ export function EnrollmentFormDialog({
                     </form.AppField>
                   ) : (
                     <>
+                      {writeBranches.needsChoice ? (
+                        <form.AppField
+                          name="branchId"
+                          validators={{ onSubmit: requireBranch }}
+                        >
+                          {(field) => (
+                            <field.SelectField
+                              label={t("organizations.branches.choose")}
+                              description={t(
+                                "organizations.branches.chooseHint",
+                              )}
+                              options={writeBranches.options}
+                            />
+                          )}
+                        </form.AppField>
+                      ) : null}
                       <form.AppField name="newTrainee.name">
                         {(field) => (
                           <field.StringField

@@ -34,7 +34,10 @@ import {
   EntityExportButton,
   EntityImportDialog,
 } from "@/features/core/import/admin";
-import { PlanLimitNotice } from "@/features/core/organizations/nextjs";
+import {
+  PlanLimitNotice,
+  useImportBranch,
+} from "@/features/core/organizations/nextjs";
 import { useTRPC } from "@/integrations/trpc/client";
 
 import {
@@ -71,6 +74,8 @@ export function TraineesTablePage() {
   const [importOpen, setImportOpen] = useState(false);
 
   const queryClient = useQueryClient();
+  // Imported rows go into one branch, picked here on "All branches".
+  const importBranch = useImportBranch();
   const importPreview = useMutation(
     trpc.trainees.importPreview.mutationOptions(),
   );
@@ -225,8 +230,17 @@ export function TraineesTablePage() {
         open={importOpen}
         onOpenChange={setImportOpen}
         entity="trainees"
-        onPreview={(input) => importPreview.mutateAsync(input)}
-        onCommit={(rows) => importCommit.mutateAsync({ rows })}
+        uploadSlot={importBranch.slot}
+        uploadDisabled={importBranch.branchId == null}
+        onPreview={(input) =>
+          importPreview.mutateAsync({
+            ...input,
+            branchId: importBranch.branchId,
+          })
+        }
+        onCommit={(rows) =>
+          importCommit.mutateAsync({ rows, branchId: importBranch.branchId })
+        }
         onImported={() => {
           queryClient.invalidateQueries({ queryKey: trpc.trainees.pathKey() });
           // A batch can move the student counter by a lot at once, so the

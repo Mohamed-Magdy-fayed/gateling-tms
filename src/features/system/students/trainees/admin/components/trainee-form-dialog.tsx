@@ -23,6 +23,10 @@ import { FieldGroup, FieldSet } from "@/components/ui/field";
 import type { Trainee } from "@/drizzle/schema";
 import { useTranslation } from "@/features/core/i18n/client";
 import {
+  requireBranch,
+  useWriteBranches,
+} from "@/features/core/organizations/nextjs";
+import {
   type TraineeMutationInput,
   traineeMutationSchema,
 } from "@/features/system/students/trainees/server/schemas";
@@ -46,12 +50,14 @@ export function TraineeFormDialog({
 
   const createMut = useMutation(trpc.trainees.create.mutationOptions());
   const updateMut = useMutation(trpc.trainees.update.mutationOptions());
+  const writeBranches = useWriteBranches();
 
   const defaultValues = useMemo<TraineeMutationInput>(
     () => ({
       name: trainee?.name ?? "",
       phone: trainee?.phone ?? "",
       email: trainee?.email ?? "",
+      branchId: null,
     }),
     [trainee],
   );
@@ -63,7 +69,10 @@ export function TraineeFormDialog({
       const action: Promise<unknown> =
         isEdit && trainee
           ? updateMut.mutateAsync({ id: trainee.id, ...value })
-          : createMut.mutateAsync(value);
+          : createMut.mutateAsync({
+              ...value,
+              branchId: value.branchId || writeBranches.onlyBranchId,
+            });
 
       try {
         await toast
@@ -128,6 +137,20 @@ export function TraineeFormDialog({
         >
           <FieldSet disabled={pending}>
             <FieldGroup>
+              {!isEdit && writeBranches.needsChoice ? (
+                <form.AppField
+                  name="branchId"
+                  validators={{ onSubmit: requireBranch }}
+                >
+                  {(field) => (
+                    <field.SelectField
+                      label={t("organizations.branches.choose")}
+                      description={t("organizations.branches.chooseHint")}
+                      options={writeBranches.options}
+                    />
+                  )}
+                </form.AppField>
+              ) : null}
               <form.AppField name="name">
                 {(field) => (
                   <field.StringField label={t("trainees.name")} autoFocus />
