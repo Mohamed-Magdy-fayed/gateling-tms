@@ -2,15 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  AwardIcon,
   BookOpenIcon,
   CalendarDaysIcon,
   TriangleAlertIcon,
-  UserCheckIcon,
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { type ComponentProps, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,18 +18,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import { Tag } from "@/components/ui/tag";
+import { H1, Muted } from "@/components/ui/typography";
 import { useTranslation } from "@/features/core/i18n/client";
 import { TestimonialPromptCard } from "@/features/marketing/testimonials/admin";
-import { EnrollmentStatusTag } from "@/features/system/students/enrollments/admin";
 import { useTRPC } from "@/integrations/trpc/client";
 import { BranchBreakdownCard } from "./branch-breakdown-card";
+import { RecentActivityCards } from "./recent-activity-cards";
+
+/** Rows the schedule placeholder shows while today's classes load. */
+const SCHEDULE_PLACEHOLDER_KEYS = ["first", "second", "third"];
 
 export function DashboardOverview() {
   const trpc = useTRPC();
   const { t, locale } = useTranslation();
+  const intlLocale = locale === "ar" ? "ar" : "en";
 
   const { data: organization } = useQuery(
     trpc.organizations.getActive.queryOptions(),
@@ -41,32 +44,24 @@ export function DashboardOverview() {
     isLoading,
     isError,
   } = useQuery(trpc.dashboard.overview.queryOptions());
-  // Students get a FORBIDDEN here by design (the strip names trainees), so the
-  // query is only issued for the roles allowed to read it and the section is
-  // simply absent otherwise — no failed request, no error toast.
+  // Students may read the dashboard but not the lists behind it, so only
+  // content managers get the recent-activity strips and clickable tiles.
   const isContentManager =
     organization?.role === "admin" || organization?.role === "teacher";
-  const { data: activity } = useQuery({
-    ...trpc.dashboard.recentActivity.queryOptions(),
-    enabled: isContentManager,
-  });
 
+  const timeZone = overview?.timeZone ?? "UTC";
   const timeFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-        timeStyle: "short",
-        timeZone: overview?.timeZone ?? "UTC",
-      }),
-    [locale, overview?.timeZone],
+    () => new Intl.DateTimeFormat(intlLocale, { timeStyle: "short", timeZone }),
+    [intlLocale, timeZone],
   );
-
   const dateFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar" : "en", {
-        dateStyle: "medium",
-        timeZone: overview?.timeZone ?? "UTC",
-      }),
-    [locale, overview?.timeZone],
+      new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeZone }),
+    [intlLocale, timeZone],
+  );
+  const numberFmt = useMemo(
+    () => new Intl.NumberFormat(intlLocale),
+    [intlLocale],
   );
 
   // "of 50 allowed" while a limit applies, nothing at all on an unlimited
@@ -79,18 +74,35 @@ export function DashboardOverview() {
       : t("dashboard.stats.ofLimit", { limit });
   }
 
+  // A placeholder while loading and a dash on failure — a 0 would be a claim
+  // about the academy.
+  function statValue(value: number | undefined) {
+    if (isLoading) {
+      return (
+        <>
+          <span className="sr-only">{t("common.loading")}</span>
+          <Skeleton
+            aria-hidden="true"
+            className="inline-block h-6 w-14 align-middle motion-reduce:animate-none"
+          />
+        </>
+      );
+    }
+    if (isError || value === undefined) return "—";
+    return numberFmt.format(value);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="font-display font-bold text-2xl text-foreground">
+          {/* No tracking-tight here: the title carries Arabic too. */}
+          <H1 className="font-display text-2xl text-foreground tracking-normal lg:text-2xl">
             {organization
               ? t("dashboard.welcome.title", { orgName: organization.name })
               : t("dashboard.welcome.titleFallback")}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {t("dashboard.welcome.subtitle")}
-          </p>
+          </H1>
+          <Muted>{t("dashboard.welcome.subtitle")}</Muted>
         </div>
         {organization && (
           <Tag color="violet">
@@ -101,17 +113,19 @@ export function DashboardOverview() {
 
       <TestimonialPromptCard isAdmin={organization?.role === "admin"} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatTile
+          href={isContentManager ? "/students" : undefined}
           label={t("dashboard.stats.students")}
-          value={overview?.counts.students ?? 0}
+          value={statValue(overview?.counts.students)}
           description={limitLabel(overview?.limits?.students)}
           icon={<UsersIcon />}
           tone="blue"
         />
-        <StatCard
+        <StatTile
+          href={isContentManager ? "/content-library/courses" : undefined}
           label={t("dashboard.stats.courses")}
-          value={overview?.counts.courses ?? 0}
+          value={statValue(overview?.counts.courses)}
           description={
             overview?.isNarrowed
               ? t("dashboard.stats.taughtHere")
@@ -120,9 +134,10 @@ export function DashboardOverview() {
           icon={<BookOpenIcon />}
           tone="green"
         />
-        <StatCard
+        <StatTile
+          href={isContentManager ? "/students/groups" : undefined}
           label={t("dashboard.stats.groups")}
-          value={overview?.counts.groups ?? 0}
+          value={statValue(overview?.counts.groups)}
           icon={<CalendarDaysIcon />}
           tone="violet"
         />
@@ -139,9 +154,7 @@ export function DashboardOverview() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Spinner />
-            </div>
+            <SchedulePlaceholder />
           ) : isError ? (
             // A failed fetch also leaves `overview` undefined — saying so beats
             // rendering "nothing scheduled", which is a claim about the day.
@@ -175,7 +188,7 @@ export function DashboardOverview() {
                   <div className="min-w-0">
                     <Link
                       href={`/students/groups/${session.groupId}`}
-                      className="truncate font-medium text-sm underline-offset-4 hover:underline"
+                      className="truncate rounded-sm font-medium text-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {session.groupName}
                     </Link>
@@ -186,7 +199,7 @@ export function DashboardOverview() {
                       })}`}
                     </p>
                   </div>
-                  <span className="font-display font-bold text-foreground text-sm">
+                  <span className="font-bold font-display text-foreground text-sm">
                     {timeFmt.format(session.scheduledAt)}
                   </span>
                 </li>
@@ -196,79 +209,51 @@ export function DashboardOverview() {
         </CardContent>
       </Card>
 
-      {isContentManager ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("dashboard.recent.enrollments")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!activity || activity.enrollments.length === 0 ? (
-                <EmptyState
-                  icon={<UserCheckIcon />}
-                  title={t("dashboard.recent.emptyTitle")}
-                  description={t("dashboard.recent.enrollmentsEmpty")}
-                />
-              ) : (
-                <ul className="divide-y divide-border">
-                  {activity.enrollments.map((enrollment) => (
-                    <li
-                      key={enrollment.id}
-                      className="flex flex-wrap items-center justify-between gap-2 py-3"
-                    >
-                      <div className="min-w-0">
-                        <Link
-                          href={`/students/${enrollment.traineeId}`}
-                          className="truncate font-medium text-sm underline-offset-4 hover:underline"
-                        >
-                          {enrollment.traineeName}
-                        </Link>
-                        <p className="truncate text-muted-foreground text-xs">
-                          {enrollment.courseName} ·{" "}
-                          {dateFmt.format(enrollment.at)}
-                        </p>
-                      </div>
-                      <EnrollmentStatusTag status={enrollment.status} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("dashboard.recent.certificates")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!activity || activity.certificates.length === 0 ? (
-                <EmptyState
-                  icon={<AwardIcon />}
-                  title={t("dashboard.recent.emptyTitle")}
-                  description={t("dashboard.recent.certificatesEmpty")}
-                />
-              ) : (
-                <ul className="divide-y divide-border">
-                  {activity.certificates.map((certificate) => (
-                    <li key={certificate.id} className="py-3">
-                      <Link
-                        href={`/certificates/${certificate.id}`}
-                        className="truncate font-medium text-sm underline-offset-4 hover:underline"
-                      >
-                        {certificate.title}
-                      </Link>
-                      <p className="truncate text-muted-foreground text-xs">
-                        {certificate.traineeName} ·{" "}
-                        {dateFmt.format(certificate.at)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      {isContentManager ? <RecentActivityCards dateFmt={dateFmt} /> : null}
     </div>
+  );
+}
+
+type StatTileProps = ComponentProps<typeof StatCard> & {
+  /** Where the number comes from; omitted for roles that can't open it. */
+  href?: string;
+};
+
+/** A stat card that opens the list behind its number when it has one. */
+function StatTile({ href, className, ...props }: StatTileProps) {
+  if (!href) return <StatCard className={className} {...props} />;
+  return (
+    <Link
+      href={href}
+      className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <StatCard
+        className="h-full transition-colors group-hover:border-primary/40 group-hover:bg-accent/40 motion-reduce:transition-none"
+        {...props}
+      />
+    </Link>
+  );
+}
+
+/** Same rhythm as a loaded schedule row, so nothing jumps when it arrives. */
+function SchedulePlaceholder() {
+  const { t } = useTranslation();
+  return (
+    <ul className="divide-y divide-border" aria-busy="true">
+      <li className="sr-only">{t("common.loading")}</li>
+      {SCHEDULE_PLACEHOLDER_KEYS.map((key) => (
+        <li
+          key={key}
+          className="flex items-center justify-between gap-2 py-3"
+          aria-hidden="true"
+        >
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-2/5 motion-reduce:animate-none" />
+            <Skeleton className="h-3 w-1/4 motion-reduce:animate-none" />
+          </div>
+          <Skeleton className="h-4 w-12 motion-reduce:animate-none" />
+        </li>
+      ))}
+    </ul>
   );
 }

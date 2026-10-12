@@ -57,9 +57,9 @@ function StatCard({
         )}
       </div>
       <div className="flex items-baseline gap-2.5">
-        <span className="font-display text-2xl font-bold leading-none text-foreground">
+        <div className="font-display text-2xl font-bold leading-none text-foreground">
           {value}
-        </span>
+        </div>
         {delta != null && (
           <span
             className={cn(

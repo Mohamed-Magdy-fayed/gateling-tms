@@ -1788,6 +1788,7 @@ export default {
       emptyTitle: "Nothing yet",
       enrollmentsEmpty: "Enroll a student in a course to see it here.",
       certificatesEmpty: "Certificates you issue show up here.",
+      errorTitle: "Couldn't load recent activity",
     },
   },
   getStarted: {

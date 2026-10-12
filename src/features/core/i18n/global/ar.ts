@@ -1763,6 +1763,7 @@ export default {
       emptyTitle: "لا يوجد شيء بعد",
       enrollmentsEmpty: "سجّل طالبًا في دورة ليظهر هنا.",
       certificatesEmpty: "تظهر الشهادات التي تصدرها هنا.",
+      errorTitle: "تعذّر تحميل النشاط الأخير",
     },
   },
   getStarted: {
