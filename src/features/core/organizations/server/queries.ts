@@ -1,5 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  isNull,
+  ne,
+  notExists,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { db } from "@/drizzle";
 import { likeContains } from "@/drizzle/lib/search";
 import {
@@ -7,6 +21,7 @@ import {
   OrganizationMembershipBranchesTable,
   OrganizationMembershipsTable,
   OrganizationsTable,
+  TraineesTable,
   UsersTable,
   UserTokensTable,
 } from "@/drizzle/schema";
@@ -188,12 +203,62 @@ export async function resolveDefaultActiveOrganizationId(
   return membership?.organizationId ?? null;
 }
 
+/**
+ * Members who belong to the selected branches (docs/designs/academy-branches.md),
+ * by the same rule `resolveBranchAccess` uses for what they can see:
+ * - admins work in every branch;
+ * - staff work in the branches they're assigned to, or in every branch when
+ *   they have no assignment;
+ * - a student belongs to the branch of their student record, or to every
+ *   branch when their account isn't linked to one yet.
+ */
+function memberInBranchScope(ctx: OrgTRPCContext): SQL | undefined {
+  const membership = OrganizationMembershipsTable;
+  const assignments = (branchIds?: string[]) =>
+    ctx.db
+      .select({ userId: OrganizationMembershipBranchesTable.userId })
+      .from(OrganizationMembershipBranchesTable)
+      .where(
+        and(
+          eq(
+            OrganizationMembershipBranchesTable.organizationId,
+            ctx.organizationId,
+          ),
+          eq(OrganizationMembershipBranchesTable.userId, membership.userId),
+          branchIds
+            ? inArray(OrganizationMembershipBranchesTable.branchId, branchIds)
+            : undefined,
+        ),
+      );
+  const studentRecords = (branchIds?: string[]) =>
+    ctx.db
+      .select({ id: TraineesTable.id })
+      .from(TraineesTable)
+      .where(
+        and(
+          eq(TraineesTable.organizationId, ctx.organizationId),
+          eq(TraineesTable.userId, membership.userId),
+          isNull(TraineesTable.deletedAt),
+          branchIds ? inArray(TraineesTable.branchId, branchIds) : undefined,
+        ),
+      );
+
+  return or(
+    eq(membership.role, "admin"),
+    exists(assignments(ctx.branchIds)),
+    and(ne(membership.role, "student"), notExists(assignments())),
+    and(eq(membership.role, "student"), exists(studentRecords(ctx.branchIds))),
+    and(eq(membership.role, "student"), notExists(studentRecords())),
+  );
+}
+
 function buildMembersWhereClause(ctx: OrgTRPCContext, input: ListMembersInput) {
   // A role filter narrows the org's members; it never widens past them. The
   // calendar's teacher list asks for staff only, so a large academy's
   // students can't push teachers off the one page it loads.
   const base = and(
     eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+    memberInBranchScope(ctx),
     input.roles?.length
       ? inArray(OrganizationMembershipsTable.role, input.roles)
       : undefined,
@@ -276,7 +341,12 @@ export async function listAllMembers(
       UsersTable,
       eq(UsersTable.id, OrganizationMembershipsTable.userId),
     )
-    .where(eq(OrganizationMembershipsTable.organizationId, ctx.organizationId))
+    .where(
+      and(
+        eq(OrganizationMembershipsTable.organizationId, ctx.organizationId),
+        memberInBranchScope(ctx),
+      ),
+    )
     .orderBy(asc(UsersTable.name), asc(OrganizationMembershipsTable.userId))
     .limit(CLIENT_TABLE_ROW_LIMIT);
   return withBranchIds(ctx, rows);
@@ -286,14 +356,50 @@ async function withBranchIds(
   ctx: OrgTRPCContext,
   rows: Omit<OrganizationMemberRow, "branchIds">[],
 ): Promise<OrganizationMemberRow[]> {
-  const byUser = await loadMemberBranchIds(
-    ctx,
-    rows.map((row) => row.userId),
-  );
+  const studentIds = rows
+    .filter((row) => row.role === "student")
+    .map((row) => row.userId);
+  const [byUser, byStudent] = await Promise.all([
+    loadMemberBranchIds(
+      ctx,
+      rows.map((row) => row.userId),
+    ),
+    loadStudentBranchIds(ctx, studentIds),
+  ]);
   return rows.map((row) => ({
     ...row,
-    branchIds: byUser.get(row.userId) ?? [],
+    branchIds:
+      (row.role === "student" ? byStudent : byUser).get(row.userId) ?? [],
   }));
+}
+
+/** A student account's branches are those of its student records. */
+async function loadStudentBranchIds(
+  ctx: OrgTRPCContext,
+  userIds: string[],
+): Promise<Map<string, string[]>> {
+  const byUser = new Map<string, string[]>();
+  if (userIds.length === 0) return byUser;
+
+  const rows = await ctx.db
+    .selectDistinct({
+      userId: TraineesTable.userId,
+      branchId: TraineesTable.branchId,
+    })
+    .from(TraineesTable)
+    .where(
+      and(
+        eq(TraineesTable.organizationId, ctx.organizationId),
+        inArray(TraineesTable.userId, userIds),
+        isNull(TraineesTable.deletedAt),
+      ),
+    );
+
+  for (const row of rows) {
+    if (!row.userId) continue;
+    byUser.set(row.userId, [...(byUser.get(row.userId) ?? []), row.branchId]);
+  }
+  return byUser;
 }
 
 export async function listMembers(

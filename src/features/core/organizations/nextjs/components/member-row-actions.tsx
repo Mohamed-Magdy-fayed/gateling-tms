@@ -82,14 +82,14 @@ export function MemberRowActions({
             className="size-8"
             aria-label={t("common.actions")}
           >
-            <MoreHorizontalIcon className="size-3.5" />
+            <MoreHorizontalIcon className="size-3.5" aria-hidden />
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={updateRoleMut.isPending}>
-            <ShieldIcon className="size-3.5" />
+            <ShieldIcon className="size-3.5" aria-hidden />
             {t("organizations.members.changeRole")}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
@@ -111,8 +111,9 @@ export function MemberRowActions({
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-        {/* Admins always see every branch, so there is nothing to assign. */}
-        {setBranchesTarget && row.role !== "admin" ? (
+        {/* Admins always see every branch, so there is nothing to assign; a
+            student's branch is the one their student record is in. */}
+        {setBranchesTarget && row.role === "teacher" ? (
           <DropdownMenuItem onClick={() => setBranchesTarget(row)}>
             <MapPinIcon className="size-3.5" aria-hidden />
             {t("organizations.members.editBranches")}
@@ -123,7 +124,7 @@ export function MemberRowActions({
           disabled={updateRoleMut.isPending}
           onClick={() => setRemoveTarget(row)}
         >
-          <Trash2Icon className="size-3.5 text-destructive" />
+          <Trash2Icon className="size-3.5 text-destructive" aria-hidden />
           <span className="text-destructive">{t("actions.delete")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

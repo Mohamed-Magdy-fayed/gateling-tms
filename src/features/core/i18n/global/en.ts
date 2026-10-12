@@ -357,6 +357,11 @@ export default {
       lastAdmin: "An academy must have at least one admin.",
       columnBranches: "Branches",
       allBranches: "All branches",
+      audience: {
+        label: "Show",
+        staff: "Staff",
+        students: "Students",
+      },
       editBranches: "Branches…",
       branchesTitle: "Branches for {name}",
       branchesHint:

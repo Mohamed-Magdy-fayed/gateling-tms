@@ -15,6 +15,8 @@ type SegmentedControlProps = {
   size?: "sm" | "md";
   fullWidth?: boolean;
   className?: string;
+  /** Names the group for assistive tech. */
+  "aria-label"?: string;
 };
 
 function SegmentedControl({
@@ -24,10 +26,13 @@ function SegmentedControl({
   size = "md",
   fullWidth = false,
   className,
+  "aria-label": ariaLabel,
 }: SegmentedControlProps) {
   return (
     <div
       data-slot="segmented-control"
+      role="group"
+      aria-label={ariaLabel}
       className={cn(
         "inline-flex items-center gap-0.5 rounded-md bg-muted p-1",
         fullWidth && "flex w-full",
@@ -43,7 +48,7 @@ function SegmentedControl({
             aria-pressed={active}
             onClick={() => onValueChange(option.value)}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm text-xs font-semibold transition-all ease-spring",
+              "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm text-xs font-semibold outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
               size === "sm" ? "h-8 px-3" : "h-10 px-4",
               fullWidth && "flex-1",
               active

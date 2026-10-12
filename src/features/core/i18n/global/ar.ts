@@ -356,6 +356,11 @@ export default {
       lastAdmin: "يجب أن يكون للأكاديمية مدير واحد على الأقل.",
       columnBranches: "الفروع",
       allBranches: "كل الفروع",
+      audience: {
+        label: "عرض",
+        staff: "الموظفون",
+        students: "الطلاب",
+      },
       editBranches: "الفروع…",
       branchesTitle: "فروع {name}",
       branchesHint:

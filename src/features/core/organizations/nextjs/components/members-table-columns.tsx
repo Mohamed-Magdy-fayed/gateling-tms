@@ -128,13 +128,17 @@ export function buildMemberColumns(opts: {
 
 const LIST_SEPARATOR = { en: ", ", ar: "، " } as const;
 
-/** Admins and unassigned members work in every branch (resolveBranchAccess). */
+/**
+ * Admins and unassigned staff work in every branch (resolveBranchAccess); a
+ * student is in the branches of their student records, if they have any yet.
+ */
 function memberBranchLabel(
   row: OrganizationMemberRow,
   branchNames: Map<string, string>,
   t: Translate,
   locale: string,
 ): string {
+  if (row.role === "student" && row.branchIds.length === 0) return "—";
   if (row.role === "admin" || row.branchIds.length === 0) {
     return t("organizations.members.allBranches");
   }

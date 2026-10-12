@@ -1,8 +1,10 @@
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/drizzle";
 import {
   BranchesTable,
   OrganizationMembershipBranchesTable,
+  TraineesTable,
 } from "@/drizzle/schema";
 import {
   callerFor,
@@ -198,5 +200,64 @@ describe("branch isolation", () => {
     ).dashboard.overview();
     expect(teacher.isNarrowed).toBe(false);
     expect(teacher.counts.students).toBe(nasr.counts.students);
+  });
+
+  test("members follow the selected branch", async () => {
+    const floater = await createMember(tenant, "teacher");
+    const student = await createMember(tenant, "student");
+    await db
+      .update(TraineesTable)
+      .set({ userId: student.userId })
+      .where(eq(TraineesTable.id, maadiStudent));
+    try {
+      const members = async (branchId: string | null) =>
+        (
+          await callerFor(
+            tenant.userId,
+            tenant.organizationId,
+            branchId,
+          ).organizations.members.listAll()
+        ).map((row) => row.userId);
+
+      const [all, nasr, maadi] = await Promise.all([
+        members(null),
+        members(nasrId),
+        members(maadiId),
+      ]);
+      // Admins and unassigned staff are in every branch.
+      for (const list of [all, nasr, maadi]) {
+        expect(list).toContain(tenant.userId);
+        expect(list).toContain(floater.userId);
+      }
+      // A teacher assigned to Nasr City isn't a Maadi member.
+      expect(all).toContain(teacherId);
+      expect(nasr).toContain(teacherId);
+      expect(maadi).not.toContain(teacherId);
+      // A student follows their student record's branch.
+      expect(all).toContain(student.userId);
+      expect(maadi).toContain(student.userId);
+      expect(nasr).not.toContain(student.userId);
+
+      // The teacher pickers use the paged list, under the same rule.
+      const maadiTeachers = await callerFor(
+        tenant.userId,
+        tenant.organizationId,
+        maadiId,
+      ).organizations.members.list({
+        page: 1,
+        perPage: 100,
+        roles: ["teacher"],
+      });
+      const ids = maadiTeachers.rows.map((row) => row.userId);
+      expect(ids).toContain(floater.userId);
+      expect(ids).not.toContain(teacherId);
+    } finally {
+      await db
+        .update(TraineesTable)
+        .set({ userId: null })
+        .where(eq(TraineesTable.id, maadiStudent));
+      await destroyMember(student.userId);
+      await destroyMember(floater.userId);
+    }
   });
 });

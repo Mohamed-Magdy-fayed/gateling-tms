@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Tag } from "@/components/ui/tag";
 import { H3 } from "@/components/ui/typography";
 import { organizationMembershipRoleValues } from "@/drizzle/schema";
@@ -47,6 +48,16 @@ import {
 } from "./components";
 import { buildMemberColumns } from "./components/members-table-columns";
 
+/**
+ * Staff run the academy; students only hold portal accounts. They're listed
+ * apart so a large academy's students don't bury its teachers, while a
+ * student's portal access can still be found and removed here.
+ */
+type MemberAudience = "staff" | "students";
+
+const isInAudience = (row: OrganizationMemberRow, audience: MemberAudience) =>
+  audience === "students" ? row.role === "student" : row.role !== "student";
+
 export function OrganizationsSettingsPage() {
   const trpc = useTRPC();
   const { t, locale } = useTranslation();
@@ -77,20 +88,38 @@ export function OrganizationsSettingsPage() {
     useState<OrganizationMemberRow | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [audience, setAudience] = useState<MemberAudience>("staff");
 
+  // Students are one role, so only the staff view has a role filter.
   const roleOptions = useMemo(
     () =>
-      organizationMembershipRoleValues.map((role) => ({
-        value: role,
-        label: t(`organizations.members.role.${role}`),
-      })),
+      organizationMembershipRoleValues
+        .filter((role) => role !== "student")
+        .map((role) => ({
+          value: role,
+          label: t(`organizations.members.role.${role}`),
+        })),
     [t],
   );
 
-  // A definition list: loaded whole and sorted/filtered in the browser.
+  // A definition list: loaded whole and sorted/filtered in the browser. The
+  // server already narrows it to the selected branches.
   const membersQuery = useQuery(
     trpc.organizations.members.listAll.queryOptions(),
   );
+  const members = useMemo(
+    () =>
+      (membersQuery.data ?? []).filter((row) => isInAudience(row, audience)),
+    [membersQuery.data, audience],
+  );
+
+  function handleAudienceChange(value: string) {
+    if (value !== "staff" && value !== "students") return;
+    setAudience(value);
+    // A role filter from the staff view would empty the students view.
+    setColumnFilters((prev) => prev.filter((filter) => filter.id !== "role"));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }
 
   const canManage = activeOrganization?.role === "admin";
 
@@ -162,7 +191,7 @@ export function OrganizationsSettingsPage() {
     setGlobalFilter: setResolvedGlobalFilter,
   } = useDataTable({
     mode: "client",
-    data: membersQuery.data ?? [],
+    data: members,
     columns,
     getRowId: (row) => row.userId,
     controlled,
@@ -200,7 +229,7 @@ export function OrganizationsSettingsPage() {
                   size="sm"
                   onClick={() => setEditProfileOpen(true)}
                 >
-                  <PencilIcon className="size-3.5" />
+                  <PencilIcon className="size-3.5" aria-hidden />
                   {t("actions.edit")}
                 </Button>
               </CardAction>
@@ -222,8 +251,24 @@ export function OrganizationsSettingsPage() {
       {canManage ? <PublicShowcaseCard /> : null}
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <H3 className="text-lg">{t("organizations.members.title")}</H3>
+          <SegmentedControl
+            size="sm"
+            aria-label={t("organizations.members.audience.label")}
+            value={audience}
+            onValueChange={handleAudienceChange}
+            options={[
+              {
+                value: "staff",
+                label: t("organizations.members.audience.staff"),
+              },
+              {
+                value: "students",
+                label: t("organizations.members.audience.students"),
+              },
+            ]}
+          />
         </div>
 
         <DataTable
@@ -236,11 +281,13 @@ export function OrganizationsSettingsPage() {
               searchPlaceholder={t("organizations.members.searchHint")}
               filterSlot={
                 <>
-                  <DataTableFacetedFilter
-                    column={table.getColumn("role")}
-                    title={t("organizations.members.columnRole")}
-                    options={roleOptions}
-                  />
+                  {audience === "staff" ? (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("role")}
+                      title={t("organizations.members.columnRole")}
+                      options={roleOptions}
+                    />
+                  ) : null}
                   <DataTableDateRangeFilter
                     column={table.getColumn("joinedAt")}
                     title={t("organizations.members.columnJoinedAt")}
@@ -256,7 +303,7 @@ export function OrganizationsSettingsPage() {
                   onClick={() => setInviteOpen(true)}
                   aria-label={t("organizations.members.inviteButton")}
                 >
-                  <MailPlusIcon className="size-3.5" />
+                  <MailPlusIcon className="size-3.5" aria-hidden />
                 </Button>
               ) : null}
               <DataTableViewOptions table={table} />
