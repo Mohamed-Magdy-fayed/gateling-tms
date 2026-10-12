@@ -57,7 +57,11 @@ export function CertificatesTablePage() {
     setSorting,
     setColumnFilters,
     setGlobalFilter,
-  } = useTableUrlState({ page: 1, perPage: 20 });
+  } = useTableUrlState({
+    page: 1,
+    perPage: 20,
+    sorting: [{ id: "issuedAt", desc: true }],
+  });
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

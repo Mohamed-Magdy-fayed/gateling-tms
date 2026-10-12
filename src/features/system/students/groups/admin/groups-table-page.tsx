@@ -65,7 +65,11 @@ export function GroupsTablePage() {
     setSorting,
     setColumnFilters,
     setGlobalFilter,
-  } = useTableUrlState({ page: 1, perPage: 20 });
+  } = useTableUrlState({
+    page: 1,
+    perPage: 20,
+    sorting: [{ id: "startDate", desc: true }],
+  });
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

@@ -11,7 +11,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type Defaults = {
   page?: number;
   perPage?: number;
+  /**
+   * The order a page opens in — newest first on every list page. Kept out of
+   * the URL while it's in effect, so links stay clean.
+   */
+  sorting?: SortingState;
 };
+
+type ResolvedDefaults = Required<Defaults>;
+
+const NO_SORTING: SortingState = [];
 
 type TableUrlState = {
   pagination: PaginationState;
@@ -31,7 +40,7 @@ function safeParseJson<T>(raw: string | null): T | undefined {
 
 function readState(
   params: URLSearchParams,
-  { page = 1, perPage = 20 }: Defaults,
+  { page, perPage, sorting }: ResolvedDefaults,
 ): TableUrlState {
   const p = Number(params.get("page") ?? page);
   const pp = Number(params.get("perPage") ?? perPage);
@@ -41,16 +50,20 @@ function readState(
       pageIndex: Math.max(0, (Number.isFinite(p) ? p : page) - 1),
       pageSize: Number.isFinite(pp) && pp > 0 ? pp : perPage,
     },
-    sorting: safeParseJson<SortingState>(params.get("sort")) ?? [],
+    sorting: safeParseJson<SortingState>(params.get("sort")) ?? sorting,
     columnFilters:
       safeParseJson<ColumnFiltersState>(params.get("filters")) ?? [],
     globalFilter: params.get("q") ?? "",
   };
 }
 
+const sameSorting = (a: SortingState, b: SortingState) =>
+  a.length === b.length &&
+  a.every((sort, i) => sort.id === b[i].id && sort.desc === b[i].desc);
+
 function buildSearchParams(
   state: TableUrlState,
-  defaults: Required<Defaults>,
+  defaults: ResolvedDefaults,
 ): string {
   const out = new URLSearchParams();
   if (state.pagination.pageIndex > 0) {
@@ -59,7 +72,9 @@ function buildSearchParams(
   if (state.pagination.pageSize !== defaults.perPage) {
     out.set("perPage", String(state.pagination.pageSize));
   }
-  if (state.sorting.length) {
+  // An explicitly cleared sort is written as `[]`, so a reload doesn't put
+  // the default back.
+  if (!sameSorting(state.sorting, defaults.sorting)) {
     out.set("sort", JSON.stringify(state.sorting));
   }
   if (state.columnFilters.length) {
@@ -80,9 +95,15 @@ function buildSearchParams(
  * - Updates are debounced (250ms) to avoid one navigation per keystroke.
  */
 export function useTableUrlState(defaults: Defaults = {}) {
-  const fullDefaults = useMemo(
-    () => ({ page: defaults.page ?? 1, perPage: defaults.perPage ?? 20 }),
-    [defaults.page, defaults.perPage],
+  // Callers pass the sorting inline, so it's keyed by value, not identity.
+  const sortingKey = JSON.stringify(defaults.sorting ?? NO_SORTING);
+  const fullDefaults = useMemo<ResolvedDefaults>(
+    () => ({
+      page: defaults.page ?? 1,
+      perPage: defaults.perPage ?? 20,
+      sorting: JSON.parse(sortingKey) as SortingState,
+    }),
+    [defaults.page, defaults.perPage, sortingKey],
   );
   const router = useRouter();
   const pathname = usePathname();

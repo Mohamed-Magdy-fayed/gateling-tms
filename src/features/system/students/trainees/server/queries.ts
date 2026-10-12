@@ -116,7 +116,8 @@ export async function listTraineeGroups(
         ),
       ),
     )
-    .orderBy(asc(GroupsTable.name), asc(GroupsTable.id));
+    // Newest class first, like every other list.
+    .orderBy(desc(GroupStudentsTable.createdAt), desc(GroupsTable.id));
 }
 
 export async function getTrainee(ctx: OrgTRPCContext, id: string) {
