@@ -1770,6 +1770,7 @@ export default {
       groups: "Classes",
       plan: "Plan",
       ofLimit: dt("of {limit:number} allowed", {}),
+      taughtHere: "Taught in this branch",
     },
     today: {
       title: "Today's sessions",

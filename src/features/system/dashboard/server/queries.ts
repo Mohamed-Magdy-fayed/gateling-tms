@@ -3,6 +3,7 @@ import {
   and,
   asc,
   count,
+  countDistinct,
   desc,
   eq,
   gte,
@@ -32,18 +33,19 @@ const RECENT_ACTIVITY_LIMIT = 5;
 /**
  * Everything the dashboard renders (phase-05.md step 8), in one round trip.
  *
- * `studentCount`/`courseCount` are read off the organization row rather than
- * counted here — they are the same maintained counters the plan limits are
- * enforced against (`assertCanAddStudent`), so counting separately could show
- * a number the limit check disagrees with. Groups have no counter and no
- * limit, so they are counted directly.
+ * The tiles follow the branch switcher (docs/designs/academy-branches.md):
+ * students and groups are counted inside the selected branches. Courses are
+ * shared academy content, so on the whole academy the tile is the library
+ * count (the counter the plan limit is enforced against); narrowed to some
+ * branches it is the courses those branches teach — the ones with a group
+ * there. Plan limits are academy-wide, so they're only offered when the tiles
+ * cover the whole academy.
  */
 export async function getDashboardOverview(ctx: OrgTRPCContext) {
   const organization = await ctx.db.query.OrganizationsTable.findFirst({
     where: eq(OrganizationsTable.id, ctx.organizationId),
     columns: {
       plan: true,
-      studentCount: true,
       courseCount: true,
       timeZone: true,
     },
@@ -57,10 +59,29 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
   }
 
   const { start, end } = getDayBoundsInZone(new Date(), organization.timeZone);
+  // A single branch picked out of several. A member who can only ever see
+  // one branch is looking at everything they have, so that's not narrowed.
+  const isNarrowed = ctx.branchIds.length < ctx.visibleBranchIds.length;
 
-  // Both need the organization row (the day bounds are on its clock), but not
+  // All need the organization row (the day bounds are on its clock), but not
   // each other — so they go out together.
-  const [[{ value: groupCount }], todaysSessions] = await Promise.all([
+  const [
+    [{ value: studentCount }],
+    taughtCourseCount,
+    [{ value: groupCount }],
+    todaysSessions,
+  ] = await Promise.all([
+    ctx.db
+      .select({ value: count() })
+      .from(TraineesTable)
+      .where(
+        and(
+          eq(TraineesTable.organizationId, ctx.organizationId),
+          inArray(TraineesTable.branchId, ctx.branchIds),
+          isNull(TraineesTable.deletedAt),
+        ),
+      ),
+    isNarrowed ? countTaughtCourses(ctx) : null,
     ctx.db
       .select({ value: count() })
       .from(GroupsTable)
@@ -108,18 +129,34 @@ export async function getDashboardOverview(ctx: OrgTRPCContext) {
   return {
     plan: organization.plan,
     timeZone: organization.timeZone,
+    isNarrowed,
     counts: {
-      students: organization.studentCount,
-      courses: organization.courseCount,
+      students: Number(studentCount),
+      courses: taughtCourseCount ?? organization.courseCount,
       groups: Number(groupCount),
     },
-    limits: {
-      students: limits.maxStudents,
-      courses: limits.maxCourses,
-    },
+    limits: isNarrowed
+      ? null
+      : { students: limits.maxStudents, courses: limits.maxCourses },
     todaysSessions,
     branches,
   };
+}
+
+/** Live courses with at least one group in the selected branches. */
+async function countTaughtCourses(ctx: OrgTRPCContext): Promise<number> {
+  const [{ value }] = await ctx.db
+    .select({ value: countDistinct(GroupsTable.courseId) })
+    .from(GroupsTable)
+    .innerJoin(CoursesTable, eq(CoursesTable.id, GroupsTable.courseId))
+    .where(
+      and(
+        eq(GroupsTable.organizationId, ctx.organizationId),
+        inArray(GroupsTable.branchId, ctx.branchIds),
+        isNull(CoursesTable.deletedAt),
+      ),
+    );
+  return Number(value);
 }
 
 export type BranchBreakdownRow = {

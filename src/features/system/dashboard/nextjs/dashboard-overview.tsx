@@ -71,7 +71,8 @@ export function DashboardOverview() {
 
   // "of 50 allowed" while a limit applies, nothing at all on an unlimited
   // plan — PLAN_LIMITS uses null for unlimited (enterprise), and rendering
-  // "of null allowed" would be nonsense.
+  // "of null allowed" would be nonsense. Limits are academy-wide, so the
+  // server leaves them out when the tiles are narrowed to a branch.
   function limitLabel(limit: number | null | undefined) {
     return limit === null || limit === undefined
       ? undefined
@@ -104,14 +105,18 @@ export function DashboardOverview() {
         <StatCard
           label={t("dashboard.stats.students")}
           value={overview?.counts.students ?? 0}
-          description={limitLabel(overview?.limits.students)}
+          description={limitLabel(overview?.limits?.students)}
           icon={<UsersIcon />}
           tone="blue"
         />
         <StatCard
           label={t("dashboard.stats.courses")}
           value={overview?.counts.courses ?? 0}
-          description={limitLabel(overview?.limits.courses)}
+          description={
+            overview?.isNarrowed
+              ? t("dashboard.stats.taughtHere")
+              : limitLabel(overview?.limits?.courses)
+          }
           icon={<BookOpenIcon />}
           tone="green"
         />

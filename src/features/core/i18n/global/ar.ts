@@ -1746,6 +1746,7 @@ export default {
       groups: "المجموعات",
       plan: "الباقة",
       ofLimit: dt("من {limit:number} مسموح بها", {}),
+      taughtHere: "تُدرَّس في هذا الفرع",
     },
     today: {
       title: "حصص اليوم",

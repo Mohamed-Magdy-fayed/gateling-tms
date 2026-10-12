@@ -160,4 +160,43 @@ describe("branch isolation", () => {
     ).dashboard.overview();
     expect(one.branches).toBeNull();
   });
+
+  test("the dashboard tiles follow the selected branch", async () => {
+    const overview = (branchId: string | null) =>
+      callerFor(
+        tenant.userId,
+        tenant.organizationId,
+        branchId,
+      ).dashboard.overview();
+    const [all, nasr, maadi] = await Promise.all([
+      overview(null),
+      overview(nasrId),
+      overview(maadiId),
+    ]);
+
+    // Earlier tests add students to Maadi, so compare against the lists.
+    const count = async (branchId: string) =>
+      (await listIds(callerFor(tenant.userId, tenant.organizationId, branchId)))
+        .length;
+    expect(nasr.counts.students).toBe(await count(nasrId));
+    expect(maadi.counts.students).toBe(await count(maadiId));
+    expect(all.counts.students).toBe(
+      nasr.counts.students + maadi.counts.students,
+    );
+
+    // Plan limits are academy-wide; a single branch doesn't get them.
+    expect(all.isNarrowed).toBe(false);
+    expect(all.limits).not.toBeNull();
+    expect(maadi.isNarrowed).toBe(true);
+    expect(maadi.limits).toBeNull();
+
+    // A teacher who only ever sees one branch is looking at all they have.
+    const teacher = await callerFor(
+      teacherId,
+      tenant.organizationId,
+      null,
+    ).dashboard.overview();
+    expect(teacher.isNarrowed).toBe(false);
+    expect(teacher.counts.students).toBe(nasr.counts.students);
+  });
 });
